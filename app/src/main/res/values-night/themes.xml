@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Base.Theme.TripExpenseManager" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:datePickerDialogTheme">@style/CustomCalendarTheme</item>
+        <item name="android:alertDialogTheme">@style/CustomAlertDialogTheme</item>
+
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <item name="checkboxStyle">@style/CustomCheckboxStyle</item>
+
+        <item name="android:dropDownListViewStyle">@style/CustomDropDownListView</item>
+        <item name="android:spinnerDropDownItemStyle">@style/CustomSpinnerDropDownItem</item>
+    </style>
+
+    <style name="Theme.TripExpenseManager" parent="Base.Theme.TripExpenseManager" />
+
+    <style name="CustomCheckboxStyle" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">#B0B0B0</item>
+    </style>
+
+    <style name="CustomDropDownListView" parent="Widget.AppCompat.ListView.DropDown">
+        <item name="android:background">#2C2C2C</item>
+        <item name="android:elevation">4dp</item>
+    </style>
+
+    <style name="CustomSpinnerDropDownItem" parent="Widget.AppCompat.DropDownItem.Spinner">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:background">#2C2C2C</item>
+    </style>
+
+    <style name="CustomAlertDialogTheme" parent="Theme.Material3.Dark.Dialog.Alert">
+        <item name="android:background">#333333</item>
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorAccent">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#E0E0E0</item>
+
+        <item name="buttonBarPositiveButtonStyle">@style/AlertDialogButtonBoldWhite</item>
+        <item name="buttonBarNegativeButtonStyle">@style/AlertDialogButtonBoldWhite</item>
+    </style>
+
+    <style name="AlertDialogButtonBoldWhite" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">#FFFFFF</item> <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="CustomCalendarTheme" parent="Theme.Material3.Dark.Dialog">
+        <item name="colorPrimary">#E0E0E0</item> <item name="colorOnPrimary">#121212</item>
+        <item name="colorAccent">#E0E0E0</item>
+        <item name="android:windowBackground">#222222</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B0B0B0</item>
+
+        <item name="buttonBarPositiveButtonStyle">@style/CalendarActionButtonsDarkStyle</item>
+        <item name="buttonBarNegativeButtonStyle">@style/CalendarActionButtonsDarkStyle</item>
+    </style>
+
+    <style name="CalendarActionButtonsDarkStyle" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">#E0E0E0</item> <item name="android:textStyle">bold</item>
+    </style>
+
+</resources>

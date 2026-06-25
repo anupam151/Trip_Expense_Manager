@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Trip Expense Manager</string>
+    <string name="desc_app_logo">App Logo</string>
+    <string name="header_small_tag">TRIP EXPENSE MANAGER</string>
+    <string name="title_home_page">Trip Expense Manager</string>
+
+    <string name="title_trip_manager">Trip Expense Manager</string>
+    <string name="subtitle_trip_manager">Manage your trips and expenses easily</string>
+    <string name="btn_get_started">Get Started</string>
+
+    <string name="dash_app_title">Trip Expense Manager</string>
+    <string name="dash_btn_create_trip">Create New Trip</string>
+    <string name="dash_btn_view_trip">View Trip</string>
+    <string name="title_pinned_activity_workspace">Pinned Activity Workspace</string>
+    <string name="msg_no_trip_added">No trip added</string>
+
+    <string name="title_create_trip">Create New Trip</string>
+    <string name="label_trip_name">Name of The Trip</string>
+    <string name="hint_trip_name">Enter trip name</string>
+    <string name="label_destination">Destination</string>
+    <string name="hint_destination">Enter destination</string>
+    <string name="label_add_members">Add Trip Members</string>
+    <string name="btn_add_member_trigger">+ Add Member</string>
+    <string name="label_start_date">Journey start Date</string>
+    <string name="label_end_date">Journey end Date</string>
+    <string name="btn_create_trip_submit">Create Trip</string>
+    <string name="btn_update_trip">Update Trip</string>
+
+    <string name="dialog_add_btn">Add</string>
+    <string name="dialog_back_btn">Back</string>
+    <string name="dialog_hint_member_name">Enter member name</string>
+    <string name="fmt_dialog_member_count_label">Add member %d</string>
+
+    <string name="title_trip_categories">Trip Categories</string>
+    <string name="btn_ongoing_trips">1. Ongoing Trips</string>
+    <string name="btn_upcoming_trips">2. Upcoming Trips</string>
+    <string name="btn_ended_trips">3. Ended Trips</string>
+    <string name="btn_all_trips">4. All Trips</string>
+    <string name="header_default_title">Upcoming Trips</string>
+
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="btn_label_add_new_trip">Add New Trip</string>
+
+    <string name="title_add_expense">Add New Expense</string>
+    <string name="label_expense_purpose">Expense Purpose / Description</string>
+    <string name="hint_expense_purpose">e.g., Dinner, Car Rental, Hotel Booking</string>
+    <string name="label_amount">Amount (₹)</string>
+    <string name="hint_amount">0.00</string>
+    <string name="label_expense_for">Expense For</string>
+    <string name="subtitle_expense_split">(Uncheck members who didn’t participate to split equally among remaining)</string>
+    <string name="preview_dynamic_members">[ Trip Members Will Load Here Automatically ]</string>
+    <string name="label_paid_by">Paid By</string>
+    <string name="label_expense_date">Expense Date</string>
+    <string name="btn_save_expense_split">Save Expense &amp; Split</string>
+
+    <string name="label_title_add_payment">Add New Payment</string>
+    <string name="title_add_payment">Add Member Payment</string>
+    <string name="label_select_member">Select Member</string>
+    <string name="label_payment_by">Payment By</string>
+    <string name="label_payment_date">Payment Date</string>
+    <string name="label_payment_amount">Amount (₹)</string>
+    <string name="hint_payment_amount">Enter positive integer</string>
+    <string name="btn_submit_payment">Add Payment</string>
+    <string name="hint_date_picker">Select Date</string>
+    <string name="btn_add_expense">Add Expense</string>
+    <string name="btn_add_payment">Add Payment</string>
+
+    <string name="label_total_expense">Total Expense:</string>
+    <string name="label_total_received">Total Received:</string>
+
+    <string name="subtitle_trip_summary">INDIVIDUAL TRIP LEDGER</string>
+    <string name="card_total_expense">Total Trip Expense</string>
+    <string name="card_total_deposit">Total Fund Deposit</string>
+    <string name="section_member_balances">Individual Member Summary</string>
+
+    <string name="err_empty_name">Please enter a name</string>
+    <string name="err_mandatory_fields">Every input field is mandatory!</string>
+    <string name="err_trip_name_alphabet_required">Trip Name must contain at least one alphabet letter!</string>
+    <string name="err_destination_alphabet_required">Destination must contain at least one alphabet letter!</string>
+    <string name="err_date_chronology_mismatch">Journey start date must be the same date or before the end date!</string>
+    <string name="err_invalid_date_format">Invalid date format encountered!</string>
+    <string name="err_min_one_member_required">Please add at least one trip member!</string>
+    <string name="msg_trip_update_success">Trip Updated successfully!</string>
+    <string name="err_trip_update_failed">Failed to update trip record details!</string>
+
+    <string name="footer_text">Design &amp; Developed by Anupam</string>
+    <string name="dev_branding_signature_placeholder">Designed and Developed by %1$s</string>
+
+    <string name="fmt_card_destination">Destination: %s</string>
+    <string name="fmt_card_member_count">No. of Members: %d</string>
+    <string name="fmt_card_trip_id">Trip ID: %s</string>
+    <string name="fmt_card_start_date">Start Date: %s</string>
+    <string name="fmt_destination">Destination: %1$s</string>
+    <string name="fmt_member_count">No. of Members: %1$d</string>
+    <string name="fmt_start_date">Start Date: %1$s</string>
+    <string name="placeholder_trip_name">Kolkata Tour</string>
+    <string name="placeholder_destination">Destination: Victoria Memorial, Kolkata</string>
+    <string name="placeholder_member_count">No. of Members: 5</string>
+    <string name="placeholder_start_date">Start Date: 22/06/2026</string>
+    <string name="label_state_pinned">Pinned</string>
+    <string name="label_state_pin">Pin</string>
+
+    <string name="fmt_ledger_trip_name">Trip Name: %s</string>
+    <string name="fmt_ledger_destination">Trip Destination: %s</string>
+    <string name="fmt_ledger_member_count">Number of Members: %d</string>
+    <string name="fmt_ledger_all_members">All Member Names: %s</string>
+    <string name="fmt_ledger_total_expenses">Total Expenses: ₹%.2f</string>
+    <string name="fmt_ledger_total_payments">Total Payment Received: ₹%.2f</string>
+    <string name="label_ledger_calculation_pending">Fund Balance: (Calculation coming soon)</string>
+
+    <string name="fmt_trip_title_regular">%1$d. %2$s</string>
+    <string name="fmt_trip_title_pinned">%1$d. 📌 %2$s</string>
+    <string name="fmt_trip_destination">Destination: %1$s</string>
+    <string name="fmt_trip_member_count">No. of Members: %1$d</string>
+    <string name="fmt_trip_id">Trip ID: %1$s</string>
+    <string name="fmt_trip_start_date">Start Date: %1$s</string>
+    <string name="fmt_currency_rupees">₹%1$.2f</string>
+    <string name="action_state_pin">Pin</string>
+    <string name="action_state_unpin">Unpin</string>
+
+    <string name="fmt_dash_pinned_title">%1$d. 📌 %2$s</string>
+    <string name="fmt_dash_destination">Destination: %1$s</string>
+    <string name="fmt_dash_member_count">No. of Members: %1$d</string>
+    <string name="fmt_dash_trip_id">Trip ID: %1$s</string>
+    <string name="fmt_dash_start_date">Start Date: %1$s</string>
+    <string name="fmt_dash_currency_rupees">₹%1$.2f</string>
+    <string name="action_unpin">Unpin</string>
+
+    <string name="fmt_item_name_sequential">%1$d. %2$s</string>
+    <string name="fmt_item_name_pinned_sequential">%1$d. 📌 %2$s</string>
+    <string name="fmt_item_destination">Destination: %1$s</string>
+    <string name="fmt_item_member_count">No. of Members: %1$d</string>
+    <string name="fmt_item_trip_id">Trip ID: %1$s</string>
+    <string name="fmt_item_start_date">Start Date: %1$s</string>
+
+    <string name="ledger_title_main_header">Ledger of the trip</string>
+    <string name="ledger_col_sl_no">SL No</string>
+    <string name="ledger_col_description">Description</string>
+    <string name="ledger_col_tx_date">Date of\nTransaction</string>
+    <string name="ledger_col_expense_amt">Expense\nAmount</string>
+    <string name="ledger_col_payment_amt">Payment\nPrimary\nAmount</string>
+    <string name="ledger_col_expense_for">Expense\nFor</string>
+    <string name="ledger_col_party_involved">Expense by\nor, Payment by</string>
+    <string name="default_dash_placeholder">--</string>
+    <string name="default_zero_amount">₹0.00</string>
+    <string name="fmt_ledger_fund_balance">Fund Balance: ₹%.2f</string>
+    <string name="add_member_1">Add Member 1</string>
+    <string name="name">Name</string>
+    <string name="enter_member_name">Enter member name</string>
+    <string name="add">Add</string>
+    <string name="back">Back</string>
+    <string name="trip_name">Trip Name: —</string>
+    <string name="trip_destination">Trip Destination: —</string>
+    <string name="number_of_members_0">Number of Members: 0</string>
+    <string name="all_member_names">All Member Names: —</string>
+    <string name="ledger_of_the_trip">Ledger of the trip</string>
+    <string name="sl_no">SL No</string>
+    <string name="description">Description</string>
+    <string name="date_of_ntransaction">Date of\nTransaction</string>
+    <string name="expense_namount">Expense\nAmount</string>
+    <string name="payment_namount">Payment\nAmount</string>
+    <string name="expense_nfor">Expense\nFor</string>
+    <string name="expense_by_nor_payment_by">Expense by\nor, Payment by</string>
+
+</resources>

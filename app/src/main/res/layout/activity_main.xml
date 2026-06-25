@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://tools.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="#FFFFFF"
+    tools:context=".MainActivity">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <ImageView
+        android:id="@+id/app_logo"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:src="@drawable/app_logo"
+        android:layout_marginBottom="20dp"
+        android:importantForAccessibility="no"
+        tools:ignore="AccessibilityContrastCheck" />
+
+    <TextView
+        android:id="@+id/app_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/title_trip_manager"
+        android:textColor="#000000"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="10dp"/>
+
+    <TextView
+        android:id="@+id/app_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/subtitle_trip_manager"
+        android:textColor="#353535"
+        android:textSize="16sp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.2" />
+
+    <TextView
+        android:id="@+id/txt_dash_developer_branding"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#3A4664"
+        android:textSize="14sp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="25dp"
+        android:gravity="center"
+        tools:text="Designed and Developed by Anupam" />
+
+</LinearLayout>

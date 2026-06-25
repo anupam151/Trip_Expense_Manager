@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://tools.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#FFFFFF"
+    tools:context=".DashboardActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dash_app_title"
+            android:textColor="#0D1A39"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_dash_create_trip"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="@string/dash_btn_create_trip"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#85022E"
+            app:cornerRadius="8dp"
+            android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_dash_view_trips"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="@string/dash_btn_view_trip"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#CC843D"
+            app:cornerRadius="8dp"
+            android:layout_marginBottom="32dp" />
+
+        <TextView
+            android:id="@+id/lbl_recent_trip_heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/title_pinned_activity_workspace"
+            android:textColor="#0D1A39"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/container_pinned_trips_stack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="0dp"
+            android:paddingBottom="16dp"
+            android:clipToPadding="false"
+            android:clipChildren="false" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="40dp" />
+
+        <TextView
+            android:id="@+id/txt_dash_developer_branding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#3A4664"
+            android:textSize="14sp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="12dp"
+            android:gravity="center"
+            tools:text="Designed and Developed by Anupam" />
+
+    </LinearLayout>
+</ScrollView>
