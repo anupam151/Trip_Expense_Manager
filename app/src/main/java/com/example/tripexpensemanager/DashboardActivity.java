@@ -54,7 +54,7 @@ public class DashboardActivity extends AppCompatActivity {
 
         // Convert 16dp and 8dp to pixels dynamically to match item_trip.xml specs
         float scale = getResources().getDisplayMetrics().density;
-        int marginHorizontalPx = Math.round(8 * scale); // Preserves layout sides spacing
+        int marginHorizontalPx = Math.round(2 * scale); // Preserves layout sides spacing
         int marginBottomPx = Math.round(8 * scale);      // Standard row layout gaps
 
         while (cursor.moveToNext()) {
