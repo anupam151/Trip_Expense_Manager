@@ -66,6 +66,14 @@ public class AddPaymentActivity extends AppCompatActivity {
 
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance();
         datePickerDialog.show();
+
+        // FIXED: Grab the bottom bar and paint it solid maroon
+        Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            View buttonPanel = (View) positiveButton.getParent();
+            // Forces maroon (#85022E) unconditionally for both light and night modes
+            buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
+        }
     }
 
     @NonNull

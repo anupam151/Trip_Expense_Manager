@@ -3,7 +3,7 @@ package com.example.tripexpensemanager;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.TypedValue; // FIXED: Missing layout compilation mapping reference dependency added
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-//import android.graphics.Color;
 
 public class CreateTripActivity extends AppCompatActivity {
 
@@ -139,7 +138,17 @@ public class CreateTripActivity extends AppCompatActivity {
         }
 
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance(dateEditText);
+
+        // FIXED: Show the dialog first to render the UI tree
         datePickerDialog.show();
+
+        // FIXED: Safely inject the background color into the action button container
+        Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            View buttonPanel = (View) positiveButton.getParent();
+            buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
+
+        }
     }
 
     @NonNull
@@ -149,7 +158,8 @@ public class CreateTripActivity extends AppCompatActivity {
         int month = calendar.get(Calendar.MONTH);
         int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-        return new DatePickerDialog(this,
+        // FIXED: Added R.style.CustomCalendarTheme to apply the XML typography constraints
+        return new DatePickerDialog(this, R.style.CustomCalendarTheme,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
                     String formattedDate = String.format(Locale.US, "%02d/%02d/%04d", selectedDay, (selectedMonth + 1), selectedYear);
                     dateEditText.setText(formattedDate);

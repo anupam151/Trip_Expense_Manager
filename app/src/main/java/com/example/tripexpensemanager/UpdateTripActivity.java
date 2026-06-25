@@ -180,6 +180,14 @@ public class UpdateTripActivity extends AppCompatActivity {
         // FIXED: Instantiated the extracted factory method below to satisfy the design warning cleanly
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance(dateEditText);
         datePickerDialog.show();
+
+        // FIXED: Safely inject the background color into the action button container
+        Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            View buttonPanel = (View) positiveButton.getParent();
+            buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
+
+        }
     }
 
     // EXTRACTION FACTORY METHOD: Isolates dialog construction from environmental layout managers
