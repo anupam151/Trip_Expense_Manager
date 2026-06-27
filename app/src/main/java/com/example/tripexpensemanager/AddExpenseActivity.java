@@ -128,9 +128,30 @@ public class AddExpenseActivity extends AppCompatActivity {
         }
     }
 
+    // --- UPDATED SECTION START ---
+
     private void populatePaidBySpinner() {
+        ArrayList<String> spinnerOptions = new ArrayList<>();
+
+        // Add "Fund" as the first option
+        spinnerOptions.add("Fund");
+
+        // Add all trip members after "Fund"
+        spinnerOptions.addAll(parsedMembersList);
+
+        // Call the extracted method to generate the adapter
+        ArrayAdapter<String> adapter = createSpinnerAdapter(spinnerOptions);
+
+        spinnerPaidBy.setAdapter(adapter);
+
+        // Set "Fund" (index 0) as the default selected option
+        spinnerPaidBy.setSelection(0);
+    }
+
+    @NonNull
+    private ArrayAdapter<String> createSpinnerAdapter(ArrayList<String> options) {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, parsedMembersList) {
+                android.R.layout.simple_spinner_item, options) {
             @NonNull
             @Override
             public View getView(int position, View convertView, @NonNull ViewGroup parent) {
@@ -144,8 +165,10 @@ public class AddExpenseActivity extends AppCompatActivity {
             }
         };
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerPaidBy.setAdapter(adapter);
+        return adapter;
     }
+
+    // --- UPDATED SECTION END ---
 
     private void generateDynamicMembersCheckboxes() {
         layoutCheckboxContainer.removeAllViews();
@@ -223,12 +246,31 @@ public class AddExpenseActivity extends AppCompatActivity {
             return;
         }
 
+        // ... (existing code above these stays the same) ...
+
         String selectedPayer = spinnerPaidBy.getSelectedItem().toString();
         int totalSelectedConsumersCount = participatingMembersList.size();
         double equalSplitDebitShareAmount = totalAmount / totalSelectedConsumersCount;
 
+        // --- NEW FUND BALANCE CHECK START ---
+        if (selectedPayer.equals("Fund")) {
+            // Ask the database for the real-time calculated fund balance
+            double currentFundBalance = dbHelper.getFundBalance(currentTripId);
+
+            // If the expense is bigger than the fund, block the save and show an error!
+            if (totalAmount > currentFundBalance) {
+                String errorMsg = String.format(Locale.US,
+                        "Insufficient Fund Balance! Available: ₹%.2f", currentFundBalance);
+                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+                return; // Stops the code here so the expense is NOT saved
+            }
+        }
+        // --- NEW FUND BALANCE CHECK END ---
+
         String joinedSharedWithText = TextUtils.join(", ", participatingMembersList);
         long insertedRowId = dbHelper.insertExpense(currentTripId, purpose, totalAmount, selectedPayer, joinedSharedWithText, expenseDateStr);
+
+        // ... (existing code below these stays the same) ...
 
         if (insertedRowId != -1) {
             String feedbackMessage = String.format(Locale.US,

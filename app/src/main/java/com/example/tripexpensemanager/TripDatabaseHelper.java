@@ -229,20 +229,58 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
         double directPaymentsSum = 0.0;
         double expenseOutlaysSum = 0.0;
 
-        String directQuery = "SELECT SUM(" + COLUMN_PAYMENT_AMOUNT + ") FROM " + TABLE_PAYMENTS + " WHERE " + COLUMN_PAYMENT_TRIP_ID + " = ?";
-        String expenseQuery = "SELECT SUM(" + COLUMN_EXPENSE_AMOUNT + ") FROM " + TABLE_EXPENSES + " WHERE " + COLUMN_EXPENSE_TRIP_ID + " = ?";
+        // 1. Sum of direct payments made into the pool
+        String directQuery = "SELECT SUM(" + COLUMN_PAYMENT_AMOUNT + ") FROM " + TABLE_PAYMENTS +
+                " WHERE " + COLUMN_PAYMENT_TRIP_ID + " = ?";
+
+        // 2. Sum of expenses paid out-of-pocket by members (EXCLUDING the "Fund")
+        // FIXED: Added the condition to ignore 'Fund'
+        String expenseQuery = "SELECT SUM(" + COLUMN_EXPENSE_AMOUNT + ") FROM " + TABLE_EXPENSES +
+                " WHERE " + COLUMN_EXPENSE_TRIP_ID + " = ? AND " + COLUMN_EXPENSE_PAID_BY + " != 'Fund'";
 
         SQLiteDatabase db = this.getReadableDatabase();
+
         try (Cursor cursor = db.rawQuery(directQuery, new String[]{tripId})) {
             if (cursor.moveToFirst()) {
                 directPaymentsSum = cursor.getDouble(0);
             }
         }
+
         try (Cursor cursor = db.rawQuery(expenseQuery, new String[]{tripId})) {
             if (cursor.moveToFirst()) {
                 expenseOutlaysSum = cursor.getDouble(0);
             }
         }
+
         return directPaymentsSum + expenseOutlaysSum;
+    }
+
+    // --- NEW METHOD TO CALCULATE REAL-TIME FUND BALANCE ---
+    public double getFundBalance(String tripId) {
+        double totalPayments = 0.0;
+        double totalFundExpenses = 0.0;
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // 1. Get the sum of ALL payments made by anyone for this trip
+        String paymentsQuery = "SELECT SUM(" + COLUMN_PAYMENT_AMOUNT + ") FROM " + TABLE_PAYMENTS +
+                " WHERE " + COLUMN_PAYMENT_TRIP_ID + " = ?";
+        try (Cursor cursor = db.rawQuery(paymentsQuery, new String[]{tripId})) {
+            if (cursor.moveToFirst()) {
+                totalPayments = cursor.getDouble(0);
+            }
+        }
+
+        // 2. Get the sum of ALL expenses that were explicitly paid by the "Fund"
+        String fundExpensesQuery = "SELECT SUM(" + COLUMN_EXPENSE_AMOUNT + ") FROM " + TABLE_EXPENSES +
+                " WHERE " + COLUMN_EXPENSE_TRIP_ID + " = ? AND " + COLUMN_EXPENSE_PAID_BY + " = 'Fund'";
+        try (Cursor cursor = db.rawQuery(fundExpensesQuery, new String[]{tripId})) {
+            if (cursor.moveToFirst()) {
+                totalFundExpenses = cursor.getDouble(0);
+            }
+        }
+
+        // 3. The balance is total cash in minus total cash out of the fund
+        return totalPayments - totalFundExpenses;
     }
 }
