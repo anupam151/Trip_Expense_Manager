@@ -52,10 +52,9 @@ public class DashboardActivity extends AppCompatActivity {
         lblRecentHeading.setVisibility(View.VISIBLE);
         int itemIndex = 1;
 
-        // Convert 16dp and 8dp to pixels dynamically to match item_trip.xml specs
         float scale = getResources().getDisplayMetrics().density;
-        int marginHorizontalPx = Math.round(2 * scale); // Preserves layout sides spacing
-        int marginBottomPx = Math.round(8 * scale);      // Standard row layout gaps
+        int marginHorizontalPx = Math.round(2 * scale);
+        int marginBottomPx = Math.round(8 * scale);
 
         while (cursor.moveToNext()) {
             String tripId = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_ID));
@@ -74,7 +73,10 @@ public class DashboardActivity extends AppCompatActivity {
             TextView txtTripName = cardView.findViewById(R.id.txt_item_trip_name);
             TextView txtDestination = cardView.findViewById(R.id.txt_item_destination);
             TextView txtMemberCount = cardView.findViewById(R.id.txt_item_member_count);
-            TextView txtTripId = cardView.findViewById(R.id.txt_item_trip_id);
+
+            // FIXED: Link to the new XML ID
+            TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
+
             TextView txtStartDate = cardView.findViewById(R.id.txt_item_start_date);
             TextView btnPin = cardView.findViewById(R.id.btn_item_pin);
             TextView btnEdit = cardView.findViewById(R.id.btn_item_edit);
@@ -84,16 +86,22 @@ public class DashboardActivity extends AppCompatActivity {
 
             double totalExpense = dbHelper.getTripTotalExpenses(tripId);
             double totalReceived = dbHelper.getTripTotalPaymentsReceived(tripId);
+
+            // FIXED: Fetch real-time fund balance
+            double fundBalance = dbHelper.getFundBalance(tripId);
+
             TextView txtTotalExpense = cardView.findViewById(R.id.txt_item_total_expense);
             TextView txtTotalReceived = cardView.findViewById(R.id.txt_item_total_received);
 
             if (txtTotalExpense != null) txtTotalExpense.setText(getString(R.string.fmt_dash_currency_rupees, totalExpense));
             if (txtTotalReceived != null) txtTotalReceived.setText(getString(R.string.fmt_dash_currency_rupees, totalReceived));
 
+            // FIXED: Set the formatted fund balance string
+            if (txtFundBalance != null) txtFundBalance.setText(String.format(java.util.Locale.US, "Fund Balance: ₹%.2f", fundBalance));
+
             txtTripName.setText(getString(R.string.fmt_dash_pinned_title, itemIndex, name));
             txtDestination.setText(getString(R.string.fmt_dash_destination, destination));
             txtMemberCount.setText(getString(R.string.fmt_dash_member_count, count));
-            txtTripId.setText(getString(R.string.fmt_dash_trip_id, tripId));
             txtStartDate.setText(getString(R.string.fmt_dash_start_date, startDate));
 
             btnPin.setText(getString(R.string.action_unpin));
@@ -152,7 +160,6 @@ public class DashboardActivity extends AppCompatActivity {
                 startActivity(intent);
             });
 
-            // FIXED: Set side margins explicitly to match your list view's layout behavior
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT

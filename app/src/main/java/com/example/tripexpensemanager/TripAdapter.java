@@ -45,22 +45,27 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
 
         holder.txtDestination.setText(context.getString(R.string.fmt_item_destination, trip.getDestination()));
         holder.txtMemberCount.setText(context.getString(R.string.fmt_item_member_count, trip.getMemberCount()));
-        holder.txtTripId.setText(context.getString(R.string.fmt_item_trip_id, trip.getTripId()));
         holder.txtStartDate.setText(context.getString(R.string.fmt_item_start_date, trip.getStartDate()));
 
         double expensesSum = 0.0;
         double paymentsSum = 0.0;
+        double fundBalance = 0.0;
 
-        // FIXED: Using try-with-resources to safely auto-close the helper instance and silence the warning
         try (TripDatabaseHelper dbHelper = new TripDatabaseHelper(context)) {
             expensesSum = dbHelper.getTripTotalExpenses(trip.getTripId());
             paymentsSum = dbHelper.getTripTotalPaymentsReceived(trip.getTripId());
+
+            // FIXED: Fetch the real-time fund balance
+            fundBalance = dbHelper.getFundBalance(trip.getTripId());
         } catch (Exception e) {
             Log.e(TAG, "Database aggregate balance load error for trip ID: " + trip.getTripId(), e);
         }
 
         holder.txtTotalExpense.setText(context.getString(R.string.fmt_dash_currency_rupees, expensesSum));
         holder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, paymentsSum));
+
+        // FIXED: Display the calculated fund balance instead of the Trip ID
+        holder.txtFundBalance.setText(String.format(java.util.Locale.US, "Fund Balance: ₹%.2f", fundBalance));
 
         if (trip.getIsPinnedState() == 1) {
             holder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getTripName()));
@@ -91,7 +96,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
     public int getItemCount() { return tripList.size(); }
 
     public static class TripViewHolder extends RecyclerView.ViewHolder {
-        TextView txtTripName, txtDestination, txtMemberCount, txtTripId, txtStartDate;
+        TextView txtTripName, txtDestination, txtMemberCount, txtFundBalance, txtStartDate;
         TextView txtTotalExpense, txtTotalReceived;
         TextView btnPin, btnEdit, btnDelete;
         MaterialButton btnAddExpense, btnAddPayment;
@@ -101,7 +106,10 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             txtTripName = itemView.findViewById(R.id.txt_item_trip_name);
             txtDestination = itemView.findViewById(R.id.txt_item_destination);
             txtMemberCount = itemView.findViewById(R.id.txt_item_member_count);
-            txtTripId = itemView.findViewById(R.id.txt_item_trip_id);
+
+            // FIXED: Linked to the new XML ID
+            txtFundBalance = itemView.findViewById(R.id.txt_item_fund_balance);
+
             txtStartDate = itemView.findViewById(R.id.txt_item_start_date);
             txtTotalExpense = itemView.findViewById(R.id.txt_item_total_expense);
             txtTotalReceived = itemView.findViewById(R.id.txt_item_total_received);

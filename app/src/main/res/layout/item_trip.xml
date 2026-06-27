@@ -117,14 +117,14 @@
                     tools:text="No. of Members: 5" />
 
                 <TextView
-                    android:id="@+id/txt_item_trip_id"
+                    android:id="@+id/txt_item_fund_balance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textColor="#B85000"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    tools:text="Trip ID: TRIP-80AA" />
+                    tools:text="Fund Balance: ₹4500.00" />
 
                 <TextView
                     android:id="@+id/txt_item_start_date"
