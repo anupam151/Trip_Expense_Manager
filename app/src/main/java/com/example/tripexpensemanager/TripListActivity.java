@@ -141,10 +141,18 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         }
     }
 
+    // Inside TripListActivity.java
     @Override
     public void onTripItemClick(TripModel trip) {
-        Intent intent = new Intent(this, TripLedgerActivity.class);
+        // OLD: Intent intent = new Intent(this, TripLedgerActivity.class);
+
+        // NEW:
+        Intent intent = new Intent(this, TripDetailsActivity.class);
         intent.putExtra("TRIP_ID", trip.getTripId());
+        intent.putExtra("TRIP_NAME", trip.getTripName());
+        intent.putExtra("DESTINATION", trip.getDestination());
+        intent.putExtra("START_DATE", trip.getStartDate());
+        intent.putExtra("MEMBERS", trip.getMembersListString());
         startActivity(intent);
     }
 

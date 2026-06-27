@@ -12,52 +12,50 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TripExpenseManager">
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".DashboardActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".CreateTripActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".ViewTripActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".TripListActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".UpdateTripActivity"
             android:exported="false" />
-
         <activity
             android:name=".AddExpenseActivity"
             android:exported="false" />
-
         <activity
             android:name=".AddPaymentActivity"
             android:exported="false" />
-
         <activity
             android:name=".TripLedgerActivity"
             android:exported="false" />
+        <activity
+            android:name=".TripDetailsActivity"
+            android:exported="false"
+            android:parentActivityName=".DashboardActivity"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 
 </manifest>

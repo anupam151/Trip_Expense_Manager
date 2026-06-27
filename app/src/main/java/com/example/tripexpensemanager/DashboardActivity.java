@@ -107,9 +107,14 @@ public class DashboardActivity extends AppCompatActivity {
             btnPin.setText(getString(R.string.action_unpin));
             btnPin.setTextColor(0xFF2E7D32);
 
+            // Inside updatePinnedWorkspace()
             cardView.setOnClickListener(v -> {
-                Intent intent = new Intent(DashboardActivity.this, TripLedgerActivity.class);
+                Intent intent = new Intent(DashboardActivity.this, TripDetailsActivity.class);
                 intent.putExtra("TRIP_ID", trip.getTripId());
+                intent.putExtra("TRIP_NAME", trip.getTripName());
+                intent.putExtra("DESTINATION", trip.getDestination());
+                intent.putExtra("START_DATE", trip.getStartDate());
+                intent.putExtra("MEMBERS", trip.getMembersListString()); // Ensure getMembersListString() returns comma-separated names
                 startActivity(intent);
             });
 

@@ -164,4 +164,21 @@
     <string name="expense_nfor">Expense\nFor</string>
     <string name="expense_by_nor_payment_by">Expense by\nor, Payment by</string>
 
+    <string name="label_trip_details">Trip Details</string>
+    <string name="label_members_header">👥 Active Members</string>
+    <string name="label_metric_members">Members</string>
+    <string name="label_metric_fund">Fund Balance</string>
+    <string name="label_metric_expenses">Total Expenses</string>
+    <string name="label_metric_receipts">Total Receipts</string>
+
+    <string name="placeholder_trip_title">Trip: %s</string>
+    <string name="placeholder_metric_val">₹%.2f</string>
+    <string name="placeholder_member_count_val">%d</string>
+
+    <string name="label_journey_date">Journey Date</string>
+    <string name="label_members">Members</string>
+    <string name="label_fund_balance">Fund Balance</string>
+    <string name="label_total_expenses">Total Expenses</string>
+    <string name="label_total_receipts">Total Receipts</string>
+
 </resources>
