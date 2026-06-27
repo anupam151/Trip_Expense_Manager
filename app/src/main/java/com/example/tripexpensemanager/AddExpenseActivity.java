@@ -166,9 +166,11 @@ public class AddExpenseActivity extends AppCompatActivity {
         checkBox.setText(memberName);
         checkBox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
 
-        TypedValue typedValue = new TypedValue();
-        getTheme().resolveAttribute(android.R.attr.textColorSecondary, typedValue, true);
-        checkBox.setTextColor(typedValue.data);
+        // ALWAYS Gray Checkbox
+        checkBox.setButtonTintList(androidx.core.content.ContextCompat.getColorStateList(this, R.color.checkbox_state_colors));
+
+        // ALWAYS Black Text (Removed the dark mode check)
+        checkBox.setTextColor(android.graphics.Color.parseColor("#000000"));
 
         checkBox.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
         checkBox.setChecked(true);
