@@ -183,6 +183,9 @@
 
     <string name="complete_ledger">Complete Ledger</string>
 
+    <string name="label_active_members">👥 Active Members</string>
+    <string name="label_removed_members">👥 Inactive Members</string>
+
 
 
 </resources>
