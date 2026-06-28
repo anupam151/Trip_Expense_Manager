@@ -27,7 +27,7 @@ public class TripDetailsActivity extends AppCompatActivity {
 
         // UI Binding
         if (name != null) {
-            ((TextView) findViewById(R.id.txt_details_trip_name)).setText(String.format(Locale.US, "Trip: %s", name));
+            ((TextView) findViewById(R.id.txt_details_trip_name)).setText(String.format(Locale.US, "%s", name));
         }
         ((TextView) findViewById(R.id.txt_details_destination)).setText(dest != null ? dest : "N/A");
 
