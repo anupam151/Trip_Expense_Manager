@@ -182,19 +182,46 @@ public class CreateTripActivity extends AppCompatActivity {
         if (alertDialog.getWindow() != null) {
             alertDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
+
+        alertDialog.setOnShowListener(dialogInterface -> {
+            edtDialogMemberName.requestFocus();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(edtDialogMemberName, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                }
+            }, 100);
+        });
+
         alertDialog.show();
 
         btnDialogAdd.setOnClickListener(v -> {
             String memberName = edtDialogMemberName.getText().toString().trim();
             if (memberName.isEmpty()) {
-                Toast.makeText(CreateTripActivity.this, getString(R.string.err_empty_name), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.err_empty_name), Toast.LENGTH_SHORT).show();
             } else {
+                // HIDE KEYBOARD BEFORE DISMISSING
+                hideKeyboard(edtDialogMemberName);
                 addMemberToLayout(memberName);
                 alertDialog.dismiss();
             }
         });
 
-        btnDialogBack.setOnClickListener(v -> alertDialog.dismiss());
+        btnDialogBack.setOnClickListener(v -> {
+            // HIDE KEYBOARD BEFORE DISMISSING
+            hideKeyboard(edtDialogMemberName);
+            alertDialog.dismiss();
+        });
+    }
+
+    // Add this helper method to your Activity
+    private void hideKeyboard(android.view.View view) {
+        android.view.inputmethod.InputMethodManager imm =
+                (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
     private void validateAndCreateTrip() {
