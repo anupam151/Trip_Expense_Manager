@@ -21,9 +21,9 @@
             android:layout_gravity="center_horizontal"
             android:text="@string/btn_update_trip"
             android:textColor="#85022E"
-            android:textSize="28sp"
+            android:textSize="30sp"
             android:textStyle="bold"
-            android:layout_marginBottom="32dp"/>
+            android:layout_marginBottom="16dp"/>
 
         <TextView
             android:layout_width="match_parent"
@@ -44,7 +44,7 @@
             android:autofillHints="none"
             android:background="@android:drawable/edit_text"
             android:padding="10dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             android:textColor="#000000"
             android:textSize="16sp" />
 
@@ -67,7 +67,62 @@
             android:autofillHints="none"
             android:background="@android:drawable/edit_text"
             android:padding="10dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_start_date"
+            android:textColor="#0D1A39"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/edt_update_start_date"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="@string/hint_date_picker"
+            android:textColorHint="#838383"
+            android:inputType="date"
+            android:autofillHints="none"
+            android:focusable="true"
+            android:focusableInTouchMode="false"
+            android:clickable="true"
+            android:cursorVisible="false"
+            android:longClickable="false"
+            android:background="@android:drawable/edit_text"
+            android:padding="10dp"
+            android:layout_marginBottom="16dp"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_end_date"
+            android:textColor="#0D1A39"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/edt_update_end_date"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="@string/hint_date_picker"
+            android:textColorHint="#838383"
+            android:inputType="date"
+            android:autofillHints="none"
+            android:focusable="true"
+            android:focusableInTouchMode="false"
+            android:clickable="true"
+            android:cursorVisible="false"
+            android:longClickable="false"
+            android:background="@android:drawable/edit_text"
+            android:padding="10dp"
+            android:layout_marginBottom="20dp"
             android:textColor="#000000"
             android:textSize="16sp" />
 
@@ -97,72 +152,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="20dp"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_start_date"
-            android:textColor="#0D1A39"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp"/>
-
-        <EditText
-            android:id="@+id/edt_update_start_date"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:hint="@string/hint_date_picker"
-            android:textColorHint="#838383"
-            android:inputType="date"
-            android:autofillHints="none"
-            android:focusable="true"
-            android:focusableInTouchMode="false"
-            android:clickable="true"
-            android:cursorVisible="false"
-            android:longClickable="false"
-            android:background="@android:drawable/edit_text"
-            android:padding="10dp"
-            android:layout_marginBottom="24dp"
-            android:textColor="#000000"
-            android:textSize="16sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_end_date"
-            android:textColor="#0D1A39"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp"/>
-
-        <EditText
-            android:id="@+id/edt_update_end_date"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:hint="@string/hint_date_picker"
-            android:textColorHint="#838383"
-            android:inputType="date"
-            android:autofillHints="none"
-            android:focusable="true"
-            android:focusableInTouchMode="false"
-            android:clickable="true"
-            android:cursorVisible="false"
-            android:longClickable="false"
-            android:background="@android:drawable/edit_text"
-            android:padding="10dp"
-            android:layout_marginBottom="40dp"
-            android:textColor="#000000"
-            android:textSize="16sp" />
 
         <Button
             android:id="@+id/btn_update_trip_submit"
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:text="@string/btn_update_trip"
-            android:textSize="18sp"
+            android:textSize="22sp"
             android:textColor="#FFFFFF"
             android:backgroundTint="#85022E"
             app:cornerRadius="8dp"

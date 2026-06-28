@@ -22,7 +22,7 @@
             android:textSize="30sp"
             android:textStyle="bold"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="32dp"/>
+            android:layout_marginBottom="16dp"/>
 
         <TextView
             android:layout_width="match_parent"
@@ -43,7 +43,7 @@
             android:autofillHints="none"
             android:background="@android:drawable/edit_text"
             android:padding="10dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             android:textSize="16sp"
             android:textColor="#000000" />
 
@@ -66,7 +66,62 @@
             android:textColorHint="#838383"
             android:background="@android:drawable/edit_text"
             android:padding="10dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
+            android:textSize="16sp"
+            android:textColor="#000000" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_start_date"
+            android:textColor="#0D1A39"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/edt_start_date"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="@string/hint_date_picker"
+            android:textColorHint="#838383"
+            android:inputType="date"
+            android:autofillHints="none"
+            android:focusable="true"
+            android:focusableInTouchMode="false"
+            android:clickable="true"
+            android:cursorVisible="false"
+            android:longClickable="false"
+            android:background="@android:drawable/edit_text"
+            android:padding="10dp"
+            android:layout_marginBottom="16dp"
+            android:textSize="16sp"
+            android:textColor="#000000" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_end_date"
+            android:textColor="#0D1A39"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/edt_end_date"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="@string/hint_date_picker"
+            android:textColorHint="#838383"
+            android:inputType="date"
+            android:autofillHints="none"
+            android:focusable="true"
+            android:focusableInTouchMode="false"
+            android:clickable="true"
+            android:cursorVisible="false"
+            android:longClickable="false"
+            android:background="@android:drawable/edit_text"
+            android:padding="10dp"
+            android:layout_marginBottom="20dp"
             android:textSize="16sp"
             android:textColor="#000000" />
 
@@ -96,65 +151,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="20dp"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_start_date"
-            android:textColor="#0D1A39"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp"/>
-
-        <EditText
-            android:id="@+id/edt_start_date"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:hint="@string/hint_date_picker"
-            android:textColorHint="#838383"
-            android:inputType="date"
-            android:autofillHints="none"
-            android:focusable="true"
-            android:focusableInTouchMode="false"
-            android:clickable="true"
-            android:cursorVisible="false"
-            android:longClickable="false"
-            android:background="@android:drawable/edit_text"
-            android:padding="10dp"
-            android:layout_marginBottom="24dp"
-            android:textSize="16sp"
-            android:textColor="#000000" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_end_date"
-            android:textColor="#0D1A39"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp"/>
-
-        <EditText
-            android:id="@+id/edt_end_date"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:hint="@string/hint_date_picker"
-            android:textColorHint="#838383"
-            android:inputType="date"
-            android:autofillHints="none"
-            android:focusable="true"
-            android:focusableInTouchMode="false"
-            android:clickable="true"
-            android:cursorVisible="false"
-            android:longClickable="false"
-            android:background="@android:drawable/edit_text"
-            android:padding="10dp"
-            android:layout_marginBottom="40dp"
-            android:textSize="16sp"
-            android:textColor="#000000" />
 
         <Button
             android:id="@+id/btn_create_trip_submit"
