@@ -1,5 +1,6 @@
 package com.example.tripexpensemanager;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.GridLayout;
@@ -30,12 +31,17 @@ public class TripDetailsActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.txt_details_trip_name)).setText(String.format(Locale.US, "%s", name));
         }
         ((TextView) findViewById(R.id.txt_details_destination)).setText(dest != null ? dest : "N/A");
-
-        // REFORMAT DATE LOGIC
         ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(date));
 
+        // Setup Complete Ledger Button
+        Button btnCompleteLedger = findViewById(R.id.btn_complete_ledger);
+        btnCompleteLedger.setOnClickListener(v -> {
+            Intent intent = new Intent(TripDetailsActivity.this, CompleteLedgerActivity.class);
+            intent.putExtra("TRIP_ID", tripId);
+            startActivity(intent);
+        });
+
         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
-            // ... (rest of your metrics and grid logic remains the same)
             ((TextView) findViewById(R.id.txt_details_fund_balance)).setText(String.format(Locale.US, "₹%.2f", db.getFundBalance(tripId)));
             ((TextView) findViewById(R.id.txt_details_total_expenses)).setText(String.format(Locale.US, "₹%.2f", db.getTripTotalExpenses(tripId)));
             ((TextView) findViewById(R.id.txt_details_total_receipts)).setText(String.format(Locale.US, "₹%.2f", db.getTripTotalPaymentsReceived(tripId)));
@@ -44,11 +50,21 @@ public class TripDetailsActivity extends AppCompatActivity {
                 String[] memberList = membersRaw.split(",");
                 ((TextView) findViewById(R.id.txt_details_member_count)).setText(String.valueOf(memberList.length));
                 GridLayout memberGrid = findViewById(R.id.grid_members);
+
                 for (String mName : memberList) {
                     Button btn = new Button(this);
                     btn.setText(mName.trim());
                     btn.setAllCaps(false);
-                    btn.setEnabled(false);
+                    btn.setEnabled(true); // ENABLED: Ready for Individual Ledger
+
+                    // Add click listener for Individual Member Ledger
+                    btn.setOnClickListener(v -> {
+                        Intent intent = new Intent(TripDetailsActivity.this, MemberLedgerActivity.class);
+                        intent.putExtra("TRIP_ID", tripId);
+                        intent.putExtra("MEMBER_NAME", mName.trim());
+                        startActivity(intent);
+                    });
+
                     GridLayout.LayoutParams params = new GridLayout.LayoutParams();
                     params.width = 0; params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
                     params.setMargins(8, 8, 8, 8);
@@ -61,22 +77,16 @@ public class TripDetailsActivity extends AppCompatActivity {
         }
     }
 
-    // Helper method to reformat the date
     private String formatDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return "N/A";
-
         SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
         SimpleDateFormat outputFormat = new SimpleDateFormat("dd MMM yy", Locale.US);
-
         try {
             Date date = inputFormat.parse(dateStr);
-            // Add a null check here to satisfy the compiler
-            if (date != null) {
-                return outputFormat.format(date);
-            }
+            if (date != null) return outputFormat.format(date);
         } catch (ParseException e) {
             Log.e("TripDetailsActivity", "Error parsing date: " + dateStr, e);
         }
-        return dateStr; // Fallback to original string if parsing failed or date was null
+        return dateStr;
     }
 }

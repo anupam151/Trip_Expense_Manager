@@ -245,5 +245,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:columnCount="2" />
+        <Button
+            android:id="@+id/btn_complete_ledger"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/complete_ledger"
+            android:backgroundTint="#85022E"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="20dp" />
     </LinearLayout>
 </ScrollView>
