@@ -10,7 +10,7 @@ import java.util.UUID;
 public class TripDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "TripManager.db";
-    private static final int DATABASE_VERSION = 7;
+    private static final int DATABASE_VERSION = 8; // Version updated
 
     public static final String TABLE_TRIPS = "trips";
     public static final String COLUMN_INTERNAL_ID = "id";
@@ -53,6 +53,7 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
             + COLUMN_IS_PINNED + " INTEGER DEFAULT 0"
             + ");";
 
+    // ADDED created_at FOR DEVICE TIME TRACKING
     private static final String CREATE_TABLE_EXPENSES = "CREATE TABLE " + TABLE_EXPENSES + " ("
             + COLUMN_EXPENSE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
             + COLUMN_EXPENSE_TRIP_ID + " TEXT, "
@@ -60,15 +61,18 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
             + COLUMN_EXPENSE_AMOUNT + " REAL, "
             + COLUMN_EXPENSE_PAID_BY + " TEXT, "
             + COLUMN_EXPENSE_SHARED_WITH + " TEXT, "
-            + COLUMN_EXPENSE_DATE + " TEXT"
+            + COLUMN_EXPENSE_DATE + " TEXT, "
+            + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
             + ");";
 
+    // ADDED created_at FOR DEVICE TIME TRACKING
     private static final String CREATE_TABLE_PAYMENTS = "CREATE TABLE " + TABLE_PAYMENTS + " ("
             + COLUMN_PAYMENT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
             + COLUMN_PAYMENT_TRIP_ID + " TEXT, "
             + COLUMN_PAYMENT_BY + " TEXT, "
             + COLUMN_PAYMENT_DATE + " TEXT, "
-            + COLUMN_PAYMENT_AMOUNT + " REAL"
+            + COLUMN_PAYMENT_AMOUNT + " REAL, "
+            + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
             + ");";
 
     private static final String CREATE_TABLE_MEMBERS = "CREATE TABLE " + TABLE_TRIP_MEMBERS + " ("
@@ -214,9 +218,10 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
         return p - fe;
     }
 
+    // UPDATED: Now sorts by created_at ascending (Oldest entry at top, newest entry at bottom)
     public Cursor getUnifiedLedger(String tripId) {
-        String query = "SELECT " + COLUMN_EXPENSE_DATE + " as date, " + COLUMN_EXPENSE_PURPOSE + " as purpose, " + COLUMN_EXPENSE_AMOUNT + " as amount, " + COLUMN_EXPENSE_PAID_BY + " as paid_by, " + COLUMN_EXPENSE_SHARED_WITH + " as expense_shared_with, 'Expense' as type FROM " + TABLE_EXPENSES + " WHERE " + COLUMN_EXPENSE_TRIP_ID + " = ? "
-                + "UNION ALL SELECT " + COLUMN_PAYMENT_DATE + " as date, 'Payment' as purpose, " + COLUMN_PAYMENT_AMOUNT + " as amount, " + COLUMN_PAYMENT_BY + " as paid_by, '' as expense_shared_with, 'Payment' as type FROM " + TABLE_PAYMENTS + " WHERE " + COLUMN_PAYMENT_TRIP_ID + " = ? ORDER BY date DESC";
+        String query = "SELECT " + COLUMN_EXPENSE_DATE + " as date, " + COLUMN_EXPENSE_PURPOSE + " as purpose, " + COLUMN_EXPENSE_AMOUNT + " as amount, " + COLUMN_EXPENSE_PAID_BY + " as paid_by, " + COLUMN_EXPENSE_SHARED_WITH + " as expense_shared_with, 'Expense' as type, created_at FROM " + TABLE_EXPENSES + " WHERE " + COLUMN_EXPENSE_TRIP_ID + " = ? "
+                + "UNION ALL SELECT " + COLUMN_PAYMENT_DATE + " as date, 'Payment' as purpose, " + COLUMN_PAYMENT_AMOUNT + " as amount, " + COLUMN_PAYMENT_BY + " as paid_by, '' as expense_shared_with, 'Payment' as type, created_at FROM " + TABLE_PAYMENTS + " WHERE " + COLUMN_PAYMENT_TRIP_ID + " = ? ORDER BY created_at ASC";
         return getReadableDatabase().rawQuery(query, new String[]{tripId, tripId});
     }
 }
