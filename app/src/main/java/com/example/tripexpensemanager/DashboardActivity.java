@@ -97,7 +97,7 @@ public class DashboardActivity extends AppCompatActivity {
             if (txtTotalReceived != null) txtTotalReceived.setText(getString(R.string.fmt_dash_currency_rupees, totalReceived));
 
             // FIXED: Set the formatted fund balance string
-            if (txtFundBalance != null) txtFundBalance.setText(String.format(java.util.Locale.US, "Fund Balance: ₹%.2f", fundBalance));
+            if (txtFundBalance != null) txtFundBalance.setText(String.format(java.util.Locale.US, "₹%.2f", fundBalance));
 
             txtTripName.setText(getString(R.string.fmt_dash_pinned_title, itemIndex, name));
             txtDestination.setText(getString(R.string.fmt_dash_destination, destination));

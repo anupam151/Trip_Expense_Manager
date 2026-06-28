@@ -65,7 +65,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
         holder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, paymentsSum));
 
         // FIXED: Display the calculated fund balance instead of the Trip ID
-        holder.txtFundBalance.setText(String.format(java.util.Locale.US, "Fund Balance: ₹%.2f", fundBalance));
+        holder.txtFundBalance.setText(String.format(java.util.Locale.US, "₹%.2f", fundBalance));
 
         if (trip.getIsPinnedState() == 1) {
             holder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getTripName()));

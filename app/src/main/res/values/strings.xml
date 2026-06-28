@@ -121,19 +121,19 @@
     <string name="action_state_unpin">Unpin</string>
 
     <string name="fmt_dash_pinned_title">%1$d. 📌 %2$s</string>
-    <string name="fmt_dash_destination">Destination: %1$s</string>
-    <string name="fmt_dash_member_count">No. of Members: %1$d</string>
+    <string name="fmt_dash_destination">📍  Location: %1$s</string>
+    <string name="fmt_dash_member_count">👥  Travelers: %1$d</string>
     <string name="fmt_dash_trip_id">Trip ID: %1$s</string>
-    <string name="fmt_dash_start_date">Start Date: %1$s</string>
+    <string name="fmt_dash_start_date">📅 Departure: %1$s</string>
     <string name="fmt_dash_currency_rupees">₹%1$.2f</string>
     <string name="action_unpin">Unpin</string>
 
     <string name="fmt_item_name_sequential">%1$d. %2$s</string>
     <string name="fmt_item_name_pinned_sequential">%1$d. 📌 %2$s</string>
-    <string name="fmt_item_destination">Destination: %1$s</string>
-    <string name="fmt_item_member_count">No. of Members: %1$d</string>
+    <string name="fmt_item_destination">📍  Location: %1$s</string>
+    <string name="fmt_item_member_count">👥  Travelers: %1$d</string>
     <string name="fmt_item_trip_id">Trip ID: %1$s</string>
-    <string name="fmt_item_start_date">Start Date: %1$s</string>
+    <string name="fmt_item_start_date">📅 Departure: %1$s</string>
 
     <string name="ledger_title_main_header">Ledger of the trip</string>
     <string name="ledger_col_sl_no">SL No</string>
@@ -177,7 +177,7 @@
 
     <string name="label_journey_date">Journey Date</string>
     <string name="label_members">Members</string>
-    <string name="label_fund_balance">Fund Balance</string>
+    <string name="label_fund_balance">Fund Balance:</string>
     <string name="label_total_expenses">Total Expenses</string>
     <string name="label_total_receipts">Total Receipts</string>
 
