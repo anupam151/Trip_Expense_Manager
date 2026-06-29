@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class CompleteLedgerActivity extends AppCompatActivity {
-
+    @SuppressWarnings("unused")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,7 +45,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                         currentBalance -= amount;
                     }
 
-                    buildDataRow(tableLayout, cursor, allMembers, currentBalance, totalPaid, totalUsed);
+                    buildDataRow(tableLayout, cursor, allMembers, totalPaid, totalUsed);
                 }
             }
 
@@ -64,11 +64,12 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, m + "\nDebit", true);
         }
 
-        //addCell(row, "Fund", true);
+        addCell(row, "Fund", true);
         table.addView(row);
     }
 
-    private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double balance, double[] totalPaid, double[] totalUsed) {
+    //private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double balance, double[] totalPaid, double[] totalUsed) {
+        private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double[] totalPaid, double[] totalUsed) {
         TableRow row = new TableRow(this);
 
         // --- NEW: Grab the hidden Transaction ID ---
