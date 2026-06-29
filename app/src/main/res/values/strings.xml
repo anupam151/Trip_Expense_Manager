@@ -192,6 +192,15 @@
     <string name="add_new_expense">Add New Expense</string>
     <string name="edit_expense">Edit Expense</string>
 
+    <string name="home">Home</string>
+
+
+
+    <string name="add_expense">Add Expense</string>
+    <string name="add_payment">Add Payment</string>
+    <string name="edit_trip">Edit Trip</string>
+    <string name="delete_trip">Delete Trip</string>
+
 
 
 </resources>
