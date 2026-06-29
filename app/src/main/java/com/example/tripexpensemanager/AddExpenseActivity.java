@@ -52,6 +52,18 @@ public class AddExpenseActivity extends AppCompatActivity {
         layoutCheckboxContainer = findViewById(R.id.layout_checkbox_container);
         Button btnSaveExpense = findViewById(R.id.btn_save_expense);
 
+        // --- NEW: Request focus on the first input box ---
+        edtPurpose.requestFocus();
+
+        // --- NEW: Force the keyboard to open after a slight delay ---
+        edtPurpose.postDelayed(() -> {
+            android.view.inputmethod.InputMethodManager imm =
+                    (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(edtPurpose, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+            }
+        }, 200);
+
         etExpenseDate.setShowSoftInputOnFocus(false);
 
         dbHelper = new TripDatabaseHelper(this);

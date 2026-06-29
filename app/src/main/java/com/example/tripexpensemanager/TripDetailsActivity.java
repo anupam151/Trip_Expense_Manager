@@ -120,6 +120,8 @@ public class TripDetailsActivity extends AppCompatActivity {
 
     private ArrayList<String> getHistoricalMembers(TripDatabaseHelper db, String tripId) {
         ArrayList<String> members = new ArrayList<>();
+
+        // 1. Find anyone who paid for an expense or made a payment to the fund
         String query = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ? " +
                 "UNION SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
         try (Cursor c = db.getReadableDatabase().rawQuery(query, new String[]{tripId, tripId})) {
@@ -128,6 +130,23 @@ public class TripDetailsActivity extends AppCompatActivity {
                 if (!"Fund".equalsIgnoreCase(name) && !members.contains(name)) members.add(name);
             }
         }
+
+        // 2. NEW: Find anyone who consumed an expense (shared with)
+        String sharedQuery = "SELECT expense_shared_with FROM expenses WHERE expense_trip_id = ?";
+        try (Cursor c = db.getReadableDatabase().rawQuery(sharedQuery, new String[]{tripId})) {
+            while (c.moveToNext()) {
+                String sharedStr = c.getString(0);
+                if (sharedStr != null && !sharedStr.isEmpty()) {
+                    for (String s : sharedStr.split(",")) {
+                        String cleanName = s.trim();
+                        if (!cleanName.isEmpty() && !members.contains(cleanName)) {
+                            members.add(cleanName);
+                        }
+                    }
+                }
+            }
+        }
+
         return members;
     }
 
