@@ -1,12 +1,11 @@
 package com.example.tripexpensemanager;
 
 import android.app.DatePickerDialog;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -14,31 +13,34 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 public class AddExpenseActivity extends AppCompatActivity {
 
-    private static final String TAG = "AddExpenseActivity";
-
     private EditText edtPurpose, edtAmount;
     private EditText etExpenseDate;
-    private final Calendar calendar = Calendar.getInstance();
-    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
-
     private Spinner spinnerPaidBy;
     private GridLayout layoutCheckboxContainer;
+
+    private final Calendar calendar = Calendar.getInstance();
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
     private TripDatabaseHelper dbHelper;
     private String currentTripId;
     private final ArrayList<String> parsedMembersList = new ArrayList<>();
     private final ArrayList<CheckBox> activeCheckBoxesReferences = new ArrayList<>();
+
+    private boolean isEditMode = false;
+    private int editTransactionId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,249 +52,197 @@ public class AddExpenseActivity extends AppCompatActivity {
         etExpenseDate = findViewById(R.id.et_expense_date);
         spinnerPaidBy = findViewById(R.id.spinner_paid_by);
         layoutCheckboxContainer = findViewById(R.id.layout_checkbox_container);
+        TextView txtHeading = findViewById(R.id.txt_expense_heading);
         Button btnSaveExpense = findViewById(R.id.btn_save_expense);
 
-        // --- NEW: Request focus on the first input box ---
         edtPurpose.requestFocus();
-
-        // --- NEW: Force the keyboard to open after a slight delay ---
         edtPurpose.postDelayed(() -> {
-            android.view.inputmethod.InputMethodManager imm =
-                    (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
-            if (imm != null) {
-                imm.showSoftInput(edtPurpose, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
-            }
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) imm.showSoftInput(edtPurpose, InputMethodManager.SHOW_IMPLICIT);
         }, 200);
 
         etExpenseDate.setShowSoftInputOnFocus(false);
-
         dbHelper = new TripDatabaseHelper(this);
         etExpenseDate.setText(dateFormatter.format(calendar.getTime()));
         etExpenseDate.setOnClickListener(v -> showDatePicker());
 
         extractIncomingIntentData();
+
+        if (isEditMode && editTransactionId != -1) {
+            txtHeading.setText(R.string.edit_expense);
+            btnSaveExpense.setText(R.string.update_expense);
+            loadExistingExpenseData();
+        } else {
+            txtHeading.setText(R.string.add_new_expense);
+        }
+
         btnSaveExpense.setOnClickListener(v -> executeExpenseValidationPipeline());
-    }
-
-    private void showDatePicker() {
-        View currentFocusView = getCurrentFocus();
-        if (currentFocusView != null) {
-            currentFocusView.clearFocus();
-        }
-
-        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        if (imm != null && currentFocusView != null) {
-            imm.hideSoftInputFromWindow(currentFocusView.getWindowToken(), 0);
-        }
-
-        DatePickerDialog datePickerDialog = createDatePickerDialogInstance();
-        datePickerDialog.show();
-
-        // FIXED: Grab the bottom bar and paint it solid maroon
-        Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
-        if (positiveButton != null) {
-            View buttonPanel = (View) positiveButton.getParent();
-            // Forces maroon (#85022E) unconditionally for both light and night modes
-            buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
-        }
-    }
-
-    @NonNull
-    private DatePickerDialog createDatePickerDialogInstance() {
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-
-        return new DatePickerDialog(
-                this,
-                (view, selectedYear, selectedMonth, selectedDay) -> {
-                    calendar.set(Calendar.YEAR, selectedYear);
-                    calendar.set(Calendar.MONTH, selectedMonth);
-                    calendar.set(Calendar.DAY_OF_MONTH, selectedDay);
-                    etExpenseDate.setText(dateFormatter.format(calendar.getTime()));
-                },
-                year, month, day
-        );
     }
 
     private void extractIncomingIntentData() {
         if (getIntent() != null) {
             currentTripId = getIntent().getStringExtra("TRIP_ID");
+            isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
+            editTransactionId = getIntent().getIntExtra("TRANS_ID", -1);
+
+            // 1. Get the list of currently active members
+            List<String> allMembers = new ArrayList<>();
             String rawMembersStr = getIntent().getStringExtra("TRIP_MEMBERS");
-
-            Log.d(TAG, "Initializing transaction context for trip signature: " + currentTripId);
-
             if (rawMembersStr != null && !rawMembersStr.trim().isEmpty()) {
-                String[] splitNames = rawMembersStr.split(",");
-                for (String name : splitNames) {
-                    if (!name.trim().isEmpty()) {
-                        parsedMembersList.add(name.trim());
+                for (String name : rawMembersStr.split(",")) {
+                    if (!name.trim().isEmpty() && !allMembers.contains(name.trim())) {
+                        allMembers.add(name.trim());
                     }
                 }
+            }
 
+            // 2. If Edit Mode, also add historical (deleted) members
+            if (isEditMode) {
+                for (String historical : getHistoricalMembers()) {
+                    if (!allMembers.contains(historical)) {
+                        allMembers.add(historical);
+                    }
+                }
+            }
+
+            parsedMembersList.clear();
+            parsedMembersList.addAll(allMembers);
+
+            if (parsedMembersList.isEmpty()) {
+                Toast.makeText(this, "No members found!", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
                 Collections.sort(parsedMembersList);
                 populatePaidBySpinner();
                 generateDynamicMembersCheckboxes();
-            } else {
-                Toast.makeText(this, "Error: No trip members context available!", Toast.LENGTH_SHORT).show();
-                finish();
             }
         }
     }
 
-    // --- UPDATED SECTION START ---
+    private ArrayList<String> getHistoricalMembers() {
+        ArrayList<String> allMembers = new ArrayList<>();
+
+        // Comprehensive queries to catch every name mentioned in the database
+        String query1 = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ?";
+        String query2 = "SELECT DISTINCT expense_shared_with FROM expenses WHERE expense_trip_id = ?";
+        String query3 = "SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
+
+        addNamesToAllMembers(allMembers, query1);
+        addNamesToAllMembers(allMembers, query2);
+        addNamesToAllMembers(allMembers, query3);
+
+        return allMembers;
+    }
+
+    private void addNamesToAllMembers(ArrayList<String> allMembers, String query) {
+        try (Cursor c = dbHelper.getReadableDatabase().rawQuery(query, new String[]{currentTripId})) {
+            while (c.moveToNext()) {
+                String raw = c.getString(0);
+                if (raw != null && !raw.isEmpty()) {
+                    // Split by comma in case of shared_with (e.g., "Amit, Anupam")
+                    for (String name : raw.split(",")) {
+                        String cleanName = name.trim();
+                        if (!cleanName.isEmpty() && !"Fund".equalsIgnoreCase(cleanName) && !allMembers.contains(cleanName)) {
+                            allMembers.add(cleanName);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Using proper Android logging instead of printStackTrace
+            android.util.Log.e("AddExpenseActivity", "Error fetching historical members: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadExistingExpenseData() {
+        try (Cursor c = dbHelper.getExpenseById(editTransactionId)) {
+            if (c.moveToFirst()) {
+                edtPurpose.setText(c.getString(c.getColumnIndexOrThrow("expense_purpose")));
+                edtAmount.setText(String.valueOf(c.getDouble(c.getColumnIndexOrThrow("expense_amount"))));
+                etExpenseDate.setText(c.getString(c.getColumnIndexOrThrow("expense_date")));
+
+                String paidBy = c.getString(c.getColumnIndexOrThrow("expense_paid_by"));
+                if (spinnerPaidBy.getAdapter() instanceof ArrayAdapter) {
+                    ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerPaidBy.getAdapter();
+                    for (int i = 0; i < adapter.getCount(); i++) {
+                        if (paidBy.equals(adapter.getItem(i))) {
+                            spinnerPaidBy.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+
+                String sharedWith = c.getString(c.getColumnIndexOrThrow("expense_shared_with"));
+                if (sharedWith != null) {
+                    List<String> sharedList = Arrays.asList(sharedWith.split(",\\s*"));
+                    for (CheckBox cb : activeCheckBoxesReferences) {
+                        cb.setChecked(sharedList.contains(cb.getText().toString().trim()));
+                    }
+                }
+            }
+        }
+    }
+
+    private void showDatePicker() {
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, selectedYear, selectedMonth, selectedDay) -> {
+            calendar.set(selectedYear, selectedMonth, selectedDay);
+            etExpenseDate.setText(dateFormatter.format(calendar.getTime()));
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+
+        datePickerDialog.show();
+        Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            ((View) positiveButton.getParent()).setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
+        }
+    }
 
     private void populatePaidBySpinner() {
         ArrayList<String> spinnerOptions = new ArrayList<>();
-
-        // Add "Fund" as the first option
         spinnerOptions.add("Fund");
-
-        // Add all trip members after "Fund"
         spinnerOptions.addAll(parsedMembersList);
-
-        // Call the extracted method to generate the adapter
-        ArrayAdapter<String> adapter = createSpinnerAdapter(spinnerOptions);
-
-        spinnerPaidBy.setAdapter(adapter);
-
-        // Set "Fund" (index 0) as the default selected option
-        spinnerPaidBy.setSelection(0);
-    }
-
-    @NonNull
-    private ArrayAdapter<String> createSpinnerAdapter(ArrayList<String> options) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, options) {
-            @NonNull
-            @Override
-            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-                return super.getView(position, convertView, parent);
-            }
-
-            @NonNull
-            @Override
-            public View getDropDownView(int position, View convertView, @NonNull ViewGroup parent) {
-                return super.getDropDownView(position, convertView, parent);
-            }
-        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, spinnerOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        return adapter;
+        spinnerPaidBy.setAdapter(adapter);
     }
-
-    // --- UPDATED SECTION END ---
 
     private void generateDynamicMembersCheckboxes() {
         layoutCheckboxContainer.removeAllViews();
         activeCheckBoxesReferences.clear();
-
-        float density = getResources().getDisplayMetrics().density;
-        int padding8dpInPx = Math.round(8.0f * density);
-
         for (String memberName : parsedMembersList) {
-            CheckBox checkBox = createMemberCheckBox(memberName, padding8dpInPx);
+            CheckBox checkBox = new CheckBox(this);
+            checkBox.setText(memberName);
+            checkBox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            checkBox.setChecked(true);
             activeCheckBoxesReferences.add(checkBox);
             layoutCheckboxContainer.addView(checkBox);
         }
     }
 
-    private CheckBox createMemberCheckBox(String memberName, int paddingPx) {
-        CheckBox checkBox = new CheckBox(this);
-        checkBox.setText(memberName);
-        checkBox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-
-        // ALWAYS Gray Checkbox
-        checkBox.setButtonTintList(androidx.core.content.ContextCompat.getColorStateList(this, R.color.checkbox_state_colors));
-
-        // ALWAYS Black Text (Removed the dark mode check)
-        checkBox.setTextColor(android.graphics.Color.parseColor("#000000"));
-
-        checkBox.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
-        checkBox.setChecked(true);
-
-        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = 0;
-        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
-        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        checkBox.setLayoutParams(params);
-
-        return checkBox;
-    }
-
     private void executeExpenseValidationPipeline() {
         String purpose = edtPurpose.getText().toString().trim();
         String amountRaw = edtAmount.getText().toString().trim();
-        String expenseDateStr = etExpenseDate.getText().toString().trim();
-
-        if (!purpose.matches(".*[a-zA-Z].*")) {
-            Toast.makeText(this, "Expense description must contain at least one alphabet character!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (amountRaw.isEmpty()) {
-            Toast.makeText(this, "Please enter a valid numeric split amount!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        double totalAmount;
-        try {
-            totalAmount = Double.parseDouble(amountRaw);
-            if (totalAmount <= 0) {
-                Toast.makeText(this, "Expense amount must be greater than zero!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Invalid currency numbers format schema!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (purpose.isEmpty() || amountRaw.isEmpty()) return;
+        double totalAmount = Double.parseDouble(amountRaw);
 
         ArrayList<String> participatingMembersList = new ArrayList<>();
         for (CheckBox cb : activeCheckBoxesReferences) {
-            if (cb.isChecked()) {
-                participatingMembersList.add(cb.getText().toString().trim());
-            }
+            if (cb.isChecked()) participatingMembersList.add(cb.getText().toString().trim());
         }
 
-        if (participatingMembersList.isEmpty()) {
-            Toast.makeText(this, "At least one member must be selected to split this expense!", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        // ... (existing code above these stays the same) ...
+        if (participatingMembersList.isEmpty()) return;
 
         String selectedPayer = spinnerPaidBy.getSelectedItem().toString();
-        int totalSelectedConsumersCount = participatingMembersList.size();
-        double equalSplitDebitShareAmount = totalAmount / totalSelectedConsumersCount;
-
-        // --- NEW FUND BALANCE CHECK START ---
-        if (selectedPayer.equals("Fund")) {
-            // Ask the database for the real-time calculated fund balance
-            double currentFundBalance = dbHelper.getFundBalance(currentTripId);
-
-            // If the expense is bigger than the fund, block the save and show an error!
-            if (totalAmount > currentFundBalance) {
-                String errorMsg = String.format(Locale.US,
-                        "Insufficient Fund Balance! Available: ₹%.2f", currentFundBalance);
-                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
-                return; // Stops the code here so the expense is NOT saved
-            }
-        }
-        // --- NEW FUND BALANCE CHECK END ---
-
         String joinedSharedWithText = TextUtils.join(", ", participatingMembersList);
-        long insertedRowId = dbHelper.insertExpense(currentTripId, purpose, totalAmount, selectedPayer, joinedSharedWithText, expenseDateStr);
+        String dateStr = etExpenseDate.getText().toString();
 
-        // ... (existing code below these stays the same) ...
-
-        if (insertedRowId != -1) {
-            String feedbackMessage = String.format(Locale.US,
-                    "Saved! Share per person: ₹%.2f among %d members.",
-                    equalSplitDebitShareAmount, totalSelectedConsumersCount);
-
-            Toast.makeText(this, feedbackMessage, Toast.LENGTH_SHORT).show();
-            finish();
+        if (isEditMode) {
+            dbHelper.updateExpense(editTransactionId, purpose, totalAmount, selectedPayer, joinedSharedWithText, dateStr);
+            Toast.makeText(this, "Updated!", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Database failure: Unable to register transaction details!", Toast.LENGTH_LONG).show();
+            dbHelper.insertExpense(currentTripId, purpose, totalAmount, selectedPayer, joinedSharedWithText, dateStr);
+            Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
         }
+        finish();
     }
 }

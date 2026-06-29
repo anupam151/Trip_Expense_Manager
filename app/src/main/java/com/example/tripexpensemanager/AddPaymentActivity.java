@@ -1,6 +1,7 @@
 package com.example.tripexpensemanager;
 
 import android.app.DatePickerDialog;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
+import android.content.Intent;
 
 public class AddPaymentActivity extends AppCompatActivity {
 
@@ -32,6 +34,10 @@ public class AddPaymentActivity extends AppCompatActivity {
     private TripDatabaseHelper dbHelper;
     private String currentTripId;
     private final ArrayList<String> parsedMembersList = new ArrayList<>();
+
+    // --- NEW: Edit Mode Flags ---
+    private boolean isEditMode = false;
+    private int editTransactionId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +56,37 @@ public class AddPaymentActivity extends AppCompatActivity {
         edtPaymentDate.setOnClickListener(v -> showDatePicker());
 
         extractIncomingIntentData();
+
+        // --- NEW: Load Data if Editing ---
+        if (isEditMode && editTransactionId != -1) {
+            btnSavePayment.setText(R.string.update_payment);
+            loadExistingPaymentData();
+        }
+
         btnSavePayment.setOnClickListener(v -> executePaymentValidationPipeline());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadExistingPaymentData() {
+        try (Cursor c = dbHelper.getPaymentById(editTransactionId)) {
+            if (c.moveToFirst()) {
+                edtPaymentAmount.setText(String.valueOf(c.getDouble(c.getColumnIndexOrThrow("payment_amount"))));
+                edtPaymentDate.setText(c.getString(c.getColumnIndexOrThrow("payment_date")));
+
+                String paidBy = c.getString(c.getColumnIndexOrThrow("payment_by"));
+                ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerPaymentBy.getAdapter();
+
+                // Fixed: Added null checks to prevent NullPointerException
+                if (adapter != null && paidBy != null) {
+                    for (int i = 0; i < adapter.getCount(); i++) {
+                        if (paidBy.equals(adapter.getItem(i))) {
+                            spinnerPaymentBy.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void showDatePicker() {
@@ -58,7 +94,6 @@ public class AddPaymentActivity extends AppCompatActivity {
         if (currentFocusView != null) {
             currentFocusView.clearFocus();
         }
-
         InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (imm != null && currentFocusView != null) {
             imm.hideSoftInputFromWindow(currentFocusView.getWindowToken(), 0);
@@ -66,12 +101,9 @@ public class AddPaymentActivity extends AppCompatActivity {
 
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance();
         datePickerDialog.show();
-
-        // FIXED: Grab the bottom bar and paint it solid maroon
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
             View buttonPanel = (View) positiveButton.getParent();
-            // Forces maroon (#85022E) unconditionally for both light and night modes
             buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
         }
     }
@@ -99,8 +131,10 @@ public class AddPaymentActivity extends AppCompatActivity {
             currentTripId = getIntent().getStringExtra("TRIP_ID");
             String rawMembersStr = getIntent().getStringExtra("TRIP_MEMBERS");
 
-            Log.d(TAG, "Initializing payment ledger environment for unique key: " + currentTripId);
+            isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
+            editTransactionId = getIntent().getIntExtra("TRANS_ID", -1);
 
+            Log.d(TAG, "Initializing payment ledger environment for unique key: " + currentTripId);
             if (rawMembersStr != null && !rawMembersStr.trim().isEmpty()) {
                 String[] splitNames = rawMembersStr.split(",");
                 for (String name : splitNames) {
@@ -108,7 +142,6 @@ public class AddPaymentActivity extends AppCompatActivity {
                         parsedMembersList.add(name.trim());
                     }
                 }
-
                 Collections.sort(parsedMembersList);
                 populatePaymentBySpinner();
             } else {
@@ -159,15 +192,28 @@ public class AddPaymentActivity extends AppCompatActivity {
         }
 
         String selectedPayer = spinnerPaymentBy.getSelectedItem().toString();
-        Log.i(TAG, "Committing payment row directly to SQLite database matching ID: " + currentTripId);
 
-        long insertedRowId = dbHelper.insertPayment(currentTripId, selectedPayer, paymentDateStr, totalAmount);
+        if (isEditMode) {
+            boolean success = dbHelper.updatePayment(editTransactionId, selectedPayer, paymentDateStr, totalAmount);
+            if (success) {
+                Toast.makeText(this, "Payment updated successfully!", Toast.LENGTH_SHORT).show();
 
-        if (insertedRowId != -1) {
-            Toast.makeText(this, "Payment of ₹" + amountRaw + " successfully registered!", Toast.LENGTH_SHORT).show();
-            finish();
+                // Return to ledger immediately
+                Intent intent = new Intent(this, CompleteLedgerActivity.class);
+                intent.putExtra("TRIP_ID", currentTripId);
+                startActivity(intent);
+                finish();
+            } else {
+                Toast.makeText(this, "Update failed!", Toast.LENGTH_SHORT).show();
+            }
         } else {
-            Toast.makeText(this, "Critical database failure: Unable to write payment log entries!", Toast.LENGTH_LONG).show();
+            long insertedRowId = dbHelper.insertPayment(currentTripId, selectedPayer, paymentDateStr, totalAmount);
+            if (insertedRowId != -1) {
+                Toast.makeText(this, "Payment of ₹" + amountRaw + " successfully registered!", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Critical database failure!", Toast.LENGTH_LONG).show();
+            }
         }
     }
 }

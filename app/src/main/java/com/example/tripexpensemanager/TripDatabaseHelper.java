@@ -53,7 +53,6 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
             + COLUMN_IS_PINNED + " INTEGER DEFAULT 0"
             + ");";
 
-    // ADDED created_at FOR DEVICE TIME TRACKING
     private static final String CREATE_TABLE_EXPENSES = "CREATE TABLE " + TABLE_EXPENSES + " ("
             + COLUMN_EXPENSE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
             + COLUMN_EXPENSE_TRIP_ID + " TEXT, "
@@ -65,7 +64,6 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
             + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
             + ");";
 
-    // ADDED created_at FOR DEVICE TIME TRACKING
     private static final String CREATE_TABLE_PAYMENTS = "CREATE TABLE " + TABLE_PAYMENTS + " ("
             + COLUMN_PAYMENT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
             + COLUMN_PAYMENT_TRIP_ID + " TEXT, "
@@ -218,10 +216,46 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
         return p - fe;
     }
 
-    // UPDATED: Now sorts by created_at ascending (Oldest entry at top, newest entry at bottom)
+    // --- NEW EDIT & DELETE METHODS ---
+
+    public void deleteExpense(int expenseId) {
+        getWritableDatabase().delete(TABLE_EXPENSES, COLUMN_EXPENSE_ID + " = ?", new String[]{String.valueOf(expenseId)});
+    }
+
+    public void deletePayment(int paymentId) {
+        getWritableDatabase().delete(TABLE_PAYMENTS, COLUMN_PAYMENT_ID + " = ?", new String[]{String.valueOf(paymentId)});
+    }
+
+    public boolean updateExpense(int expenseId, String purpose, double amount, String paidBy, String sharedWith, String dateStr) {
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_EXPENSE_PURPOSE, purpose);
+        values.put(COLUMN_EXPENSE_AMOUNT, amount);
+        values.put(COLUMN_EXPENSE_PAID_BY, paidBy);
+        values.put(COLUMN_EXPENSE_SHARED_WITH, sharedWith);
+        values.put(COLUMN_EXPENSE_DATE, dateStr);
+        return getWritableDatabase().update(TABLE_EXPENSES, values, COLUMN_EXPENSE_ID + " = ?", new String[]{String.valueOf(expenseId)}) > 0;
+    }
+
+    public boolean updatePayment(int paymentId, String paymentBy, String dateStr, double amount) {
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PAYMENT_BY, paymentBy);
+        values.put(COLUMN_PAYMENT_DATE, dateStr);
+        values.put(COLUMN_PAYMENT_AMOUNT, amount);
+        return getWritableDatabase().update(TABLE_PAYMENTS, values, COLUMN_PAYMENT_ID + " = ?", new String[]{String.valueOf(paymentId)}) > 0;
+    }
+
+    public Cursor getExpenseById(int id) {
+        return getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_EXPENSES + " WHERE " + COLUMN_EXPENSE_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    public Cursor getPaymentById(int id) {
+        return getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_PAYMENTS + " WHERE " + COLUMN_PAYMENT_ID + " = ?", new String[]{String.valueOf(id)});
+    }
+
+    // --- UPDATED QUERY FOR LEDGER (NOW FETCHES TRANSACTION IDs) ---
     public Cursor getUnifiedLedger(String tripId) {
-        String query = "SELECT " + COLUMN_EXPENSE_DATE + " as date, " + COLUMN_EXPENSE_PURPOSE + " as purpose, " + COLUMN_EXPENSE_AMOUNT + " as amount, " + COLUMN_EXPENSE_PAID_BY + " as paid_by, " + COLUMN_EXPENSE_SHARED_WITH + " as expense_shared_with, 'Expense' as type, created_at FROM " + TABLE_EXPENSES + " WHERE " + COLUMN_EXPENSE_TRIP_ID + " = ? "
-                + "UNION ALL SELECT " + COLUMN_PAYMENT_DATE + " as date, 'Payment' as purpose, " + COLUMN_PAYMENT_AMOUNT + " as amount, " + COLUMN_PAYMENT_BY + " as paid_by, '' as expense_shared_with, 'Payment' as type, created_at FROM " + TABLE_PAYMENTS + " WHERE " + COLUMN_PAYMENT_TRIP_ID + " = ? ORDER BY created_at ASC";
+        String query = "SELECT expense_id as trans_id, " + COLUMN_EXPENSE_DATE + " as date, " + COLUMN_EXPENSE_PURPOSE + " as purpose, " + COLUMN_EXPENSE_AMOUNT + " as amount, " + COLUMN_EXPENSE_PAID_BY + " as paid_by, " + COLUMN_EXPENSE_SHARED_WITH + " as expense_shared_with, 'Expense' as type, created_at FROM " + TABLE_EXPENSES + " WHERE " + COLUMN_EXPENSE_TRIP_ID + " = ? "
+                + "UNION ALL SELECT payment_id as trans_id, " + COLUMN_PAYMENT_DATE + " as date, 'Payment' as purpose, " + COLUMN_PAYMENT_AMOUNT + " as amount, " + COLUMN_PAYMENT_BY + " as paid_by, '' as expense_shared_with, 'Payment' as type, created_at FROM " + TABLE_PAYMENTS + " WHERE " + COLUMN_PAYMENT_TRIP_ID + " = ? ORDER BY created_at ASC";
         return getReadableDatabase().rawQuery(query, new String[]{tripId, tripId});
     }
 }

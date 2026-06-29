@@ -186,6 +186,12 @@
     <string name="label_active_members">👥 Active Members</string>
     <string name="label_removed_members">👥 Inactive Members</string>
 
+    <string name="update_expense">Update Expense</string>
+    <string name="update_payment">Update Payment</string>
+
+    <string name="add_new_expense">Add New Expense</string>
+    <string name="edit_expense">Edit Expense</string>
+
 
 
 </resources>

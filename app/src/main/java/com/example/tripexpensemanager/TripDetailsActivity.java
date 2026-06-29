@@ -20,18 +20,20 @@ import java.util.Locale;
 
 public class TripDetailsActivity extends AppCompatActivity {
 
+    private String tripId; // Defined at class level for access in onResume
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_details);
 
-        String tripId = getIntent().getStringExtra("TRIP_ID");
+        tripId = getIntent().getStringExtra("TRIP_ID");
         String name = getIntent().getStringExtra("TRIP_NAME");
         String dest = getIntent().getStringExtra("DESTINATION");
         String date = getIntent().getStringExtra("START_DATE");
         String membersRaw = getIntent().getStringExtra("MEMBERS");
 
-        // UI Binding - Verify IDs exist in your XML
+        // UI Binding
         if (name != null) {
             ((TextView) findViewById(R.id.txt_details_trip_name)).setText(String.format(Locale.US, "%s", name));
         }
@@ -47,12 +49,10 @@ public class TripDetailsActivity extends AppCompatActivity {
         });
 
         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
-            // Populate Summary Cards
-            ((TextView) findViewById(R.id.txt_details_fund_balance)).setText(String.format(Locale.US, "₹%.2f", db.getFundBalance(tripId)));
-            ((TextView) findViewById(R.id.txt_details_total_expenses)).setText(String.format(Locale.US, "₹%.2f", db.getTripTotalExpenses(tripId)));
-            ((TextView) findViewById(R.id.txt_details_total_receipts)).setText(String.format(Locale.US, "₹%.2f", db.getTripTotalPaymentsReceived(tripId)));
+            // Initial load
+            refreshSummaryCards(db);
 
-            // === 1. Active Members Logic ===
+            // 1. Process Active Members
             ArrayList<String> activeMembers = new ArrayList<>();
             if (membersRaw != null && !membersRaw.isEmpty()) {
                 String[] memberList = membersRaw.split(",");
@@ -69,7 +69,7 @@ public class TripDetailsActivity extends AppCompatActivity {
                 addMemberButton(activeName, gridActive, tripId, true);
             }
 
-            // === 2. Inactive/Removed Members Logic ===
+            // 2. Process Inactive/Removed Members
             GridLayout gridInactive = findViewById(R.id.grid_inactive_members);
             TextView txtInactiveHeader = findViewById(R.id.txt_inactive_members_header);
 
@@ -91,6 +91,23 @@ public class TripDetailsActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    // --- NEW: Refreshes numbers every time user returns to this screen ---
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (tripId != null) {
+            try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
+                refreshSummaryCards(db);
+            }
+        }
+    }
+
+    private void refreshSummaryCards(TripDatabaseHelper db) {
+        ((TextView) findViewById(R.id.txt_details_fund_balance)).setText(String.format(Locale.US, "₹%.2f", db.getFundBalance(tripId)));
+        ((TextView) findViewById(R.id.txt_details_total_expenses)).setText(String.format(Locale.US, "₹%.2f", db.getTripTotalExpenses(tripId)));
+        ((TextView) findViewById(R.id.txt_details_total_receipts)).setText(String.format(Locale.US, "₹%.2f", db.getTripTotalPaymentsReceived(tripId)));
     }
 
     private void addMemberButton(String mName, GridLayout grid, String tripId, boolean isActive) {
@@ -120,8 +137,6 @@ public class TripDetailsActivity extends AppCompatActivity {
 
     private ArrayList<String> getHistoricalMembers(TripDatabaseHelper db, String tripId) {
         ArrayList<String> members = new ArrayList<>();
-
-        // 1. Find anyone who paid for an expense or made a payment to the fund
         String query = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ? " +
                 "UNION SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
         try (Cursor c = db.getReadableDatabase().rawQuery(query, new String[]{tripId, tripId})) {
@@ -130,8 +145,6 @@ public class TripDetailsActivity extends AppCompatActivity {
                 if (!"Fund".equalsIgnoreCase(name) && !members.contains(name)) members.add(name);
             }
         }
-
-        // 2. NEW: Find anyone who consumed an expense (shared with)
         String sharedQuery = "SELECT expense_shared_with FROM expenses WHERE expense_trip_id = ?";
         try (Cursor c = db.getReadableDatabase().rawQuery(sharedQuery, new String[]{tripId})) {
             while (c.moveToNext()) {
@@ -146,7 +159,6 @@ public class TripDetailsActivity extends AppCompatActivity {
                 }
             }
         }
-
         return members;
     }
 

@@ -1,5 +1,6 @@
 package com.example.tripexpensemanager;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -8,6 +9,7 @@ import android.view.Gravity;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -23,27 +25,20 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         TableLayout tableLayout = findViewById(R.id.table_full_ledger);
 
         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
-            // 1. Get ALL historical members (Base Members + Active + Removed)
             ArrayList<String> allMembers = getAllHistoricalMembers(db, tripId);
 
-            // 2. Arrays to hold the sum of Paid and Used for each member
             double[] totalPaid = new double[allMembers.size()];
             double[] totalUsed = new double[allMembers.size()];
 
-            // 3. Build Header dynamically with separate Paid/Used columns
             buildHeaderRow(tableLayout, allMembers);
 
-            // 4. Initial balance is 0 because we are starting from the very first (oldest) transaction
             double currentBalance = 0.0;
-
-            // 5. Fetch all transactions (Sorted automatically by device entry time via DB Helper)
             try (Cursor cursor = db.getUnifiedLedger(tripId)) {
                 while (cursor.moveToNext()) {
                     String type = cursor.getString(cursor.getColumnIndexOrThrow("type"));
                     double amount = cursor.getDouble(cursor.getColumnIndexOrThrow("amount"));
                     String paidBy = cursor.getString(cursor.getColumnIndexOrThrow("paid_by"));
 
-                    // Forward calculate the fund balance correctly
                     if ("Payment".equals(type)) {
                         currentBalance += amount;
                     } else if ("Expense".equals(type) && "Fund".equals(paidBy)) {
@@ -54,7 +49,6 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                 }
             }
 
-            // 6. Append the final Totals row at the bottom
             buildTotalRow(tableLayout, allMembers, totalPaid, totalUsed);
         }
     }
@@ -65,20 +59,21 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         addCell(row, "Purpose", true);
         addCell(row, "Amount", true);
 
-        // Generate two columns for each member
         for (String m : members) {
-            addCell(row, m + "\nPaid", true);
-            addCell(row, m + "\nUsed", true);
+            addCell(row, m + "\nCredit", true);
+            addCell(row, m + "\nDebit", true);
         }
 
-        addCell(row, "Fund", true);
+        //addCell(row, "Fund", true);
         table.addView(row);
     }
 
     private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double balance, double[] totalPaid, double[] totalUsed) {
         TableRow row = new TableRow(this);
 
-        // Date shown here is the user input date from the form!
+        // --- NEW: Grab the hidden Transaction ID ---
+        int transId = cursor.getInt(cursor.getColumnIndexOrThrow("trans_id"));
+
         String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
         String purpose = cursor.getString(cursor.getColumnIndexOrThrow("purpose"));
         double amount = cursor.getDouble(cursor.getColumnIndexOrThrow("amount"));
@@ -108,7 +103,6 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                 paidVal = amount;
             }
 
-            // Add to the running totals
             totalPaid[i] += paidVal;
             totalUsed[i] += usedVal;
 
@@ -116,8 +110,64 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, String.format(Locale.US, "%.1f", usedVal), false);
         }
 
-        addCell(row, String.format(Locale.US, "%.1f", balance), false);
+        //addCell(row, String.format(Locale.US, "%.1f", balance), false);
+
+        // --- NEW: Make Row Clickable for Edit/Delete ---
+        row.setClickable(true);
+        row.setBackgroundResource(android.R.drawable.list_selector_background);
+        row.setOnClickListener(v -> showTransactionOptions(transId, type, getIntent().getStringExtra("TRIP_ID")));
+
         table.addView(row);
+    }
+
+    // --- NEW EDIT & DELETE DIALOGS ---
+    private void showTransactionOptions(int transId, String type, String tripId) {
+        String[] options = {"Edit", "Delete"};
+        new AlertDialog.Builder(this)
+                .setTitle("Transaction Options")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        // EDIT
+                        Intent intent;
+                        if ("Expense".equals(type)) {
+                            intent = new Intent(this, AddExpenseActivity.class);
+                        } else {
+                            intent = new Intent(this, AddPaymentActivity.class);
+                        }
+                        intent.putExtra("TRIP_ID", tripId);
+                        intent.putExtra("IS_EDIT_MODE", true);
+                        intent.putExtra("TRANS_ID", transId);
+
+                        // Fetch existing members string from DB to pass to the Edit Activity
+                        try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
+                            intent.putExtra("TRIP_MEMBERS", getMembersForTrip(db, tripId));
+                        }
+                        startActivity(intent);
+                        finish(); // Close Ledger so it reloads fresh data when coming back
+                    } else if (which == 1) {
+                        // DELETE
+                        confirmDelete(transId, type);
+                    }
+                })
+                .show();
+    }
+
+    private void confirmDelete(int transId, String type) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete " + type)
+                .setMessage("Are you sure you want to delete this " + type + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
+                        if ("Expense".equals(type)) {
+                            db.deleteExpense(transId);
+                        } else {
+                            db.deletePayment(transId);
+                        }
+                    }
+                    recreate(); // Instantly refresh the page
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void buildTotalRow(TableLayout table, ArrayList<String> members, double[] totalPaid, double[] totalUsed) {
@@ -139,32 +189,24 @@ public class CompleteLedgerActivity extends AppCompatActivity {
 
     private ArrayList<String> getAllHistoricalMembers(TripDatabaseHelper db, String tripId) {
         ArrayList<String> members = new ArrayList<>();
-
-        // 1. Pull the base members who were explicitly added to the trip
         String baseMembersStr = getMembersForTrip(db, tripId);
         if (baseMembersStr != null && !baseMembersStr.isEmpty()) {
             String[] baseMembers = baseMembersStr.split(",");
             for (String m : baseMembers) {
                 String cleanName = m.trim();
-                if (!cleanName.isEmpty() && !members.contains(cleanName)) {
-                    members.add(cleanName);
-                }
+                if (!cleanName.isEmpty() && !members.contains(cleanName)) members.add(cleanName);
             }
         }
 
-        // 2. Query expenses and payments to catch any member who ever participated historically
         String query = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ? " +
                 "UNION SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
         try (Cursor c = db.getReadableDatabase().rawQuery(query, new String[]{tripId, tripId})) {
             while (c.moveToNext()) {
                 String name = c.getString(0).trim();
-                if (!"Fund".equalsIgnoreCase(name) && !members.contains(name)) {
-                    members.add(name);
-                }
+                if (!"Fund".equalsIgnoreCase(name) && !members.contains(name)) members.add(name);
             }
         }
 
-        // 3. Query the shared_with column to catch members who only consumed
         String sharedQuery = "SELECT expense_shared_with FROM expenses WHERE expense_trip_id = ?";
         try (Cursor c = db.getReadableDatabase().rawQuery(sharedQuery, new String[]{tripId})) {
             while (c.moveToNext()) {
@@ -173,14 +215,11 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                     String[] sharedArray = sharedStr.split(",");
                     for (String s : sharedArray) {
                         String cleanName = s.trim();
-                        if (!cleanName.isEmpty() && !members.contains(cleanName)) {
-                            members.add(cleanName);
-                        }
+                        if (!cleanName.isEmpty() && !members.contains(cleanName)) members.add(cleanName);
                     }
                 }
             }
         }
-
         return members;
     }
 
