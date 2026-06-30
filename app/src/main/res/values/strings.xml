@@ -8,6 +8,8 @@
     <string name="title_trip_manager">Trip Expense Manager</string>
     <string name="subtitle_trip_manager">Manage your trips and expenses easily</string>
     <string name="btn_get_started">Get Started</string>
+    <string name="title_manager">Manager</string>
+    <string name="title_trip">Trip Expense</string>
 
     <string name="dash_app_title">Trip Expense Manager</string>
     <string name="dash_btn_create_trip">Create New Trip</string>

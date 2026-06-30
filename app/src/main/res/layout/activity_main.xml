@@ -15,22 +15,14 @@
 
     <ImageView
         android:id="@+id/app_logo"
-        android:layout_width="140dp"
-        android:layout_height="140dp"
+        android:layout_width="360dp"
+        android:layout_height="360dp"
         android:src="@drawable/app_logo"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="8dp"
         android:importantForAccessibility="no"
         tools:ignore="AccessibilityContrastCheck" />
 
-    <TextView
-        android:id="@+id/app_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/title_trip_manager"
-        android:textColor="#000000"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="10dp"/>
+
 
     <TextView
         android:id="@+id/app_subtitle"
@@ -38,7 +30,7 @@
         android:layout_height="wrap_content"
         android:text="@string/subtitle_trip_manager"
         android:textColor="#353535"
-        android:textSize="16sp"/>
+        android:textSize="20sp"/>
 
     <View
         android:layout_width="match_parent"
