@@ -11,7 +11,7 @@ import android.widget.GridLayout;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
+import android.widget.ImageButton;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,6 +26,19 @@ public class TripDetailsActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_details);
+
+        ImageButton btnHome = findViewById(R.id.btnHome);
+        btnHome.setOnClickListener(v -> {
+            // Create an intent to go back to DashboardActivity
+            Intent intent = new Intent(TripDetailsActivity.this, DashboardActivity.class);
+            // Optional: Clear the back stack so the user can't press back to return to the trip details
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            overridePendingTransition(0, 0);
+            finish(); // Close the current activity
+        });
+
+        
 
         tripId = getIntent().getStringExtra("TRIP_ID");
         String name = getIntent().getStringExtra("TRIP_NAME");

@@ -223,16 +223,43 @@ public class AddExpenseActivity extends AppCompatActivity {
         String purpose = edtPurpose.getText().toString().trim();
         String amountRaw = edtAmount.getText().toString().trim();
         if (purpose.isEmpty() || amountRaw.isEmpty()) return;
+
         double totalAmount = Double.parseDouble(amountRaw);
+        String selectedPayer = spinnerPaidBy.getSelectedItem().toString();
+
+        // --- NEW: Fund Balance Check ---
+        if ("Fund".equals(selectedPayer)) {
+            double currentFundBalance = dbHelper.getFundBalance(currentTripId);
+
+            // If editing, the "old" amount is effectively added back to the pool
+            // so we don't get blocked by the transaction we are trying to edit.
+            double oldAmount = 0.0;
+            if (isEditMode) {
+                try (Cursor c = dbHelper.getExpenseById(editTransactionId)) {
+                    if (c.moveToFirst()) {
+                        oldAmount = c.getDouble(c.getColumnIndexOrThrow("expense_amount"));
+                    }
+                }
+            }
+
+            double effectiveBalance = currentFundBalance + (isEditMode ? oldAmount : 0.0);
+
+            if (totalAmount > effectiveBalance) {
+                Toast.makeText(this, "Insufficient Fund Balance! Available: ₹" + String.format(Locale.US, "%.2f", effectiveBalance), Toast.LENGTH_LONG).show();
+                return; // Stop the validation process
+            }
+        }
 
         ArrayList<String> participatingMembersList = new ArrayList<>();
         for (CheckBox cb : activeCheckBoxesReferences) {
             if (cb.isChecked()) participatingMembersList.add(cb.getText().toString().trim());
         }
 
-        if (participatingMembersList.isEmpty()) return;
+        if (participatingMembersList.isEmpty()) {
+            Toast.makeText(this, "Select at least one member!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        String selectedPayer = spinnerPaidBy.getSelectedItem().toString();
         String joinedSharedWithText = TextUtils.join(", ", participatingMembersList);
         String dateStr = etExpenseDate.getText().toString();
 

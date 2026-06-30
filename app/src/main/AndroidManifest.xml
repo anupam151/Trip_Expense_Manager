@@ -24,6 +24,7 @@
         </activity>
         <activity
             android:name=".DashboardActivity"
+            android:launchMode="singleTask"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity

@@ -85,7 +85,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
 
         addCell(row, (date != null ? date : "N/A"), false);
         addCell(row, purpose, false);
-        addCell(row, String.format(Locale.US, "%.1f", amount), false);
+        addCell(row, String.format(Locale.US, "%.2f", amount), false);
 
         for (int i = 0; i < members.size(); i++) {
             String m = members.get(i);
@@ -107,8 +107,8 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             totalPaid[i] += paidVal;
             totalUsed[i] += usedVal;
 
-            addCell(row, String.format(Locale.US, "%.1f", paidVal), false);
-            addCell(row, String.format(Locale.US, "%.1f", usedVal), false);
+            addCell(row, String.format(Locale.US, "%.2f", paidVal), false);
+            addCell(row, String.format(Locale.US, "%.2f", usedVal), false);
         }
 
         //addCell(row, String.format(Locale.US, "%.1f", balance), false);
@@ -180,8 +180,8 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         addCell(row, "-", true);
 
         for (int i = 0; i < members.size(); i++) {
-            addCell(row, String.format(Locale.US, "%.1f", totalPaid[i]), true);
-            addCell(row, String.format(Locale.US, "%.1f", totalUsed[i]), true);
+            addCell(row, String.format(Locale.US, "%.2f", totalPaid[i]), true);
+            addCell(row, String.format(Locale.US, "%.2f", totalUsed[i]), true);
         }
 
         addCell(row, "-", true);
