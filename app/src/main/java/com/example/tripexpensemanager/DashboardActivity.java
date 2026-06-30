@@ -114,6 +114,7 @@ public class DashboardActivity extends AppCompatActivity {
                 intent.putExtra("TRIP_NAME", trip.getTripName());
                 intent.putExtra("DESTINATION", trip.getDestination());
                 intent.putExtra("START_DATE", trip.getStartDate());
+                intent.putExtra("END_DATE", trip.getEndDate());
                 intent.putExtra("MEMBERS", trip.getMembersListString()); // Ensure getMembersListString() returns comma-separated names
                 startActivity(intent);
             });

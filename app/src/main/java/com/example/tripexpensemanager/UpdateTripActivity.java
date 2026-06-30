@@ -317,8 +317,12 @@ public class UpdateTripActivity extends AppCompatActivity {
         boolean isUpdated = dbHelper.updateTrip(tripId, tripName, destination, allMembersStr, totalMembersCount, startDate, endDate);
 
         if (isUpdated) {
-            Toast.makeText(this, getString(R.string.msg_trip_update_success), Toast.LENGTH_SHORT).show();
-            finish();
+            // 1. Give the DB a tiny window to finish writing the file
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                Toast.makeText(this, "Trip Updated!", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_OK);
+                finish();
+            }, 200); // 200ms delay is usually enough for SQLite to finalize
         } else {
             Toast.makeText(this, getString(R.string.err_trip_update_failed), Toast.LENGTH_SHORT).show();
         }

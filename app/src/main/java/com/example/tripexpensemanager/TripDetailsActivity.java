@@ -23,22 +23,41 @@ import android.widget.LinearLayout;
 public class TripDetailsActivity extends AppCompatActivity {
 
     private String tripId; // Defined at class level for access in onResume
+    private String startDateFromDatabase;
+    private String endDateFromDatabase;
+    private String membersRaw;
+    private androidx.activity.result.ActivityResultLauncher<Intent> editTripLauncher;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_details);
 
+        editTripLauncher = registerForActivityResult(
+                new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+                        try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
+                            refreshSummaryCards(db);
+                            refreshTripDetails();
+                        }
+                    }
+                });
+
+        //Setup Home Button
         ImageButton btnHome = findViewById(R.id.btnHome);
         btnHome.setOnClickListener(v -> {
-            // Create an intent to go back to DashboardActivity
             Intent intent = new Intent(TripDetailsActivity.this, DashboardActivity.class);
-            // Optional: Clear the back stack so the user can't press back to return to the trip details
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-            overridePendingTransition(0, 0);
-            finish(); // Close the current activity
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_OPEN, 0, 0);
+            } else {
+                overridePendingTransition(0, 0);
+            }
+            finish();
         });
+
 
         // Setup Refresh Button
         ImageButton btnRefresh = findViewById(R.id.btnRefresh);
@@ -50,28 +69,51 @@ public class TripDetailsActivity extends AppCompatActivity {
             }
         });
 
+        //Setup Add Expense Button
         LinearLayout btnAddExpense = findViewById(R.id.btnAddExpense);
         btnAddExpense.setOnClickListener(v -> {
             Intent intent = new Intent(TripDetailsActivity.this, AddExpenseActivity.class);
-
-            // Pass the necessary data
             intent.putExtra("TRIP_ID", tripId);
-            intent.putExtra("IS_EDIT_MODE", false); // Explicitly set to false for a "fresh" page
-
-            // Get the members from your existing logic
-            String membersRaw = getIntent().getStringExtra("MEMBERS");
-            intent.putExtra("TRIP_MEMBERS", membersRaw);
-
+            intent.putExtra("IS_EDIT_MODE", false);
+            intent.putExtra("TRIP_MEMBERS", this.membersRaw);
             startActivity(intent);
         });
 
-
+        //Setup Add Payment Button
+        LinearLayout btnAddPayment = findViewById(R.id.btnAddPayment);
+        if (btnAddPayment != null) {
+            btnAddPayment.setOnClickListener(v -> {
+                Intent intent = new Intent(TripDetailsActivity.this, AddPaymentActivity.class);
+                intent.putExtra("TRIP_ID", tripId);
+                intent.putExtra("TRIP_MEMBERS", this.membersRaw); // Always use the fresh global list
+                startActivity(intent);
+            });
+        }
 
         tripId = getIntent().getStringExtra("TRIP_ID");
         String name = getIntent().getStringExtra("TRIP_NAME");
         String dest = getIntent().getStringExtra("DESTINATION");
         String date = getIntent().getStringExtra("START_DATE");
-        String membersRaw = getIntent().getStringExtra("MEMBERS");
+        startDateFromDatabase = getIntent().getStringExtra("START_DATE");
+        endDateFromDatabase = getIntent().getStringExtra("END_DATE");
+        membersRaw = getIntent().getStringExtra("MEMBERS");
+
+        //Setup Edit Trip Button
+        LinearLayout btnEditTrip = findViewById(R.id.btnEditTrip);
+        btnEditTrip.setOnClickListener(v -> {
+            Intent intent = new Intent(TripDetailsActivity.this, UpdateTripActivity.class);
+            intent.putExtra("TRIP_ID", tripId);
+            intent.putExtra("TRIP_NAME", ((TextView) findViewById(R.id.txt_details_trip_name)).getText().toString());
+            intent.putExtra("TRIP_DESTINATION", ((TextView) findViewById(R.id.txt_details_destination)).getText().toString());
+
+            // Force the use of the global variables with 'this.'
+            intent.putExtra("TRIP_START_DATE", this.startDateFromDatabase);
+            intent.putExtra("TRIP_END_DATE", this.endDateFromDatabase);
+            intent.putExtra("TRIP_MEMBERS", this.membersRaw);
+
+            editTripLauncher.launch(intent);
+        });
+
 
         // UI Binding
         if (name != null) {
@@ -140,6 +182,7 @@ public class TripDetailsActivity extends AppCompatActivity {
         if (tripId != null) {
             try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
                 refreshSummaryCards(db);
+                refreshTripDetails();
             }
         }
     }
@@ -214,4 +257,71 @@ public class TripDetailsActivity extends AppCompatActivity {
         }
         return dateStr;
     }
+    private void refreshTripDetails() {
+        try (TripDatabaseHelper db = new TripDatabaseHelper(this);
+             Cursor cursor = db.getReadableDatabase().rawQuery(
+                     "SELECT * FROM " + TripDatabaseHelper.TABLE_TRIPS + " WHERE " + TripDatabaseHelper.COLUMN_TRIP_ID + " = ?",
+                     new String[]{tripId})) {
+
+            if (cursor.moveToFirst()) {
+                // 1. Fetch Basic Info
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
+                String dest = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_DESTINATION));
+                String sDate = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_START_DATE));
+                String eDate = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_END_DATE));
+                String currentMembersRaw = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBERS));
+
+                // 2. Update UI Fields
+                ((TextView) findViewById(R.id.txt_details_trip_name)).setText(name);
+                ((TextView) findViewById(R.id.txt_details_destination)).setText(dest);
+                ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(sDate));
+
+                // Update class-level variables
+                startDateFromDatabase = sDate;
+                endDateFromDatabase = eDate;
+
+                // 3. Refresh Active Members
+                ArrayList<String> activeMembers = new ArrayList<>();
+                if (currentMembersRaw != null && !currentMembersRaw.isEmpty()) {
+                    for (String m : currentMembersRaw.split(",")) {
+                        if (!m.trim().isEmpty()) activeMembers.add(m.trim());
+                    }
+                }
+
+                // Update Member Count
+                ((TextView) findViewById(R.id.txt_details_member_count)).setText(String.valueOf(activeMembers.size()));
+
+                // Refresh Active Grid
+                GridLayout gridActive = findViewById(R.id.grid_members);
+                gridActive.removeAllViews();
+                for (String activeName : activeMembers) {
+                    addMemberButton(activeName, gridActive, tripId, true);
+                }
+
+                // 4. Refresh Inactive Members
+                GridLayout gridInactive = findViewById(R.id.grid_inactive_members);
+                TextView txtInactiveHeader = findViewById(R.id.txt_inactive_members_header);
+
+                ArrayList<String> historicalMembers = getHistoricalMembers(db, tripId);
+                ArrayList<String> inactiveMembers = new ArrayList<>();
+                for (String hMem : historicalMembers) {
+                    if (!activeMembers.contains(hMem)) inactiveMembers.add(hMem);
+                }
+
+                if (!inactiveMembers.isEmpty()) {
+                    txtInactiveHeader.setVisibility(View.VISIBLE);
+                    gridInactive.setVisibility(View.VISIBLE);
+                    gridInactive.removeAllViews();
+                    for (String inactiveName : inactiveMembers) {
+                        addMemberButton(inactiveName, gridInactive, tripId, false);
+                    }
+                } else {
+                    txtInactiveHeader.setVisibility(View.GONE);
+                    gridInactive.setVisibility(View.GONE);
+                }
+                membersRaw = currentMembersRaw;
+            }
+        }
+    }
+
 }
