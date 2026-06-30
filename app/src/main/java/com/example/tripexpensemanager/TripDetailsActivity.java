@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import android.widget.Toast;
+import android.widget.LinearLayout;
 
 public class TripDetailsActivity extends AppCompatActivity {
 
@@ -47,6 +48,21 @@ public class TripDetailsActivity extends AppCompatActivity {
                 // Add a small visual feedback so the user knows it refreshed
                 Toast.makeText(this, "Data Refreshed", Toast.LENGTH_SHORT).show();
             }
+        });
+
+        LinearLayout btnAddExpense = findViewById(R.id.btnAddExpense);
+        btnAddExpense.setOnClickListener(v -> {
+            Intent intent = new Intent(TripDetailsActivity.this, AddExpenseActivity.class);
+
+            // Pass the necessary data
+            intent.putExtra("TRIP_ID", tripId);
+            intent.putExtra("IS_EDIT_MODE", false); // Explicitly set to false for a "fresh" page
+
+            // Get the members from your existing logic
+            String membersRaw = getIntent().getStringExtra("MEMBERS");
+            intent.putExtra("TRIP_MEMBERS", membersRaw);
+
+            startActivity(intent);
         });
 
 
