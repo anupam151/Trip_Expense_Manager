@@ -15,14 +15,12 @@
 
     <ImageView
         android:id="@+id/app_logo"
-        android:layout_width="360dp"
-        android:layout_height="360dp"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
         android:src="@drawable/app_logo"
         android:layout_marginBottom="8dp"
         android:importantForAccessibility="no"
         tools:ignore="AccessibilityContrastCheck" />
-
-
 
     <TextView
         android:id="@+id/app_subtitle"
