@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import android.widget.Toast;
 
 public class TripDetailsActivity extends AppCompatActivity {
 
@@ -38,7 +39,17 @@ public class TripDetailsActivity extends AppCompatActivity {
             finish(); // Close the current activity
         });
 
-        
+        // Setup Refresh Button
+        ImageButton btnRefresh = findViewById(R.id.btnRefresh);
+        btnRefresh.setOnClickListener(v -> {
+            try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
+                refreshSummaryCards(db);
+                // Add a small visual feedback so the user knows it refreshed
+                Toast.makeText(this, "Data Refreshed", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
 
         tripId = getIntent().getStringExtra("TRIP_ID");
         String name = getIntent().getStringExtra("TRIP_NAME");
