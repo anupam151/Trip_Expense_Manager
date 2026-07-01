@@ -22,6 +22,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+// Rounded corner dialog
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.view.Window;
+// Rounded corner dialog End
 
 public class CreateTripActivity extends AppCompatActivity {
 
@@ -157,6 +162,20 @@ public class CreateTripActivity extends AppCompatActivity {
 
         // FIXED: Show the dialog first to render the UI tree
         datePickerDialog.show();
+
+
+        // Rounded corner dialog
+        Window window = datePickerDialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(
+                    new ColorDrawable(Color.TRANSPARENT)
+            );
+
+            window.setBackgroundDrawableResource(
+                    R.drawable.bg_date_picker_dialog
+            );
+        }
+        // Rounded corner dialog End
 
         // FIXED: Safely inject the background color into the action button container
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);

@@ -2,10 +2,13 @@ package com.example.tripexpensemanager;
 
 import android.app.DatePickerDialog;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -191,6 +194,20 @@ public class AddExpenseActivity extends AppCompatActivity {
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
 
         datePickerDialog.show();
+
+        // Rounded corner dialog
+        Window window = datePickerDialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(
+                    new ColorDrawable(Color.TRANSPARENT)
+            );
+
+            window.setBackgroundDrawableResource(
+                    R.drawable.bg_date_picker_dialog
+            );
+        }
+        // Rounded corner dialog End
+
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
             ((View) positiveButton.getParent()).setBackgroundColor(android.graphics.Color.parseColor("#85022E"));

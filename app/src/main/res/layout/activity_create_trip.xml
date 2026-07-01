@@ -1,61 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://tools.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F5F6F8"
     tools:context=".CreateTripActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:background="#85022E"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="10dp"
-        android:paddingTop="4dp">
-
-        <ImageButton
-            android:id="@+id/btn_back"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/arrow_back"
-            android:contentDescription="@string/desc_back_button"
-            app:tint="#FFFFFF" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="@string/title_create_new_trip"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <ScrollView
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:layout_marginTop="65dp"
+        android:layout_marginBottom="75dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="1dp"
+        app:cardBackgroundColor="#FFFFFF">
 
-        <androidx.cardview.widget.CardView
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="#FFFFFF">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                app:cardCornerRadius="16dp"
                 android:padding="20dp">
 
                 <TextView
@@ -74,7 +46,6 @@
                     android:background="@drawable/bg_input_field"
                     android:gravity="center_vertical"
                     android:padding="6dp">
-
                     <LinearLayout
                         android:layout_width="30dp"
                         android:layout_height="30dp"
@@ -87,7 +58,6 @@
                             android:contentDescription="@string/desc_trip_icon"
                             app:tint="#85022E" />
                     </LinearLayout>
-
                     <EditText
                         android:id="@+id/edt_trip_name"
                         android:layout_width="match_parent"
@@ -118,7 +88,6 @@
                     android:background="@drawable/bg_input_field"
                     android:gravity="center_vertical"
                     android:padding="6dp">
-
                     <LinearLayout
                         android:layout_width="30dp"
                         android:layout_height="30dp"
@@ -131,7 +100,6 @@
                             android:contentDescription="@string/desc_destination_icon"
                             app:tint="#85022E" />
                     </LinearLayout>
-
                     <EditText
                         android:id="@+id/edt_destination"
                         android:layout_width="match_parent"
@@ -162,7 +130,6 @@
                     android:background="@drawable/bg_input_field"
                     android:gravity="center_vertical"
                     android:padding="6dp">
-
                     <LinearLayout
                         android:layout_width="30dp"
                         android:layout_height="30dp"
@@ -175,7 +142,6 @@
                             android:contentDescription="@string/desc_calendar_icon"
                             app:tint="#85022E" />
                     </LinearLayout>
-
                     <EditText
                         android:id="@+id/edt_start_date"
                         android:layout_width="0dp"
@@ -190,7 +156,6 @@
                         android:textColor="#000000"
                         android:textColorHint="#A0A0A0"
                         android:textSize="15sp" />
-
                 </LinearLayout>
 
                 <TextView
@@ -209,7 +174,6 @@
                     android:background="@drawable/bg_input_field"
                     android:gravity="center_vertical"
                     android:padding="6dp">
-
                     <LinearLayout
                         android:layout_width="30dp"
                         android:layout_height="30dp"
@@ -222,7 +186,6 @@
                             android:contentDescription="@string/desc_calendar_icon"
                             app:tint="#85022E" />
                     </LinearLayout>
-
                     <EditText
                         android:id="@+id/edt_end_date"
                         android:layout_width="0dp"
@@ -254,9 +217,7 @@
                     android:background="@drawable/bg_dashed_box"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="18dp"
-                    android:layout_marginBottom="24dp">
-
+                    android:padding="18dp">
                     <TextView
                         android:id="@+id/txt_no_members"
                         android:layout_width="wrap_content"
@@ -265,7 +226,6 @@
                         android:textColor="#000000"
                         android:textSize="15sp"
                         android:textStyle="bold" />
-
                     <TextView
                         android:id="@+id/txt_members_subtext"
                         android:layout_width="wrap_content"
@@ -274,17 +234,15 @@
                         android:text="@string/txt_add_members_subtext"
                         android:textColor="#838383"
                         android:textSize="13sp" />
-
                     <Button
                         android:id="@+id/btn_add_member_trigger"
                         android:layout_width="160dp"
                         android:layout_height="45dp"
-                        android:backgroundTint="#DE7C26"
+                        android:backgroundTint="#CC843D"
                         android:text="@string/btn_add_new_member"
                         android:textAllCaps="false"
                         android:textColor="#FFFFFF"
                         app:cornerRadius="8dp" />
-
                     <LinearLayout
                         android:id="@+id/layout_member_list"
                         android:layout_width="match_parent"
@@ -293,21 +251,57 @@
                         android:layout_marginTop="16dp"
                         android:visibility="gone"/>
                 </LinearLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_create_trip_submit"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:backgroundTint="#85022E"
-                    android:text="@string/btn_submit_create_trip"
-                    android:textAllCaps="false"
-                    android:textSize="22sp"
-                    app:cornerRadius="10dp"
-                    app:icon="@drawable/flight"
-                    app:iconGravity="textStart"
-                    app:iconTint="#FFFFFF" />
-
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
-    </ScrollView>
-</LinearLayout>
+        </ScrollView>
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/header_layout"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#85022E"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="10dp"
+        android:paddingTop="2dp">
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/arrow_back"
+            android:contentDescription="@string/desc_back_button"
+            app:tint="#FFFFFF" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="@string/title_create_new_trip"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_alignParentBottom="true"
+        android:background="#F5F6F8"
+        android:gravity="center">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_create_trip_submit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_submit_create_trip"
+            android:textAllCaps="false"
+            android:textSize="20sp"
+            android:backgroundTint="#85022E"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/flight"
+            app:iconGravity="textStart"
+            app:iconTint="#FFFFFF" />
+    </LinearLayout>
+</RelativeLayout>

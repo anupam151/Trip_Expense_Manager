@@ -27,7 +27,8 @@
     <string name="label_start_date">Journey start Date</string>
     <string name="label_end_date">Journey end Date</string>
     <string name="btn_create_trip_submit">Create Trip</string>
-    <string name="btn_update_trip">Update Trip</string>
+    <string name="btn_update_trip">Save Changes</string>
+    <string name="title_update_trip">Edit Trip</string>
 
     <string name="dialog_add_btn">Add</string>
     <string name="dialog_back_btn">Back</string>
@@ -45,7 +46,7 @@
     <string name="action_delete">Delete</string>
     <string name="btn_label_add_new_trip">Add New Trip</string>
 
-    <string name="title_add_expense">Add New Expense</string>
+    <string name="title_add_expense">Record New Expense</string>
     <string name="label_expense_purpose">Expense Purpose / Description</string>
     <string name="hint_expense_purpose">e.g., Dinner, Car Rental, Hotel Booking</string>
     <string name="label_amount">Amount (₹)</string>
@@ -57,14 +58,14 @@
     <string name="label_expense_date">Expense Date</string>
     <string name="btn_save_expense_split">Save Expense &amp; Split</string>
 
-    <string name="label_title_add_payment">Add New Payment</string>
+    <string name="label_title_add_payment">Record New Payment</string>
     <string name="title_add_payment">Add Member Payment</string>
     <string name="label_select_member">Select Member</string>
     <string name="label_payment_by">Payment By</string>
     <string name="label_payment_date">Payment Date</string>
     <string name="label_payment_amount">Amount (₹)</string>
     <string name="hint_payment_amount">Enter Positive Integer</string>
-    <string name="btn_submit_payment">Add Payment</string>
+    <string name="btn_submit_payment">Save Payment</string>
     <string name="hint_date_picker">Select Date</string>
     <string name="btn_add_expense">Add Expense</string>
     <string name="btn_add_payment">Add Payment</string>
@@ -150,7 +151,7 @@
     <string name="fmt_ledger_fund_balance">Fund Balance: ₹%.2f</string>
     <string name="add_member_1">Add Member 1</string>
     <string name="name">Name</string>
-    <string name="enter_member_name">Enter member name</string>
+    <string name="enter_member_name">Enter Member Name</string>
     <string name="add">Add</string>
     <string name="back">Back</string>
     <string name="trip_name">Trip Name: —</string>
@@ -188,11 +189,12 @@
     <string name="label_active_members">👥 Active Members</string>
     <string name="label_removed_members">👥 Inactive Members</string>
 
-    <string name="update_expense">Update Expense</string>
-    <string name="update_payment">Update Payment</string>
+    <string name="update_expense">Save Changes &amp; Split</string>
+    <string name="update_payment">Save Changes</string>
 
-    <string name="add_new_expense">Add New Expense</string>
+    <string name="add_new_expense">Record New Expense</string>
     <string name="edit_expense">Edit Expense</string>
+    <string name="edit_payment">Edit Payment</string>
 
     <string name="home">Home</string>
 
@@ -215,13 +217,26 @@
     <string name="txt_no_members_yet">No members added yet</string>
     <string name="txt_add_members_subtext">Add members who are part of this trip</string>
     <string name="btn_add_new_member">+ Add Member</string>
-    <string name="btn_submit_create_trip">Create Trip</string>
+    <string name="btn_submit_create_trip">Save New Trip</string>
 
     <string name="desc_back_button">Go back</string>
     <string name="desc_trip_icon">Trip Icon</string>
     <string name="desc_destination_icon">Destination Icon</string>
     <string name="desc_calendar_icon">Calendar Icon</string>
     <string name="desc_add_group_icon">Add Group Icon</string>
+
+    <string name="label_selected_members">Selected Members</string>
+    <string name="placeholder_zero_members">0 Members</string>
+    <string name="label_split_amount">Split Amount</string>
+    <string name="placeholder_zero_amount">₹ 0.00</string>
+
+    <string name="desc_go_back">Go back</string>
+    <string name="desc_receipt_icon">Receipt Icon</string>
+    <string name="desc_currency_icon">Currency Icon</string>
+    <string name="desc_wallet_icon">Wallet Icon</string>
+    <string name="desc_group_icon">Group Icon</string>
+
+    <string name="desc_calculate_icon">Calculate expense</string>
 
 
 

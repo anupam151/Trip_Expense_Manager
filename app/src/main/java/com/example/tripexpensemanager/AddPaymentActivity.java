@@ -11,6 +11,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,6 +21,11 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
 import android.content.Intent;
+// Rounded corner dialog
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.view.Window;
+// Rounded corner dialog End
 
 public class AddPaymentActivity extends AppCompatActivity {
 
@@ -47,6 +53,7 @@ public class AddPaymentActivity extends AppCompatActivity {
         spinnerPaymentBy = findViewById(R.id.spinner_payment_by);
         edtPaymentDate = findViewById(R.id.edt_payment_date);
         edtPaymentAmount = findViewById(R.id.edt_payment_amount);
+        TextView txtHeading = findViewById(R.id.txt_payment_heading);
         Button btnSavePayment = findViewById(R.id.btn_save_payment);
 
         edtPaymentDate.setShowSoftInputOnFocus(false);
@@ -59,6 +66,7 @@ public class AddPaymentActivity extends AppCompatActivity {
 
         // --- NEW: Load Data if Editing ---
         if (isEditMode && editTransactionId != -1) {
+            txtHeading.setText(R.string.edit_payment);
             btnSavePayment.setText(R.string.update_payment);
             loadExistingPaymentData();
         }
@@ -100,6 +108,20 @@ public class AddPaymentActivity extends AppCompatActivity {
 
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance();
         datePickerDialog.show();
+
+        // Rounded corner dialog
+        Window window = datePickerDialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(
+                    new ColorDrawable(Color.TRANSPARENT)
+            );
+
+            window.setBackgroundDrawableResource(
+                    R.drawable.bg_date_picker_dialog
+            );
+        }
+        // Rounded corner dialog End
+
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
             View buttonPanel = (View) positiveButton.getParent();

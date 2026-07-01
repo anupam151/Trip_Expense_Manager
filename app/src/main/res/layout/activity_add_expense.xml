@@ -1,188 +1,370 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://tools.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="#FFFFFF"
+    android:background="#F5F6F8"
     tools:context=".AddExpenseActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="24dp"
-        android:paddingVertical="16dp">
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_columnWeight="1"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="14dp"
-            app:cardCornerRadius="6dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="#85022E">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="65dp"
+        android:layout_marginBottom="75dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="1dp"
+        app:cardBackgroundColor="#FFFFFF">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
             <LinearLayout
-                android:orientation="vertical"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
                 <TextView
-                    android:text="@string/title_add_expense"
-                    android:id="@+id/txt_expense_heading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="26sp"
-                    android:textStyle="bold"/>
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/label_expense_purpose"
+                    android:textColor="#0D1A39"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_input_field"
+                    android:gravity="center_vertical"
+                    android:padding="6dp">
+                    <LinearLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_icon_box"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/description"
+                            android:contentDescription="@string/desc_receipt_icon"
+                            app:tint="#85022E" />
+                    </LinearLayout>
+                    <EditText
+                        android:id="@+id/edt_expense_purpose"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="10dp"
+                        android:background="@null"
+                        android:hint="@string/hint_expense_purpose"
+                        android:inputType="textCapSentences"
+                        android:autofillHints="none"
+                        android:textColor="#000000"
+                        android:textColorHint="#A0A0A0"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/label_amount"
+                    android:textColor="#0D1A39"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_input_field"
+                    android:gravity="center_vertical"
+                    android:padding="6dp">
+                    <LinearLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_icon_box"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/currency_rupee"
+                            android:contentDescription="@string/desc_currency_icon"
+                            app:tint="#85022E" />
+                    </LinearLayout>
+                    <EditText
+                        android:id="@+id/edt_expense_amount"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="10dp"
+                        android:background="@null"
+                        android:hint="@string/hint_amount"
+                        android:inputType="numberDecimal"
+                        android:autofillHints="none"
+                        android:textColor="#000000"
+                        android:textColorHint="#A0A0A0"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/label_expense_date"
+                    android:textColor="#0D1A39"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_input_field"
+                    android:gravity="center_vertical"
+                    android:padding="6dp">
+                    <LinearLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_icon_box"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/edit_calendar"
+                            android:contentDescription="@string/desc_calendar_icon"
+                            app:tint="#85022E" />
+                    </LinearLayout>
+                    <EditText
+                        android:id="@+id/et_expense_date"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        android:background="@null"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:focusableInTouchMode="false"
+                        android:hint="@string/hint_date_picker"
+                        android:inputType="date"
+                        android:autofillHints="none"
+                        android:textColor="#000000"
+                        android:textColorHint="#A0A0A0"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/label_paid_by"
+                    android:textColor="#0D1A39"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_input_field"
+                    android:gravity="center_vertical"
+                    android:padding="6dp">
+                    <LinearLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_icon_box"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/person"
+                            android:contentDescription="@string/desc_wallet_icon"
+                            app:tint="#85022E" />
+                    </LinearLayout>
+                    <Spinner
+                        android:id="@+id/spinner_paid_by"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        android:background="@null" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E8E8E8" android:layout_marginBottom="14dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_expense_for"
+                    android:textColor="#0D1A39"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/subtitle_expense_split"
+                    android:textColor="#838383"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="16dp" />
+                <GridLayout
+                    android:id="@+id/layout_checkbox_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="3"
+                    android:alignmentMode="alignBounds" />
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E8E8E8" android:layout_marginVertical="16dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <LinearLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_box"
+                            android:gravity="center">
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/group"
+                                android:contentDescription="@string/desc_group_icon"
+                                app:tint="#85022E" />
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginStart="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_selected_members"
+                                android:textColor="#838383"
+                                android:textSize="11sp"/>
+                            <TextView
+                                android:id="@+id/txt_selected_count_preview"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/placeholder_zero_members"
+                                android:textColor="#85022E"
+                                android:textSize="14sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#E8E8E8" android:layout_marginHorizontal="8dp"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:gravity="end|center_vertical">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="end"
+                            android:layout_marginEnd="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_split_amount"
+                                android:textColor="#838383"
+                                android:textSize="11sp"/>
+                            <TextView
+                                android:id="@+id/txt_split_amount_preview"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/placeholder_zero_amount"
+                                android:textColor="#85022E"
+                                android:textSize="14sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_icon_box"
+                            android:gravity="center">
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/calculate"
+                                android:contentDescription="@string/desc_calculate_icon"
+                                app:tint="#85022E" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </ScrollView>
+    </androidx.cardview.widget.CardView>
+    <LinearLayout
+        android:id="@+id/header_layout"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#85022E"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="2dp">
+
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/arrow_back"
+            android:contentDescription="@string/desc_go_back"
+            app:tint="#FFFFFF" />
 
         <TextView
-            android:layout_width="match_parent"
+            android:id="@+id/txt_expense_heading"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/label_expense_purpose"
-            android:textColor="#0D1A39"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <EditText
-            android:id="@+id/edt_expense_purpose"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@android:drawable/edit_text"
-            android:hint="@string/hint_expense_purpose"
-            android:inputType="textCapSentences"
-            android:paddingHorizontal="10dp"
-            android:textColor="#000000"
-            android:textColorHint="#5B5B5B"
-            android:textSize="15sp"
-            android:autofillHints="none"
-            android:layout_marginBottom="14dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_amount"
-            android:textColor="#0D1A39"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <EditText
-            android:id="@+id/edt_expense_amount"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@android:drawable/edit_text"
-            android:hint="@string/hint_amount"
-            android:inputType="numberDecimal"
-            android:paddingHorizontal="10dp"
-            android:textColor="#000000"
-            android:textColorHint="#5B5B5B"
-            android:textSize="15sp"
-            android:autofillHints="none"
-            android:layout_marginBottom="14dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_expense_date"
-            android:textColor="#0D1A39"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <EditText
-            android:id="@+id/et_expense_date"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@android:drawable/edit_text"
-            android:clickable="true"
-            android:focusable="true"
-            android:focusableInTouchMode="false"
-            android:cursorVisible="false"
-            android:longClickable="false"
-            android:autofillHints="none"
-            android:inputType="date"
-            android:hint="@string/hint_date_picker"
-            android:paddingHorizontal="10dp"
-            android:textColor="#000000"
-            android:textColorHint="#5B5B5B"
-            android:textSize="15sp"
-            android:layout_marginBottom="14dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_paid_by"
-            android:textColor="#0D1A39"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <Spinner
-            android:id="@+id/spinner_paid_by"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@android:drawable/btn_dropdown"
-            android:layout_marginBottom="24dp"
-            tools:ignore="SpeakableTextPresentCheck" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/label_expense_for"
-            android:textColor="#0D1A39"
-            android:textSize="14sp"
+            android:layout_marginStart="16dp"
+            android:text="@string/title_add_expense"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
             android:textStyle="bold" />
+    </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/subtitle_expense_split"
-            android:textColor="#5B5B5B"
-            android:textSize="12sp"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="12dp" />
-
-        <GridLayout
-            android:id="@+id/layout_checkbox_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="2"
-            android:alignmentMode="alignBounds"
-            android:rowOrderPreserved="false"
-            android:layout_marginBottom="32dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/preview_dynamic_members"
-                android:textColor="#5B5B5B"
-                android:textSize="14sp"
-                android:textStyle="italic"
-                android:layout_columnSpan="2" />
-        </GridLayout>
+    <LinearLayout
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_alignParentBottom="true"
+        android:background="#F5F6F8"
+        android:gravity="center">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save_expense"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:text="@string/btn_save_expense_split"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:backgroundTint="#85022E"
-            app:cornerRadius="8dp"
-            android:layout_marginBottom="8dp" />
-
+            android:text="@string/btn_save_expense_split"
+            android:textAllCaps="false"
+            android:textSize="20sp"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/account_balance"
+            app:iconGravity="textStart"
+            app:iconTint="#FFFFFF" />
     </LinearLayout>
-</ScrollView>
+</RelativeLayout>

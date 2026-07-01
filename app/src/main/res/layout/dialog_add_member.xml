@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://tools.android.com/tools"
     xmlns:tools2="http://schemas.android.com/tools"
     android:layout_width="320dp"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:background="@drawable/dialog_bg"
     android:layout_gravity="center"
     android:clipToOutline="true"
-    tools2:targetApi="31">
+    tools2:targetApi="31"
+    tools2:ignore="ButtonStyle">
 
     <LinearLayout
         android:id="@+id/layout_dialog_header"
@@ -42,8 +43,50 @@
             android:textColor="#112771"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="10dp" />
 
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_input_field"
+            android:gravity="center_vertical"
+            android:padding="6dp">
+
+            <LinearLayout
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_icon_box"
+                android:gravity="center">
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/person"
+                    android:contentDescription="@string/desc_trip_icon"
+                    app:tint="#85022E" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/edt_dialog_member_name"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:background="@null"
+                android:hint="@string/enter_member_name"
+                android:inputType="textPersonName|textCapWords"
+                android:autofillHints="none"
+                android:textColor="#000000"
+                android:textColorHint="#A0A0A0"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+
+
+
+        <!-- This is a single-line comment
         <EditText
             android:id="@+id/edt_dialog_member_name"
             android:layout_width="match_parent"
@@ -57,7 +100,7 @@
             android:padding="10dp"
             android:textSize="16sp"
             android:layout_marginBottom="24dp" />
-
+-->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -66,27 +109,26 @@
             android:layout_marginBottom="8dp">
 
             <Button
-                android:id="@+id/btn_dialog_add"
-                android:layout_width="110dp"
-                android:layout_height="50dp"
-                android:text="@string/add"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#85022E"
-                android:layout_marginEnd="16dp"
-                tools:ignore="AccessibilityContrastCheck"
-                tools2:ignore="ButtonStyle" />
-
-            <Button
                 android:id="@+id/btn_dialog_back"
                 android:layout_width="110dp"
                 android:layout_height="50dp"
+                android:layout_marginEnd="26dp"
+                android:background="@drawable/button_back"
+                app:backgroundTint="@null"
                 android:text="@string/back"
-                android:textSize="16sp"
                 android:textColor="#FFFFFF"
-                android:backgroundTint="#CC843D"
-                tools:ignore="AccessibilityContrastCheck"
-                tools2:ignore="ButtonStyle" />
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btn_dialog_add"
+                android:layout_width="110dp"
+                android:layout_height="50dp"
+                android:background="@drawable/button_add"
+                app:backgroundTint="@null"
+                android:text="@string/add"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
 
         </LinearLayout>
     </LinearLayout>
