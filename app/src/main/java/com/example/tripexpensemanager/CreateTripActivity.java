@@ -86,6 +86,11 @@ public class CreateTripActivity extends AppCompatActivity {
 
         layoutMemberList.addView(rowLayout);
         memberCounter++;
+        // 1. Make the dynamic list visible
+        layoutMemberList.setVisibility(View.VISIBLE);
+        // 2. Hide the placeholder texts
+        findViewById(R.id.txt_no_members).setVisibility(View.GONE);
+        findViewById(R.id.txt_members_subtext).setVisibility(View.GONE);
     }
 
     private TextView createRemoveButtonNode(final LinearLayout rowLayout, final String name) {
@@ -101,6 +106,12 @@ public class CreateTripActivity extends AppCompatActivity {
             layoutMemberList.removeView(rowLayout);
             memberList.remove(name);
             reorderMemberCounter();
+
+            if (memberList.isEmpty()) {
+                layoutMemberList.setVisibility(View.GONE);
+                findViewById(R.id.txt_no_members).setVisibility(View.VISIBLE);
+                findViewById(R.id.txt_members_subtext).setVisibility(View.VISIBLE);
+            }
         });
         return btnRemove;
     }

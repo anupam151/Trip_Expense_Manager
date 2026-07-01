@@ -307,7 +307,7 @@
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:src="@drawable/ic_add_expense"
+                    android:src="@drawable/receipt_long"
                     android:contentDescription="@string/add_expense"
                     app:tint="#CC843D"/>
 
@@ -342,7 +342,7 @@
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:src="@drawable/ic_add_payment"
+                    android:src="@drawable/payments"
                     android:contentDescription="@string/add_payment"
                     app:tint="#CC843D"/>
 
@@ -377,7 +377,7 @@
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:src="@drawable/ic_edit_trip"
+                    android:src="@drawable/edit_square"
                     android:contentDescription="@string/edit_trip"
                     app:tint="#CC843D"/>
 
@@ -412,7 +412,7 @@
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:src="@drawable/ic_delete_trip"
+                    android:src="@drawable/delete"
                     android:contentDescription="@string/delete_trip"
                     app:tint="#CC843D" />
 

@@ -203,6 +203,26 @@
     <string name="edit_trip">Edit Trip</string>
     <string name="delete_trip">Delete Trip</string>
 
+    <string name="title_create_new_trip">Create New Trip</string>
+    <string name="label_name_of_trip">Name of The Trip</string>
+    <string name="hint_enter_trip_name">Enter trip name</string>
+    <string name="label_trip_destination">Destination</string>
+    <string name="hint_enter_destination">Enter destination</string>
+    <string name="label_journey_start_date">Journey start Date</string>
+    <string name="label_journey_end_date">Journey end Date</string>
+    <string name="hint_select_date">Select date</string>
+    <string name="label_add_trip_members">Add Trip Members</string>
+    <string name="txt_no_members_yet">No members added yet</string>
+    <string name="txt_add_members_subtext">Add members who are part of this trip</string>
+    <string name="btn_add_new_member">+ Add Member</string>
+    <string name="btn_submit_create_trip">Create Trip</string>
+
+    <string name="desc_back_button">Go back</string>
+    <string name="desc_trip_icon">Trip Icon</string>
+    <string name="desc_destination_icon">Destination Icon</string>
+    <string name="desc_calendar_icon">Calendar Icon</string>
+    <string name="desc_add_group_icon">Add Group Icon</string>
+
 
 
 </resources>
