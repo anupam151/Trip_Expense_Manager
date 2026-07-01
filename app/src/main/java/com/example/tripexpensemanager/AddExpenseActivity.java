@@ -4,8 +4,11 @@ import android.app.DatePickerDialog;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.Window;
@@ -15,6 +18,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.GridLayout;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +38,9 @@ public class AddExpenseActivity extends AppCompatActivity {
     private Spinner spinnerPaidBy;
     private GridLayout layoutCheckboxContainer;
 
+    // UI Elements for Live Summary
+    private TextView txtSelectedCountPreview, txtSplitAmountPreview;
+
     private final Calendar calendar = Calendar.getInstance();
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
@@ -50,6 +57,7 @@ public class AddExpenseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_expense);
 
+        // Map UI elements
         edtPurpose = findViewById(R.id.edt_expense_purpose);
         edtAmount = findViewById(R.id.edt_expense_amount);
         etExpenseDate = findViewById(R.id.et_expense_date);
@@ -58,6 +66,36 @@ public class AddExpenseActivity extends AppCompatActivity {
         TextView txtHeading = findViewById(R.id.txt_expense_heading);
         Button btnSaveExpense = findViewById(R.id.btn_save_expense);
 
+        // Map new Live Summary elements
+        txtSelectedCountPreview = findViewById(R.id.txt_selected_count_preview);
+        txtSplitAmountPreview = findViewById(R.id.txt_split_amount_preview);
+
+        // Setup Custom Back Button
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                View currentFocus = getCurrentFocus();
+                if (imm != null && currentFocus != null) {
+                    imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
+                }
+                finish();
+            });
+        }
+
+        // Live Math Logic
+        edtAmount.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                calculateAndDisplaySplit();
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Focus and Keyboard logic
         edtPurpose.requestFocus();
         edtPurpose.postDelayed(() -> {
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -80,6 +118,38 @@ public class AddExpenseActivity extends AppCompatActivity {
         }
 
         btnSaveExpense.setOnClickListener(v -> executeExpenseValidationPipeline());
+
+        // Run initial calculation to update default text
+        calculateAndDisplaySplit();
+    }
+
+    // --- NEW: Live Calculation Method ---
+    private void calculateAndDisplaySplit() {
+        String amountString = edtAmount.getText().toString().trim();
+        double totalAmount = 0.0;
+
+        if (!amountString.isEmpty()) {
+            try {
+                totalAmount = Double.parseDouble(amountString);
+            } catch (NumberFormatException e) {
+                totalAmount = 0.0;
+            }
+        }
+
+        int selectedCount = 0;
+        for (CheckBox cb : activeCheckBoxesReferences) {
+            if (cb.isChecked()) {
+                selectedCount++;
+            }
+        }
+
+        double splitAmount = 0.0;
+        if (selectedCount > 0) {
+            splitAmount = totalAmount / selectedCount;
+        }
+
+        txtSelectedCountPreview.setText(getString(R.string.format_selected_members, selectedCount));
+        txtSplitAmountPreview.setText(String.format(Locale.getDefault(), "₹ %.2f", splitAmount));
     }
 
     private void extractIncomingIntentData() {
@@ -88,7 +158,6 @@ public class AddExpenseActivity extends AppCompatActivity {
             isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
             editTransactionId = getIntent().getIntExtra("TRANS_ID", -1);
 
-            // 1. Get the list of currently active members
             List<String> allMembers = new ArrayList<>();
             String rawMembersStr = getIntent().getStringExtra("TRIP_MEMBERS");
             if (rawMembersStr != null && !rawMembersStr.trim().isEmpty()) {
@@ -99,7 +168,6 @@ public class AddExpenseActivity extends AppCompatActivity {
                 }
             }
 
-            // 2. If Edit Mode, also add historical (deleted) members
             if (isEditMode) {
                 for (String historical : getHistoricalMembers()) {
                     if (!allMembers.contains(historical)) {
@@ -124,8 +192,6 @@ public class AddExpenseActivity extends AppCompatActivity {
 
     private ArrayList<String> getHistoricalMembers() {
         ArrayList<String> allMembers = new ArrayList<>();
-
-        // Comprehensive queries to catch every name mentioned in the database
         String query1 = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ?";
         String query2 = "SELECT DISTINCT expense_shared_with FROM expenses WHERE expense_trip_id = ?";
         String query3 = "SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
@@ -142,7 +208,6 @@ public class AddExpenseActivity extends AppCompatActivity {
             while (c.moveToNext()) {
                 String raw = c.getString(0);
                 if (raw != null && !raw.isEmpty()) {
-                    // Split by comma in case of shared_with (e.g., "Amit, Anupam")
                     for (String name : raw.split(",")) {
                         String cleanName = name.trim();
                         if (!cleanName.isEmpty() && !"Fund".equalsIgnoreCase(cleanName) && !allMembers.contains(cleanName)) {
@@ -152,7 +217,6 @@ public class AddExpenseActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            // Using proper Android logging instead of printStackTrace
             android.util.Log.e("AddExpenseActivity", "Error fetching historical members: " + e.getMessage());
         }
     }
@@ -183,6 +247,9 @@ public class AddExpenseActivity extends AppCompatActivity {
                         cb.setChecked(sharedList.contains(cb.getText().toString().trim()));
                     }
                 }
+
+                // Recalculate after loading edit data
+                calculateAndDisplaySplit();
             }
         }
     }
@@ -194,19 +261,11 @@ public class AddExpenseActivity extends AppCompatActivity {
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
 
         datePickerDialog.show();
-
-        // Rounded corner dialog
         Window window = datePickerDialog.getWindow();
         if (window != null) {
-            window.setBackgroundDrawable(
-                    new ColorDrawable(Color.TRANSPARENT)
-            );
-
-            window.setBackgroundDrawableResource(
-                    R.drawable.bg_date_picker_dialog
-            );
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setBackgroundDrawableResource(R.drawable.bg_date_picker_dialog);
         }
-        // Rounded corner dialog End
 
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
@@ -223,16 +282,41 @@ public class AddExpenseActivity extends AppCompatActivity {
         spinnerPaidBy.setAdapter(adapter);
     }
 
+    // --- UPDATED: Beautifully Styled Dynamic Checkboxes ---
     private void generateDynamicMembersCheckboxes() {
         layoutCheckboxContainer.removeAllViews();
         activeCheckBoxesReferences.clear();
+
         for (String memberName : parsedMembersList) {
-            CheckBox checkBox = new CheckBox(this);
-            checkBox.setText(memberName);
-            checkBox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-            checkBox.setChecked(true);
-            activeCheckBoxesReferences.add(checkBox);
-            layoutCheckboxContainer.addView(checkBox);
+            CheckBox cb = new CheckBox(this);
+            cb.setText(memberName);
+            cb.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            cb.setTextColor(android.graphics.Color.parseColor("#0D1A39")); // Darker text for readability
+            cb.setPadding(12, 12, 12, 12); // Internal padding inside the box
+            cb.setChecked(true); // Checked by default
+
+            // Create a custom drawable for the white, rounded background with a subtle border
+            GradientDrawable borderDrawable = new GradientDrawable();
+            borderDrawable.setColor(android.graphics.Color.parseColor("#E6E6E6"));
+            borderDrawable.setCornerRadius(12f); // Rounded corners
+            borderDrawable.setStroke(1, android.graphics.Color.parseColor("#666666")); // Subtle gray border
+            cb.setBackground(borderDrawable);
+
+            // Listen for changes to update Live Split calculation
+            cb.setOnCheckedChangeListener((buttonView, isChecked) -> calculateAndDisplaySplit());
+
+            // Setup Layout Parameters for the Grid
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+            params.width = 0; // Equal width
+            params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f); // 1f weight
+
+            // Add margins around each box so they don't touch
+            params.setMargins(8, 12, 8, 12);
+            cb.setLayoutParams(params);
+
+            layoutCheckboxContainer.addView(cb);
+            activeCheckBoxesReferences.add(cb);
         }
     }
 
@@ -244,12 +328,8 @@ public class AddExpenseActivity extends AppCompatActivity {
         double totalAmount = Double.parseDouble(amountRaw);
         String selectedPayer = spinnerPaidBy.getSelectedItem().toString();
 
-        // --- NEW: Fund Balance Check ---
         if ("Fund".equals(selectedPayer)) {
             double currentFundBalance = dbHelper.getFundBalance(currentTripId);
-
-            // If editing, the "old" amount is effectively added back to the pool
-            // so we don't get blocked by the transaction we are trying to edit.
             double oldAmount = 0.0;
             if (isEditMode) {
                 try (Cursor c = dbHelper.getExpenseById(editTransactionId)) {
@@ -263,7 +343,7 @@ public class AddExpenseActivity extends AppCompatActivity {
 
             if (totalAmount > effectiveBalance) {
                 Toast.makeText(this, "Insufficient Fund Balance! Available: ₹" + String.format(Locale.US, "%.2f", effectiveBalance), Toast.LENGTH_LONG).show();
-                return; // Stop the validation process
+                return;
             }
         }
 

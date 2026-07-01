@@ -238,6 +238,8 @@
 
     <string name="desc_calculate_icon">Calculate expense</string>
 
+    <string name="format_selected_members">%1$d Members</string>
+
 
 
 </resources>
