@@ -76,7 +76,6 @@ public class AddPaymentActivity extends AppCompatActivity {
                 String paidBy = c.getString(c.getColumnIndexOrThrow("payment_by"));
                 ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerPaymentBy.getAdapter();
 
-                // Fixed: Added null checks to prevent NullPointerException
                 if (adapter != null && paidBy != null) {
                     for (int i = 0; i < adapter.getCount(); i++) {
                         if (paidBy.equals(adapter.getItem(i))) {
@@ -135,20 +134,46 @@ public class AddPaymentActivity extends AppCompatActivity {
             editTransactionId = getIntent().getIntExtra("TRANS_ID", -1);
 
             Log.d(TAG, "Initializing payment ledger environment for unique key: " + currentTripId);
-            if (rawMembersStr != null && !rawMembersStr.trim().isEmpty()) {
-                String[] splitNames = rawMembersStr.split(",");
-                for (String name : splitNames) {
-                    if (!name.trim().isEmpty()) {
-                        parsedMembersList.add(name.trim());
-                    }
-                }
-                Collections.sort(parsedMembersList);
-                populatePaymentBySpinner();
-            } else {
+
+            // Fetch the compiled list using our helper method
+            ArrayList<String> allMembers = compileCompleteMemberList(rawMembersStr);
+
+            parsedMembersList.clear();
+            parsedMembersList.addAll(allMembers);
+
+            if (parsedMembersList.isEmpty()) {
                 Toast.makeText(this, "Error: No trip members found context packet!", Toast.LENGTH_SHORT).show();
                 finish();
+            } else {
+                Collections.sort(parsedMembersList);
+                populatePaymentBySpinner();
             }
         }
+    }
+
+    // --- THIS IS THE METHOD THAT WAS MISSING ---
+    private ArrayList<String> compileCompleteMemberList(String rawMembersStr) {
+        ArrayList<String> allMembers = new ArrayList<>();
+
+        // 1. Add currently active members from intent
+        if (rawMembersStr != null && !rawMembersStr.trim().isEmpty()) {
+            for (String name : rawMembersStr.split(",")) {
+                if (!name.trim().isEmpty() && !allMembers.contains(name.trim())) {
+                    allMembers.add(name.trim());
+                }
+            }
+        }
+
+        // 2. Add historical members if in edit mode
+        if (isEditMode) {
+            for (String historical : getHistoricalMembers()) {
+                if (!allMembers.contains(historical)) {
+                    allMembers.add(historical);
+                }
+            }
+        }
+
+        return allMembers;
     }
 
     private void populatePaymentBySpinner() {
@@ -198,7 +223,6 @@ public class AddPaymentActivity extends AppCompatActivity {
             if (success) {
                 Toast.makeText(this, "Payment updated successfully!", Toast.LENGTH_SHORT).show();
 
-                // Return to ledger immediately
                 Intent intent = new Intent(this, CompleteLedgerActivity.class);
                 intent.putExtra("TRIP_ID", currentTripId);
                 startActivity(intent);
@@ -214,6 +238,39 @@ public class AddPaymentActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Critical database failure!", Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    // --- HISTORICAL MEMBER HELPER METHODS ---
+    private ArrayList<String> getHistoricalMembers() {
+        ArrayList<String> allMembers = new ArrayList<>();
+
+        String query1 = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ?";
+        String query2 = "SELECT DISTINCT expense_shared_with FROM expenses WHERE expense_trip_id = ?";
+        String query3 = "SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
+
+        addNamesToAllMembers(allMembers, query1);
+        addNamesToAllMembers(allMembers, query2);
+        addNamesToAllMembers(allMembers, query3);
+
+        return allMembers;
+    }
+
+    private void addNamesToAllMembers(ArrayList<String> allMembers, String query) {
+        try (Cursor c = dbHelper.getReadableDatabase().rawQuery(query, new String[]{currentTripId})) {
+            while (c.moveToNext()) {
+                String raw = c.getString(0);
+                if (raw != null && !raw.isEmpty()) {
+                    for (String name : raw.split(",")) {
+                        String cleanName = name.trim();
+                        if (!cleanName.isEmpty() && !"Fund".equalsIgnoreCase(cleanName) && !allMembers.contains(cleanName)) {
+                            allMembers.add(cleanName);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.e("AddPaymentActivity", "Error fetching historical members: " + e.getMessage());
         }
     }
 }
