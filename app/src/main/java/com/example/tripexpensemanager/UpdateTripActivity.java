@@ -39,6 +39,22 @@ public class UpdateTripActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_update_trip);
 
+        android.widget.ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> {
+            // Safely close the keyboard if it is currently open
+            android.view.View currentFocus = getCurrentFocus();
+            if (currentFocus != null) {
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
+                }
+            }
+
+            // Close this screen and return to the previous one
+            finish();
+        });
+
 
 
         dbHelper = new TripDatabaseHelper(this);
