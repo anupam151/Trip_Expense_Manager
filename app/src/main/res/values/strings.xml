@@ -63,7 +63,7 @@
     <string name="label_payment_by">Payment By</string>
     <string name="label_payment_date">Payment Date</string>
     <string name="label_payment_amount">Amount (₹)</string>
-    <string name="hint_payment_amount">Enter positive integer</string>
+    <string name="hint_payment_amount">Enter Positive Integer</string>
     <string name="btn_submit_payment">Add Payment</string>
     <string name="hint_date_picker">Select Date</string>
     <string name="btn_add_expense">Add Expense</string>
@@ -205,12 +205,12 @@
 
     <string name="title_create_new_trip">Create New Trip</string>
     <string name="label_name_of_trip">Name of The Trip</string>
-    <string name="hint_enter_trip_name">Enter trip name</string>
+    <string name="hint_enter_trip_name">Enter Trip Name</string>
     <string name="label_trip_destination">Destination</string>
-    <string name="hint_enter_destination">Enter destination</string>
-    <string name="label_journey_start_date">Journey start Date</string>
-    <string name="label_journey_end_date">Journey end Date</string>
-    <string name="hint_select_date">Select date</string>
+    <string name="hint_enter_destination">Enter Destination</string>
+    <string name="label_journey_start_date">Journey Start Date</string>
+    <string name="label_journey_end_date">Journey End Date</string>
+    <string name="hint_select_date">Select Date</string>
     <string name="label_add_trip_members">Add Trip Members</string>
     <string name="txt_no_members_yet">No members added yet</string>
     <string name="txt_add_members_subtext">Add members who are part of this trip</string>

@@ -52,6 +52,11 @@ public class CreateTripActivity extends AppCompatActivity {
 
         Button btnAddMemberTrigger = findViewById(R.id.btn_add_member_trigger);
         Button btnCreateTripSubmit = findViewById(R.id.btn_create_trip_submit);
+        android.widget.ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> {
+            hideKeyboard(v);
+            finish();
+        });
 
         edtStartDate.setOnClickListener(v -> showDatePicker(edtStartDate));
         edtEndDate.setOnClickListener(v -> showDatePicker(edtEndDate));

@@ -39,6 +39,8 @@ public class UpdateTripActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_update_trip);
 
+
+
         dbHelper = new TripDatabaseHelper(this);
         memberList = new ArrayList<>();
 
@@ -68,6 +70,13 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         // Extracting incoming bundle packets and auto-prefilling data fields
         extractAndPrefillData();
+        layoutMemberList.post(() -> {
+            if (layoutMemberList.getChildCount() > 0) {
+                findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.GONE);
+                findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.GONE);
+            }
+        });
+
     }
 
     private void extractAndPrefillData() {
@@ -139,6 +148,11 @@ public class UpdateTripActivity extends AppCompatActivity {
             layoutMemberList.removeView(rowLayout);
             memberList.remove(name);
             reorderMemberCounter();
+
+            if (memberList.isEmpty()) {
+                findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.VISIBLE);
+                findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.VISIBLE);
+            }
         });
         return btnRemove;
     }
