@@ -98,6 +98,8 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_EXPENSES);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PAYMENTS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TRIP_MEMBERS);
+        db.execSQL("ALTER TABLE expenses ADD COLUMN expense_created_at TEXT DEFAULT '01/01/2026 00:00:00'");
+        db.execSQL("ALTER TABLE payments ADD COLUMN payment_created_at TEXT DEFAULT '01/01/2026 00:00:00'");
         onCreate(db);
     }
 
