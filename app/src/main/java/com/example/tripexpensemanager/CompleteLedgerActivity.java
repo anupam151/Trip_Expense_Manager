@@ -55,21 +55,21 @@ public class CompleteLedgerActivity extends AppCompatActivity {
 
     private void buildHeaderRow(TableLayout table, ArrayList<String> members) {
         TableRow row = new TableRow(this);
-        addCell(row, "Date", true);
-        addCell(row, "Purpose", true);
-        addCell(row, "Amount", true);
+        addCell(row, "Date of \nTransaction", true);
+        addCell(row, "Purpose or \nDescription", true);
+        addCell(row, "Total \nAmount", true);
 
         for (String m : members) {
             addCell(row, m + "\nCredit", true);
             addCell(row, m + "\nDebit", true);
         }
 
-        addCell(row, "Fund", true);
+       // addCell(row, "Fund", true);
         table.addView(row);
     }
 
     //private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double balance, double[] totalPaid, double[] totalUsed) {
-        private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double[] totalPaid, double[] totalUsed) {
+    private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double[] totalPaid, double[] totalUsed) {
         TableRow row = new TableRow(this);
 
         // --- NEW: Grab the hidden Transaction ID ---
@@ -184,7 +184,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, String.format(Locale.US, "%.2f", totalUsed[i]), true);
         }
 
-        addCell(row, "-", true);
+       // addCell(row, "-", true);
         table.addView(row);
     }
 

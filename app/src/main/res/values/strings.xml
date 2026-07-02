@@ -252,6 +252,19 @@
     <string name="label_total">Total</string>
     <string name="note_negative_balance">Negative balance means you owe to the trip.</string>
 
+    <string name="trip_name_cl">Trip: %s</string>
+    <string name="total_expense">Total Expense: ₹%s</string>
+    <string name="fund_balance">Fund Balance: ₹%s</string>
+    <string name="total_payments">Total Trip Payments: ₹%s</string>
+    <string name="label_purpose_with_type">%1$s (%2$s)</string>
+    <string name="label_currency_format">₹%s</string>
+
+    <string name="label_fund_balance_default">Fund Balance: ₹0.00</string>
+    <string name="label_expense_default">Expenses: ₹0.00</string>
+    <string name="label_payment_default">Total Trip Payments: ₹0.00</string>
+
+    <string name="txt_complete_ledger">All Transactions</string>
+
 
 
 </resources>
