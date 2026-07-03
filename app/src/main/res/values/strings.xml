@@ -12,7 +12,7 @@
     <string name="title_trip">Trip Expense</string>
 
     <string name="dash_app_title">Trip Expense Manager</string>
-    <string name="dash_btn_create_trip">Create New Trip</string>
+    <string name="dash_btn_create_trip">Create Trip</string>
     <string name="dash_btn_view_trip">View Trips</string>
     <string name="title_pinned_activity_workspace">Pinned Activity Workspace</string>
     <string name="msg_no_trip_added">No trip added</string>
@@ -264,6 +264,13 @@
     <string name="label_payment_default">Total Trip Payments: ₹0.00</string>
 
     <string name="txt_complete_ledger">All Transactions</string>
+
+    <string name="welcome_message">Welcome!</string>
+    <string name="dashboard_subtitle">Track Every Expense. Enjoy Every Journey</string>
+    <string name="no_pinned_trips_icon_desc">No pinned trips icon</string>
+    <string name="no_pinned_trips_title">No Pinned Trips Yet</string>
+    <string name="no_pinned_trips_description">Pin your most important trips to see their summary here for quick access.</string>
+    <string name="btn_explore_trips">Explore Trips</string>
 
 
 

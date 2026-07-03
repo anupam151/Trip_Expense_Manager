@@ -1,79 +1,200 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://tools.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="#FFFFFF"
+    android:background="#F5F6F8"
     tools:context=".DashboardActivity">
 
     <LinearLayout
+        android:id="@+id/header_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:padding="24dp">
+        android:layout_height="50dp"
+        android:background="#85022E"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="2dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:text="@string/dash_app_title"
-            android:textColor="#0D1A39"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_dash_create_trip"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:text="@string/dash_btn_create_trip"
-            android:textSize="20sp"
+            android:background="#85022E"
+            android:gravity="center"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#85022E"
-            app:cornerRadius="8dp"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_dash_view_trips"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:text="@string/dash_btn_view_trip"
             android:textSize="20sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#CC843D"
-            app:cornerRadius="8dp"
-            android:layout_marginBottom="16dp" />
+            android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="60dp"
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/lbl_recent_trip_heading"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/title_pinned_activity_workspace"
+            android:layout_marginHorizontal="16dp"
+            android:gravity="center"
+            android:text="@string/welcome_message"
             android:textColor="#0D1A39"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="10dp"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:textSize="42sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:text="@string/dashboard_subtitle"
+            android:textColor="#0D1A39"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <LinearLayout
-            android:id="@+id/container_pinned_trips_stack"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="0dp"
-            android:paddingBottom="16dp"
-            android:clipToPadding="false"
-            android:clipChildren="false" />
+            android:layout_height="55dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginHorizontal="16dp"
+            android:orientation="horizontal">
 
-        <View
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dash_create_trip"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:text="@string/dash_btn_create_trip"
+                android:textSize="20sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#85022E"
+                app:cornerRadius="10dp"
+                android:layout_weight="1"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_dash_view_trips"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:text="@string/dash_btn_view_trip"
+                android:textSize="20sp"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#CC843D"
+                app:cornerRadius="10dp"
+                android:layout_weight="1"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="35dp"
+        android:layout_marginTop="220dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:minHeight="40dp" />
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/lbl_recent_trip_heading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/title_pinned_activity_workspace"
+                android:textColor="#0D1A39"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <ScrollView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fillViewport="true">
+            <LinearLayout
+                android:id="@+id/container_pinned_trips_stack"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="0dp"
+                android:clipToPadding="false"
+                android:clipChildren="false" />
+            </ScrollView>
+
+            <LinearLayout
+                android:id="@+id/layout_no_pinned_trips"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_dashed_box"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="20dp"
+                >
+                <!--android:visibility="gone"-->
+
+                <ImageView
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_marginTop="40dp"
+                    android:src="@drawable/pin"
+                    android:contentDescription="@string/no_pinned_trips_icon_desc" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/no_pinned_trips_title"
+                    android:textColor="#85022E"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/no_pinned_trips_description"
+                    android:gravity="center"
+                    android:layout_marginTop="16dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_create_new_trips"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/title_create_trip"
+                        android:textColor="#85022E"
+                        android:textSize="16sp"
+                        app:elevation="5dp"
+                        android:backgroundTint="#FFFFFF"
+                        app:strokeColor="#85022E"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="10dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#F5F6F8"
+        android:gravity="center"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/txt_dash_developer_branding"
@@ -85,6 +206,6 @@
             android:layout_marginBottom="12dp"
             android:gravity="center"
             tools:text="Designed and Developed by Anupam" />
-
     </LinearLayout>
-</ScrollView>
+
+</RelativeLayout>

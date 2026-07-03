@@ -1,5 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Trip App Colors -->
+    <color name="colorPrimary">#249CBF</color>
+    <color name="colorPrimaryDark">#1A7A96</color>
+    <color name="colorBackground">#F8F9FA</color>
+    <color name="text_primary">#0D1A39</color>
+    <color name="text_secondary">#5E6A75</color>
+    <color name="color_accent">#249CBF</color>
+    <color name="color_delete">#FF3B30</color>
+    <color name="color_divider">#E8EBEF</color>
+    <color name="color_orange">#E27A2A</color>
 </resources>

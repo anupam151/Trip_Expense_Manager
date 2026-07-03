@@ -54,7 +54,6 @@
         <item name="colorPrimary">#85022E</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorAccent">#85022E</item>
-
         <item name="buttonBarPositiveButtonStyle">@style/CalendarWhiteTextButton</item>
         <item name="buttonBarNegativeButtonStyle">@style/CalendarWhiteTextButton</item>
     </style>
@@ -63,6 +62,5 @@
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:textStyle">bold</item>
     </style>
-
 
 </resources>

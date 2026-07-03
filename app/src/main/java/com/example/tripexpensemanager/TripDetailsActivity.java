@@ -50,7 +50,7 @@ public class TripDetailsActivity extends AppCompatActivity {
             Intent intent = new Intent(TripDetailsActivity.this, DashboardActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-            if (android.os.Build.VERSION.SDK_INT >= 34) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_OPEN, 0, 0);
             } else {
                 overridePendingTransition(0, 0);

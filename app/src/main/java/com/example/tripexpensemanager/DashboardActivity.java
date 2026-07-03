@@ -17,6 +17,7 @@ public class DashboardActivity extends AppCompatActivity {
 
     private TextView lblRecentHeading;
     private LinearLayout containerPinnedTripsStack;
+    private LinearLayout layoutNoPinnedTrips; // Added for empty state
     private TripDatabaseHelper dbHelper;
 
     @Override
@@ -30,6 +31,7 @@ public class DashboardActivity extends AppCompatActivity {
         MaterialButton btnViewTrips = findViewById(R.id.btn_dash_view_trips);
         lblRecentHeading = findViewById(R.id.lbl_recent_trip_heading);
         containerPinnedTripsStack = findViewById(R.id.container_pinned_trips_stack);
+        layoutNoPinnedTrips = findViewById(R.id.layout_no_pinned_trips); // Initialized
 
         TextView txtDeveloperBranding = findViewById(R.id.txt_dash_developer_branding);
         String styledSignatureText = getString(R.string.dev_branding_signature_placeholder, "<b><font color='#1E88E5'>Anupam</font></b>");
@@ -37,21 +39,35 @@ public class DashboardActivity extends AppCompatActivity {
 
         btnCreateTrip.setOnClickListener(v -> startActivity(new Intent(this, CreateTripActivity.class)));
         btnViewTrips.setOnClickListener(v -> startActivity(new Intent(this, TripListActivity.class)));
+
+        // Explore Trips button logic (redirects to the trip list)
+        findViewById(R.id.btn_create_new_trips).setOnClickListener(v ->
+                startActivity(new Intent(this, CreateTripActivity.class))
+        );
+
+        updatePinnedWorkspace();
     }
 
     private void updatePinnedWorkspace() {
         containerPinnedTripsStack.removeAllViews();
         Cursor cursor = dbHelper.getPinnedTripsCursor();
 
+        // 1. EMPTY STATE LOGIC
         if (cursor == null || cursor.getCount() == 0) {
             lblRecentHeading.setVisibility(View.GONE);
+            containerPinnedTripsStack.setVisibility(View.GONE); // Hide the stack
+            layoutNoPinnedTrips.setVisibility(View.VISIBLE);    // Show the placeholder
+
             if (cursor != null) cursor.close();
             return;
         }
 
+        // 2. ACTIVE STATE LOGIC
+        layoutNoPinnedTrips.setVisibility(View.GONE);       // Hide the placeholder
+        containerPinnedTripsStack.setVisibility(View.VISIBLE); // Show the stack
         lblRecentHeading.setVisibility(View.VISIBLE);
-        int itemIndex = 1;
 
+        int itemIndex = 1;
         float scale = getResources().getDisplayMetrics().density;
         int marginHorizontalPx = Math.round(2 * scale);
         int marginBottomPx = Math.round(8 * scale);
@@ -73,11 +89,9 @@ public class DashboardActivity extends AppCompatActivity {
             TextView txtTripName = cardView.findViewById(R.id.txt_item_trip_name);
             TextView txtDestination = cardView.findViewById(R.id.txt_item_destination);
             TextView txtMemberCount = cardView.findViewById(R.id.txt_item_member_count);
-
-            // FIXED: Link to the new XML ID
             TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
-
             TextView txtStartDate = cardView.findViewById(R.id.txt_item_start_date);
+
             TextView btnPin = cardView.findViewById(R.id.btn_item_pin);
             TextView btnEdit = cardView.findViewById(R.id.btn_item_edit);
             TextView btnDelete = cardView.findViewById(R.id.btn_item_delete);
@@ -86,8 +100,6 @@ public class DashboardActivity extends AppCompatActivity {
 
             double totalExpense = dbHelper.getTripTotalExpenses(tripId);
             double totalReceived = dbHelper.getTripTotalPaymentsReceived(tripId);
-
-            // FIXED: Fetch real-time fund balance
             double fundBalance = dbHelper.getFundBalance(tripId);
 
             TextView txtTotalExpense = cardView.findViewById(R.id.txt_item_total_expense);
@@ -95,8 +107,6 @@ public class DashboardActivity extends AppCompatActivity {
 
             if (txtTotalExpense != null) txtTotalExpense.setText(getString(R.string.fmt_dash_currency_rupees, totalExpense));
             if (txtTotalReceived != null) txtTotalReceived.setText(getString(R.string.fmt_dash_currency_rupees, totalReceived));
-
-            // FIXED: Set the formatted fund balance string
             if (txtFundBalance != null) txtFundBalance.setText(String.format(java.util.Locale.US, "₹%.2f", fundBalance));
 
             txtTripName.setText(getString(R.string.fmt_dash_pinned_title, itemIndex, name));
@@ -107,7 +117,6 @@ public class DashboardActivity extends AppCompatActivity {
             btnPin.setText(getString(R.string.action_unpin));
             btnPin.setTextColor(0xFF2E7D32);
 
-            // Inside updatePinnedWorkspace()
             cardView.setOnClickListener(v -> {
                 Intent intent = new Intent(DashboardActivity.this, TripDetailsActivity.class);
                 intent.putExtra("TRIP_ID", trip.getTripId());
@@ -115,7 +124,7 @@ public class DashboardActivity extends AppCompatActivity {
                 intent.putExtra("DESTINATION", trip.getDestination());
                 intent.putExtra("START_DATE", trip.getStartDate());
                 intent.putExtra("END_DATE", trip.getEndDate());
-                intent.putExtra("MEMBERS", trip.getMembersListString()); // Ensure getMembersListString() returns comma-separated names
+                intent.putExtra("MEMBERS", trip.getMembersListString());
                 startActivity(intent);
             });
 
@@ -183,5 +192,13 @@ public class DashboardActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updatePinnedWorkspace();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (dbHelper != null) {
+            dbHelper.close();
+        }
     }
 }
