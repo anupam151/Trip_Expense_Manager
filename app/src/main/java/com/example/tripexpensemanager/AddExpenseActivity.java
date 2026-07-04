@@ -255,6 +255,18 @@ public class AddExpenseActivity extends AppCompatActivity {
     }
 
     private void showDatePicker() {
+        // --- NEW CODE: Hide keyboard and clear cursor focus ---
+        View currentFocus = getCurrentFocus();
+        if (currentFocus != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
+            }
+            currentFocus.clearFocus(); // This stops the blinking cursor in the Amount field
+        }
+        // ------------------------------------------------------
+
+        // Your existing DatePickerDialog code below
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, selectedYear, selectedMonth, selectedDay) -> {
             calendar.set(selectedYear, selectedMonth, selectedDay);
             etExpenseDate.setText(dateFormatter.format(calendar.getTime()));
