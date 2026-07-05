@@ -182,7 +182,6 @@
         android:background="#85022E"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-
         <ImageButton
             android:id="@+id/btn_back"
             android:layout_width="48dp"
@@ -215,16 +214,16 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save_payment"
+            android:text="@string/btn_submit_payment"
+            app:icon="@drawable/bank"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#85022E"
             android:layout_marginTop="7dp"
             android:layout_marginBottom="14dp"
-            android:text="@string/btn_submit_payment"
             android:textAllCaps="false"
             android:textSize="13sp"
             app:cornerRadius="8dp"
-            app:icon="@drawable/bank"
             app:iconGravity="textStart"
             android:textColor="#FFFFFF"/>
         <TextView
