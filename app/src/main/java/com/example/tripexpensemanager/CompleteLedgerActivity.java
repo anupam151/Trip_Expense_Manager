@@ -67,6 +67,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
 
     private void buildHeaderRow(TableLayout table, ArrayList<String> members) {
         TableRow row = new TableRow(this);
+        applyRowDividersWhite(row);
         addCell(row, "Date of \nTransaction", true);
         addCell(row, "Purpose or \nDescription", true);
         addCell(row, "Total \nAmount", true);
@@ -82,6 +83,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
 
     private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double[] totalPaid, double[] totalUsed) {
         TableRow row = new TableRow(this);
+        applyRowDividers(row);
 
         // --- NEW: Grab the hidden Transaction ID ---
         int transId = cursor.getInt(cursor.getColumnIndexOrThrow("trans_id"));
@@ -182,6 +184,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
 
     private void buildTotalRow(TableLayout table, ArrayList<String> members, double[] totalPaid, double[] totalUsed) {
         TableRow row = new TableRow(this);
+        applyRowDividersWhite(row);
         row.setBackgroundColor(Color.parseColor("#E2E8F0"));
 
         addCell(row, "TOTALS", true);
@@ -273,5 +276,27 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             tv.setTextColor(Color.parseColor("#2D3748"));
         }
         row.addView(tv);
+    }
+
+    private void applyRowDividers(TableRow row) {
+        // This tells the row to draw a line between every cell
+        row.setShowDividers(android.widget.LinearLayout.SHOW_DIVIDER_MIDDLE);
+
+        // Create the physical line (2 pixels wide, light gray color)
+        android.graphics.drawable.GradientDrawable divider = new android.graphics.drawable.GradientDrawable();
+        divider.setColor(Color.parseColor("#CBD5E1"));
+        divider.setSize(2, 0);
+
+        row.setDividerDrawable(divider);
+    }
+    //white vertical line for column divider
+    private void applyRowDividersWhite(TableRow row) {
+        // This tells the row to draw a line between every cell
+        row.setShowDividers(android.widget.LinearLayout.SHOW_DIVIDER_MIDDLE);
+        android.graphics.drawable.GradientDrawable divider = new android.graphics.drawable.GradientDrawable();
+        divider.setColor(Color.parseColor("#FFFFFF"));
+        divider.setSize(2, 0);
+
+        row.setDividerDrawable(divider);
     }
 }
