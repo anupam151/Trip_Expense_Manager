@@ -385,7 +385,7 @@
             android:layout_height="wrap_content"
             android:backgroundTint="#85022E"
             android:layout_marginTop="7dp"
-            android:layout_marginBottom="7dp"
+            android:layout_marginBottom="10dp"
             android:text="@string/btn_save_expense_split"
             android:textAllCaps="false"
             android:textSize="13sp"
