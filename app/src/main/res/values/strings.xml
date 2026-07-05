@@ -242,7 +242,7 @@
 
     <string name="title_individual_ledger">Individual Ledger</string>
     <string name="desc_go_back_il">Go Back</string>
-    <string name="label_balance_due">Balance / Due</string>
+    <string name="label_balance_due">Balance / Due ⓘ</string>
     <string name="label_total_payments">Total Payments</string>
     <string name="label_total_expenses_il">Total Expenses</string>
     <string name="label_date">Date</string>
@@ -250,7 +250,7 @@
     <string name="label_debit">Debit (₹)</string>
     <string name="label_credit">Credit (₹)</string>
     <string name="label_total">Total</string>
-    <string name="note_negative_balance">Negative balance means you owe to the trip.</string>
+    <string name="note_negative_balance">Balance / Due: Green = Balance | Red = Amount Due</string>
 
     <string name="trip_name_cl">Trip: %s</string>
     <string name="total_expense">Total Expense: ₹%s</string>
