@@ -6,14 +6,6 @@
     android:layout_height="match_parent"
     android:background="#F5F6F8"
     tools:context=".CompleteLedgerActivity">
-
-
-
-
-
-
-
-
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -60,42 +52,6 @@
 
         </LinearLayout>
     </HorizontalScrollView>
-
-
-
-
-
-
-
-<!--
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="82dp"
-        android:layout_marginHorizontal="6dp"
-        android:layout_marginBottom="97dp"
-        android:background="#FAFAFF"
-        android:fillViewport="true">
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#FAFAFF"
-            android:layout_margin="6dp"
-            android:fillViewport="true"
-            android:padding="6dp">
-            <TableLayout
-                android:id="@+id/table_full_ledger"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:divider="?android:attr/listDivider"
-                android:showDividers="middle" />
-        </HorizontalScrollView>
-    </ScrollView>
-
-    -->
-
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

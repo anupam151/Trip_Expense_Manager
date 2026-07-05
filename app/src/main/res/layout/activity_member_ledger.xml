@@ -67,14 +67,15 @@
             app:strokeWidth="1dp"
             app:strokeColor="#EAEAEA"
             app:cardBackgroundColor="#FFFFFF"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:layout_gravity="center_horizontal"
                 android:baselineAligned="false"
-                android:padding="16dp">
+                android:padding="4dp">
 
                 <RelativeLayout
                     android:layout_width="0dp"
@@ -154,7 +155,7 @@
                         <TextView
                             android:id="@+id/txt_ledger_balance"
                             tools:text="₹1,000.00"
-                            android:textSize="18sp"
+                            android:textSize="16sp"
                             android:textStyle="bold"
                             android:textColor="#85022E"
                             android:layout_width="wrap_content"
@@ -173,14 +174,14 @@
 
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
-                android:layout_height="70dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginEnd="6dp"
-                app:cardCornerRadius="10dp"
+                app:cardCornerRadius="6dp"
+                android:layout_marginEnd="10dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="#F6FBF7">
+                app:cardBackgroundColor="#EBFAED">
                 <RelativeLayout
-                    android:padding="12dp"
+                    android:padding="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
@@ -216,24 +217,22 @@
                             tools:text="₹6,000.00"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="#2E7D32"
+                            android:textColor="#216B25"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"/>
                     </LinearLayout>
                 </RelativeLayout>
             </androidx.cardview.widget.CardView>
-
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
-                android:layout_height="70dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="6dp"
-                app:cardCornerRadius="10dp"
+                app:cardCornerRadius="6dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="#FCF8F9">
+                app:cardBackgroundColor="#FFEDED">
                 <RelativeLayout
-                    android:padding="12dp"
+                    android:padding="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
@@ -313,8 +312,7 @@
             app:cardElevation="0dp"
             app:strokeWidth="1dp"
             app:strokeColor="#EAEAEA"
-            android:layout_marginBottom="12dp">
-
+            android:layout_marginBottom="8dp">
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -326,7 +324,7 @@
                     android:layout_alignParentTop="true"
                     android:orientation="horizontal"
                     android:background="#85022E"
-                    android:paddingVertical="12dp"
+                    android:paddingVertical="6dp"
                     android:paddingHorizontal="8dp">
 
                     <TextView
@@ -373,7 +371,7 @@
                     android:layout_alignParentBottom="true"
                     android:orientation="horizontal"
                     android:background="#FCF8F9"
-                    android:paddingVertical="14dp"
+                    android:paddingVertical="4dp"
                     android:paddingHorizontal="8dp">
 
                     <TextView
@@ -412,7 +410,7 @@
                     android:layout_below="@id/table_header_row"
                     android:layout_above="@id/table_footer_row"
                     tools:listitem="@layout/item_ledger_transaction"
-                    tools:itemCount="8"/>
+                    tools:itemCount="20"/>
 
             </RelativeLayout>
         </androidx.cardview.widget.CardView>
@@ -420,8 +418,46 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:background="#F5F6F8"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:gravity="center">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_export_to_excel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#85022E"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="7dp"
+                android:layout_marginBottom="10dp"
+                android:text="@string/btn_export_excel"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/excel_logo"
+                app:iconGravity="textStart"
+                app:iconTint="#FFFFFF" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_export_to_pdf"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#85022E"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="7dp"
+                android:layout_marginBottom="10dp"
+                android:text="@string/btn_export_pdf"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/pdf"
+                app:iconGravity="textStart"
+                app:iconTint="#FFFFFF" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:background="@drawable/bg_dashed_box"
-            android:padding="12dp"
             android:gravity="center_vertical">
             <ImageView
                 android:layout_width="20dp"
@@ -437,7 +473,6 @@
                 android:textColor="#555555"
                 android:textSize="13sp"/>
         </LinearLayout>
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
