@@ -184,7 +184,7 @@
     <string name="label_total_expenses">Total Expenses</string>
     <string name="label_total_receipts">Total Receipts</string>
 
-    <string name="complete_ledger">Complete Ledger</string>
+    <string name="complete_ledger">View All Transactions</string>
 
     <string name="label_active_members">👥 Active Members</string>
     <string name="label_removed_members">👥 Inactive Members</string>
@@ -271,6 +271,10 @@
     <string name="no_pinned_trips_title">No Pinned Trips Yet</string>
     <string name="no_pinned_trips_description">Pin your most important trips to see their summary here for quick access.</string>
     <string name="btn_explore_trips">Explore Trips</string>
+
+    <string name="btn_export_excel">Export to Excel</string>
+    <string name="btn_export_pdf">Export to PDF</string>
+
 
 
 
