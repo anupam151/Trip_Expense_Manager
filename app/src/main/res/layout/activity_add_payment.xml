@@ -162,8 +162,8 @@
         android:background="#FFFFFF"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingBottom="3.5dp"
-        android:paddingTop="3.5dp">
+        android:paddingBottom="4dp"
+        android:paddingTop="4dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -178,7 +178,7 @@
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
+        android:layout_marginTop="28dp"
         android:background="#85022E"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -219,7 +219,7 @@
             android:layout_height="wrap_content"
             android:backgroundTint="#85022E"
             android:layout_marginTop="7dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="14dp"
             android:text="@string/btn_submit_payment"
             android:textAllCaps="false"
             android:textSize="13sp"

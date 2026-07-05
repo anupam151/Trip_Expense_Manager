@@ -102,8 +102,8 @@
         android:background="#FFFFFF"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingBottom="3.5dp"
-        android:paddingTop="3.5dp">
+        android:paddingBottom="4dp"
+        android:paddingTop="4dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -118,7 +118,7 @@
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
+        android:layout_marginTop="28dp"
         android:background="#85022E"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -132,7 +132,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/arrow_back"
             android:contentDescription="@string/desc_go_back"
-            app:tint="#FFFFFF" />
+            app:tint="#E6CBCB" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -156,7 +156,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="#F5F6F8"
-        android:layout_marginBottom="2dp"
+        android:layout_marginBottom="6dp"
         android:gravity="center">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_export_to_excel"
