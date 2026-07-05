@@ -9,16 +9,17 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:layout_marginTop="50dp"
-        android:layout_marginHorizontal="8dp"
-        android:padding="8dp">
+        android:layout_marginTop="78dp"
+        android:layout_marginBottom="94dp"
+        android:layout_marginHorizontal="6dp"
+        android:padding="6dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:baselineAligned="false"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="6dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -30,22 +31,21 @@
                     android:layout_height="wrap_content"
                     android:text="@string/label_destination"
                     android:textStyle="bold"
-                    android:textSize="15sp"
-                    android:layout_marginBottom="2dp"/>
+                    android:textSize="14sp"
+                    android:layout_marginBottom="1dp"/>
                 <View
                     android:layout_width="60dp"
-                    android:layout_height="2dp"
+                    android:layout_height="1dp"
                     android:background="#A36324" />
                 <TextView
                     android:id="@+id/txt_details_destination"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textSize="22sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="#85022E"/>
             </LinearLayout>
-
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -57,37 +57,36 @@
                     android:layout_height="wrap_content"
                     android:text="@string/label_journey_date"
                     android:textStyle="bold"
-                    android:textSize="15sp"
-                    android:layout_marginBottom="2dp"/>
+                    android:textSize="14sp"
+                    android:layout_marginBottom="1dp"/>
                 <View
                     android:layout_width="60dp"
-                    android:layout_height="2dp"
+                    android:layout_height="1dp"
                     android:background="#A36324" />
                 <TextView
                     android:id="@+id/txt_details_dates"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textSize="22sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="#85022E"/>
             </LinearLayout>
         </LinearLayout>
-
         <GridLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:columnCount="2"
             android:background="@drawable/bg_dashed_box"
             app:cardBackgroundColor="#FFFFFF"
-            android:padding="4dp"
+            android:padding="2dp"
             android:layout_marginBottom="8dp">
 
             <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
-                android:layout_margin="6dp"
+                android:layout_margin="4dp"
                 app:cardCornerRadius="6dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FFEAEB">
@@ -111,7 +110,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="#85022E"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -120,13 +119,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
-                android:layout_margin="6dp"
+                android:layout_margin="4dp"
                 app:cardCornerRadius="6dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FBEDE1">
                 <LinearLayout
                     android:orientation="vertical"
-                    android:padding="6dp"
+                    android:padding="5dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
                     <TextView
@@ -140,7 +139,7 @@
                         android:id="@+id/txt_details_fund_balance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="#A36324"/>
                 </LinearLayout>
@@ -150,13 +149,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
-                android:layout_margin="6dp"
+                android:layout_margin="4dp"
                 app:cardCornerRadius="6dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FBEDE1">
                 <LinearLayout
                     android:orientation="vertical"
-                    android:padding="6dp"
+                    android:padding="5dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
                     <TextView
@@ -170,7 +169,7 @@
                         android:id="@+id/txt_details_total_expenses"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="#A36324"/>
                 </LinearLayout>
@@ -180,13 +179,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
-                android:layout_margin="6dp"
+                android:layout_margin="4dp"
                 app:cardCornerRadius="6dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FFEAEB">
                 <LinearLayout
                     android:orientation="vertical"
-                    android:padding="6dp"
+                    android:padding="5dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
                     <TextView
@@ -200,18 +199,17 @@
                         android:id="@+id/txt_details_total_receipts"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="#85022E"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
         </GridLayout>
-
         <LinearLayout
             android:id="@+id/layoutQuickActions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="2dp"
             android:gravity="center"
             android:orientation="horizontal"
             android:weightSum="4"
@@ -355,14 +353,24 @@
                     android:textStyle="bold"/>
 
             </LinearLayout>
-
         </LinearLayout>
-
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/txt_instruction_to_view_member_ledger"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="2dp"
+                android:textColor="#85022E"/>
+        </LinearLayout>
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#FAFAFF"
-            android:layout_marginBottom="58dp"
             android:fillViewport="true">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -373,9 +381,9 @@
                     android:layout_height="wrap_content"
                     android:text="@string/label_active_members"
                     android:gravity="center"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
-                    android:layout_marginBottom="6dp"
+                    android:layout_marginBottom="2dp"
                     android:textColor="#85022E"/>
 
                 <GridLayout
@@ -392,8 +400,8 @@
                     android:gravity="center"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="6dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="2dp"
                     android:textColor="#85022E"
                     android:visibility="gone"/>
 
@@ -405,19 +413,33 @@
                     android:visibility="gone"/>
             </LinearLayout>
         </ScrollView>
-
     </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingBottom="4dp"
+        android:paddingTop="4dp">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:fontFamily="monospace"
+            android:textColor="#85022E"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
     <LinearLayout
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
         android:background="#85022E"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:baselineAligned="false"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="2dp">
+        android:orientation="horizontal">
 
         <ImageButton
             android:id="@+id/btnHome"
@@ -463,23 +485,32 @@
         android:id="@+id/button_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_alignParentBottom="true"
         android:background="#F5F6F8"
-        android:elevation="8dp"
         android:gravity="center">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_complete_ledger"
             android:layout_width="wrap_content"
+            app:icon="@drawable/bank"
+            android:text="@string/complete_ledger"
             android:layout_height="wrap_content"
             android:backgroundTint="#85022E"
-            android:text="@string/complete_ledger"
-            android:layout_marginBottom="4dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="14dp"
             android:textAllCaps="false"
-            android:textSize="20sp"
+            android:textSize="13sp"
             app:cornerRadius="8dp"
-            app:icon="@drawable/bank"
             app:iconGravity="textStart"
             android:textColor="#FFFFFF"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/footer_text"
+            android:layout_marginBottom="10dp"
+            android:fontFamily="monospace"
+            android:textColor="#85022E"
+            android:textSize="12sp" />
     </LinearLayout>
 </RelativeLayout>
