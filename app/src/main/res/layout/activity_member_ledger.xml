@@ -419,8 +419,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:background="#F5F6F8"
-            android:layout_marginTop="6dp"
-            android:layout_marginBottom="6dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
             android:gravity="center">
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_export_to_excel"
@@ -428,8 +428,8 @@
                 android:layout_height="wrap_content"
                 android:backgroundTint="#85022E"
                 android:layout_marginHorizontal="10dp"
-                android:layout_marginTop="7dp"
-                android:layout_marginBottom="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
                 android:text="@string/btn_export_excel"
                 android:textAllCaps="false"
                 android:textSize="13sp"
@@ -443,8 +443,8 @@
                 android:layout_height="wrap_content"
                 android:backgroundTint="#85022E"
                 android:layout_marginHorizontal="10dp"
-                android:layout_marginTop="7dp"
-                android:layout_marginBottom="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
                 android:text="@string/btn_export_pdf"
                 android:textAllCaps="false"
                 android:textSize="13sp"
@@ -458,10 +458,10 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:background="@drawable/bg_dashed_box"
-            android:gravity="center_vertical">
+            android:gravity="center">
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:src="@drawable/info"
                 android:importantForAccessibility="no"
                 app:tint="#85022E"/>
