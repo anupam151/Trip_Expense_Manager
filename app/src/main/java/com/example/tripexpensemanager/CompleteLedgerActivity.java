@@ -22,7 +22,16 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_complete_ledger);
 
         String tripId = getIntent().getStringExtra("TRIP_ID");
-        TableLayout tableLayout = findViewById(R.id.table_full_ledger);
+
+        // --- UPDATED: Map the 3 separate tables from the new XML ---
+        TableLayout tableHeader = findViewById(R.id.table_header);
+        TableLayout tableData = findViewById(R.id.table_data);
+        TableLayout tableTotal = findViewById(R.id.table_total);
+
+
+        if (findViewById(R.id.btn_back) != null) {
+            findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+        }
 
         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
             ArrayList<String> allMembers = getAllHistoricalMembers(db, tripId);
@@ -30,7 +39,8 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             double[] totalPaid = new double[allMembers.size()];
             double[] totalUsed = new double[allMembers.size()];
 
-            buildHeaderRow(tableLayout, allMembers);
+            // --- UPDATED: Pass the Header Table ---
+            buildHeaderRow(tableHeader, allMembers);
 
             double currentBalance = 0.0;
             try (Cursor cursor = db.getUnifiedLedger(tripId)) {
@@ -45,11 +55,13 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                         currentBalance -= amount;
                     }
 
-                    buildDataRow(tableLayout, cursor, allMembers, totalPaid, totalUsed);
+                    // --- UPDATED: Pass the scrollable Data Table ---
+                    buildDataRow(tableData, cursor, allMembers, totalPaid, totalUsed);
                 }
             }
 
-            buildTotalRow(tableLayout, allMembers, totalPaid, totalUsed);
+            // --- UPDATED: Pass the Footer (Total) Table ---
+            buildTotalRow(tableTotal, allMembers, totalPaid, totalUsed);
         }
     }
 
@@ -64,11 +76,10 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, m + "\nDebit", true);
         }
 
-       // addCell(row, "Fund", true);
+        // addCell(row, "Fund", true);
         table.addView(row);
     }
 
-    //private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double balance, double[] totalPaid, double[] totalUsed) {
     private void buildDataRow(TableLayout table, Cursor cursor, ArrayList<String> members, double[] totalPaid, double[] totalUsed) {
         TableRow row = new TableRow(this);
 
@@ -110,8 +121,6 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, String.format(Locale.US, "%.2f", paidVal), false);
             addCell(row, String.format(Locale.US, "%.2f", usedVal), false);
         }
-
-        //addCell(row, String.format(Locale.US, "%.1f", balance), false);
 
         // --- NEW: Make Row Clickable for Edit/Delete ---
         row.setClickable(true);
@@ -184,7 +193,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, String.format(Locale.US, "%.2f", totalUsed[i]), true);
         }
 
-       // addCell(row, "-", true);
+        // addCell(row, "-", true);
         table.addView(row);
     }
 
@@ -250,9 +259,15 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         tv.setText(text);
         tv.setPadding(16, 16, 16, 16);
         tv.setGravity(Gravity.CENTER);
+
+        // --- CRITICAL FIX: Force uniform width (80dp) so the 3 tables align horizontally ---
+        int widthInPx = (int) (80 * getResources().getDisplayMetrics().density);
+        tv.setWidth(widthInPx);
+        // ------------------------------------------------------------------------------------
+
         if (isHeader) {
-            tv.setBackgroundColor(Color.LTGRAY);
-            tv.setTextColor(Color.BLACK);
+            tv.setBackgroundColor(Color.parseColor("#85022E"));
+            tv.setTextColor(Color.WHITE);
             tv.setTypeface(null, android.graphics.Typeface.BOLD);
         } else {
             tv.setTextColor(Color.parseColor("#2D3748"));
