@@ -7,7 +7,7 @@ plugins {
 // Keep these as constants at the top of your file.
 val androidCompileSdk = 37
 val androidTargetSdk = 37
-val androidMinSdk = 24
+val androidMinSdk = 26
 
 android {
     namespace = "com.example.tripexpensemanager"
