@@ -14,7 +14,7 @@
     <string name="dash_app_title">Trip Expense Manager</string>
     <string name="dash_btn_create_trip">Create Trip</string>
     <string name="dash_btn_view_trip">View Trips</string>
-    <string name="title_pinned_activity_workspace">Pinned Activity Workspace</string>
+    <string name="title_pinned_activity_workspace">Pinned Trips (for Quick Access)</string>
     <string name="msg_no_trip_added">No trip added</string>
 
     <string name="title_create_trip">Create New Trip</string>
@@ -265,7 +265,8 @@
 
     <string name="txt_complete_ledger">All Transactions</string>
 
-    <string name="welcome_message">Welcome!</string>
+    <string name="welcome_message">Welcome to!</string>
+    <string name="welcome_subtitle">Your ultimate companion for group travel budgeting and expense tracking.</string>
     <string name="dashboard_subtitle">Track Every Expense. Enjoy Every Journey</string>
     <string name="no_pinned_trips_icon_desc">No pinned trips icon</string>
     <string name="no_pinned_trips_title">No Pinned Trips Yet</string>
