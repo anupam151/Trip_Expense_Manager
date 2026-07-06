@@ -490,20 +490,47 @@
         android:background="#F5F6F8"
         android:gravity="center">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_complete_ledger"
-            android:layout_width="wrap_content"
-            app:icon="@drawable/bank"
-            android:text="@string/complete_ledger"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="#85022E"
-            android:layout_marginTop="6dp"
-            android:layout_marginBottom="14dp"
-            android:textAllCaps="false"
-            android:textSize="13sp"
-            app:cornerRadius="8dp"
-            app:iconGravity="textStart"
-            android:textColor="#FFFFFF"/>
+            android:layout_marginHorizontal="8dp"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:background="#F5F6F8"
+            android:gravity="center">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_all_individual_to_one_pdf"
+                android:layout_width="0dp"
+                app:icon="@drawable/pdf"
+                android:text="@string/all_in_one_pdf"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="#85022E"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="10dp"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                app:cornerRadius="8dp"
+                app:iconGravity="textStart"
+                android:textColor="#FFFFFF"/>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_complete_ledger"
+                android:layout_width="0dp"
+                app:icon="@drawable/bank"
+                android:text="@string/complete_ledger"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="#85022E"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="10dp"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                app:cornerRadius="8dp"
+                app:iconGravity="textStart"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -512,5 +539,7 @@
             android:fontFamily="monospace"
             android:textColor="#85022E"
             android:textSize="12sp" />
+
+
     </LinearLayout>
 </RelativeLayout>
