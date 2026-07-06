@@ -9,19 +9,38 @@ import android.view.Gravity;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.Locale;
 
 public class CompleteLedgerActivity extends AppCompatActivity {
+
+    // --- NEW: Export Manager and Global Variables ---
+    private LedgerExportManager exportManager;
+    private ArrayList<String> allMembersList;
+    private String currentTripId;
+    private String currentTripName = "Trip";
+
+    // --- NEW: The SAF Launcher that opens the "Save As" screen safely ---
+    private final ActivityResultLauncher<String> createExcelLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("text/csv"),
+            uri -> {
+                if (uri != null && exportManager != null) {
+                    exportManager.exportCompleteLedgerToCsv(uri, currentTripId, allMembersList);
+                }
+            });
+
     @SuppressWarnings("unused")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_complete_ledger);
 
-        String tripId = getIntent().getStringExtra("TRIP_ID");
+        // Assign to our global variable instead of a local one
+        currentTripId = getIntent().getStringExtra("TRIP_ID");
 
         // --- UPDATED: Map the 3 separate tables from the new XML ---
         TableLayout tableHeader = findViewById(R.id.table_header);
@@ -34,16 +53,19 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         }
 
         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
-            ArrayList<String> allMembers = getAllHistoricalMembers(db, tripId);
+            // --- NEW: Initialize the Export Engine ---
+            exportManager = new LedgerExportManager(this, db);
+            allMembersList = getAllHistoricalMembers(db, currentTripId);
+            currentTripName = fetchTripName(db, currentTripId);
 
-            double[] totalPaid = new double[allMembers.size()];
-            double[] totalUsed = new double[allMembers.size()];
+            double[] totalPaid = new double[allMembersList.size()];
+            double[] totalUsed = new double[allMembersList.size()];
 
             // --- UPDATED: Pass the Header Table ---
-            buildHeaderRow(tableHeader, allMembers);
+            buildHeaderRow(tableHeader, allMembersList);
 
             double currentBalance = 0.0;
-            try (Cursor cursor = db.getUnifiedLedger(tripId)) {
+            try (Cursor cursor = db.getUnifiedLedger(currentTripId)) {
                 while (cursor.moveToNext()) {
                     String type = cursor.getString(cursor.getColumnIndexOrThrow("type"));
                     double amount = cursor.getDouble(cursor.getColumnIndexOrThrow("amount"));
@@ -56,12 +78,19 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                     }
 
                     // --- UPDATED: Pass the scrollable Data Table ---
-                    buildDataRow(tableData, cursor, allMembers, totalPaid, totalUsed);
+                    buildDataRow(tableData, cursor, allMembersList, totalPaid, totalUsed);
                 }
             }
 
             // --- UPDATED: Pass the Footer (Total) Table ---
-            buildTotalRow(tableTotal, allMembers, totalPaid, totalUsed);
+            buildTotalRow(tableTotal, allMembersList, totalPaid, totalUsed);
+        }
+
+        // --- NEW: Hook up the Export to Excel Button ---
+        if (findViewById(R.id.btn_export_to_excel) != null) {
+            findViewById(R.id.btn_export_to_excel).setOnClickListener(v ->
+                    createExcelLauncher.launch(currentTripName + "_Ledger.csv")
+            );
         }
     }
 
@@ -127,7 +156,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         // --- NEW: Make Row Clickable for Edit/Delete ---
         row.setClickable(true);
         row.setBackgroundResource(android.R.drawable.list_selector_background);
-        row.setOnClickListener(v -> showTransactionOptions(transId, type, getIntent().getStringExtra("TRIP_ID")));
+        row.setOnClickListener(v -> showTransactionOptions(transId, type, currentTripId)); // Used global variable here
 
         table.addView(row);
     }
@@ -298,5 +327,22 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         divider.setSize(2, 0);
 
         row.setDividerDrawable(divider);
+    }
+    // --- NEW: Fetch and clean the trip name for the file export ---
+    private String fetchTripName(TripDatabaseHelper db, String tripId) {
+        String name = "Trip";
+        String query = "SELECT " + TripDatabaseHelper.COLUMN_TRIP_NAME +
+                " FROM " + TripDatabaseHelper.TABLE_TRIPS +
+                " WHERE " + TripDatabaseHelper.COLUMN_TRIP_ID + " = ?";
+        try (Cursor cursor = db.getReadableDatabase().rawQuery(query, new String[]{tripId})) {
+            if (cursor.moveToFirst()) {
+                name = cursor.getString(0);
+            }
+        } catch (Exception e) {
+            // FIXED: Using Android's official Log system instead of printStackTrace
+            android.util.Log.e("CompleteLedger", "Error fetching trip name", e);
+        }
+        // Replace spaces and special characters with underscores for safe file saving
+        return name.replaceAll("[^a-zA-Z0-9]", "_");
     }
 }
