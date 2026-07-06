@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,6 +20,27 @@ public class MemberLedgerActivity extends AppCompatActivity {
     private TripDatabaseHelper dbHelper;
     private final List<Transaction> transactionList = new ArrayList<>();
 
+    // --- NEW: Export Manager ---
+    private LedgerExportManager exportManager;
+
+    // --- NEW: The SAF Launcher for Individual Excel Export ---
+    private final ActivityResultLauncher<String> createExcelLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("text/csv"),
+            uri -> {
+                if (uri != null && exportManager != null) {
+                    exportManager.exportIndividualMemberToCsv(uri, tripId, memberName);
+                }
+            });
+
+    // --- NEW: The SAF Launcher for Individual PDF Export ---
+    private final ActivityResultLauncher<String> createPdfLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("application/pdf"),
+            uri -> {
+                if (uri != null && exportManager != null) {
+                    exportManager.exportIndividualMemberToPdf(uri, tripId, memberName);
+                }
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,6 +50,9 @@ public class MemberLedgerActivity extends AppCompatActivity {
         memberName = getIntent().getStringExtra("MEMBER_NAME");
         tripId = getIntent().getStringExtra("TRIP_ID");
         dbHelper = new TripDatabaseHelper(this);
+
+        // --- NEW: Initialize the Export Engine ---
+        exportManager = new LedgerExportManager(this, dbHelper);
 
         // Bind UI
         ImageButton btnBack = findViewById(R.id.btn_back);
@@ -39,6 +65,22 @@ public class MemberLedgerActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         loadLedgerData();
+
+        // --- NEW: Hook up the Export to Excel Button ---
+        if (findViewById(R.id.btn_export_to_excel) != null) {
+            findViewById(R.id.btn_export_to_excel).setOnClickListener(v -> {
+                // Dynamically sets the default file name to match the member!
+                String fileName = memberName + "_Ledger.csv";
+                createExcelLauncher.launch(fileName);
+            });
+        }
+        // --- NEW: Hook up the Export to PDF Button ---
+        if (findViewById(R.id.btn_export_to_pdf) != null) {
+            findViewById(R.id.btn_export_to_pdf).setOnClickListener(v -> {
+                String fileName = memberName + "_Ledger.pdf";
+                createPdfLauncher.launch(fileName);
+            });
+        }
     }
 
     private void loadLedgerData() {
