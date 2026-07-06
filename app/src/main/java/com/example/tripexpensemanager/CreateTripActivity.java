@@ -58,6 +58,7 @@ public class CreateTripActivity extends AppCompatActivity {
         Button btnAddMemberTrigger = findViewById(R.id.btn_add_member_trigger);
         Button btnCreateTripSubmit = findViewById(R.id.btn_create_trip_submit);
         android.widget.ImageButton btnBack = findViewById(R.id.btn_back);
+
         btnBack.setOnClickListener(v -> {
             hideKeyboard(v);
             finish();
@@ -67,6 +68,16 @@ public class CreateTripActivity extends AppCompatActivity {
         edtEndDate.setOnClickListener(v -> showDatePicker(edtEndDate));
         btnAddMemberTrigger.setOnClickListener(v -> showAddMemberDialog());
         btnCreateTripSubmit.setOnClickListener(v -> validateAndCreateTrip());
+
+        // --- NEW: Auto-focus and open keyboard for Trip Name ---
+        edtTripName.requestFocus();
+        edtTripName.postDelayed(() -> {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(edtTripName, InputMethodManager.SHOW_IMPLICIT);
+            }
+        }, 200);
+        // -------------------------------------------------------
     }
 
     private void addMemberToLayout(String name) {
@@ -182,7 +193,6 @@ public class CreateTripActivity extends AppCompatActivity {
         if (positiveButton != null) {
             View buttonPanel = (View) positiveButton.getParent();
             buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
-
         }
     }
 
