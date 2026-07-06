@@ -365,11 +365,11 @@ public class LedgerExportManager {
                 }
                 double finalBalance = totalCredit - totalDebit;
 
-                // --- 2. SETUP PDF & PAINTS ---
+                // --- 2. SETUP PDF & PAINTS (A4 Size) ---
                 PdfDocument document = new PdfDocument();
                 int pageWidth = 595, pageHeight = 842, margin = 40;
 
-                Paint paintMainTitle = new Paint(); paintMainTitle.setTextSize(22f); paintMainTitle.setFakeBoldText(true); paintMainTitle.setTextAlign(Paint.Align.CENTER);
+                Paint paintMainTitle = new Paint(); paintMainTitle.setTextSize(22f); paintMainTitle.setFakeBoldText(true); paintMainTitle.setTextAlign(Paint.Align.CENTER); paintMainTitle.setColor(Color.parseColor("#85022E"));
                 Paint paintSubTitle = new Paint(); paintSubTitle.setTextSize(14f); paintSubTitle.setTextAlign(Paint.Align.CENTER); paintSubTitle.setColor(Color.DKGRAY);
                 Paint paintTextBold = new Paint(); paintTextBold.setTextSize(10f); paintTextBold.setFakeBoldText(true);
                 Paint paintTextNormal = new Paint(); paintTextNormal.setTextSize(10f);
@@ -394,32 +394,18 @@ public class LedgerExportManager {
                 PdfDocument.Page page = document.startPage(pageInfo);
                 Canvas canvas = page.getCanvas();
 
-                // --- 3. DRAW HEADER (Page 1 Only) ---
-                int yPos = margin + 20;
-                canvas.drawText("TRIP EXPENSE MANAGER", pageWidth / 2f, yPos, paintMainTitle);
-                yPos += 20;
-                canvas.drawText("— Individual Member Ledger —", pageWidth / 2f, yPos, paintSubTitle);
+                // --- 3. DRAW HEADER & SUMMARY CARDS (Page 1) ---
+                int yPos = drawPageHeader(canvas, pageWidth, margin, tripName, memberName, generatedOn, reportDate, paintMainTitle, paintSubTitle, paintTextBold, paintTextNormal, paintTextRight);
 
-                yPos += 30;
-                canvas.drawText("Trip Name : " + tripName, margin, yPos, paintTextNormal);
-                canvas.drawText("Generated On : " + generatedOn, pageWidth - margin, yPos, paintTextRight);
-                yPos += 15;
-                canvas.drawText("Member      : " + memberName, margin, yPos, paintTextNormal);
-                canvas.drawText("Report Date   : " + reportDate, pageWidth - margin, yPos, paintTextRight);
-
-                // --- 4. DRAW SUMMARY CARDS ---
-                yPos += 25;
                 int cardTop = yPos;
                 int cardBottom = yPos + 70;
                 canvas.drawRoundRect(new RectF(margin, cardTop, pageWidth - margin, cardBottom), 5, 5, paintBorder);
 
-                // Dividers
                 float colWidth = (pageWidth - (margin * 2)) / 4f;
                 for (int i = 1; i <= 3; i++) {
                     canvas.drawLine(margin + (colWidth * i), cardTop + 10, margin + (colWidth * i), cardBottom - 10, paintLine);
                 }
 
-                // Card Contents
                 float center1 = margin + (colWidth * 0.5f);
                 float center2 = margin + (colWidth * 1.5f);
                 float center3 = margin + (colWidth * 2.5f);
@@ -436,17 +422,15 @@ public class LedgerExportManager {
                 canvas.drawText(finalBalance >= 0 ? "(CR - Refundable)" : "(DR - Payable)", center3, cardTop + 55, paintBoxTitle);
 
                 canvas.drawText("TRANSACTIONS", center4, cardTop + 20, paintBoxTitle);
-                canvas.drawText(String.valueOf(transactionCount), center4, cardTop + 45, paintMainTitle); // Just using big text for count
+                canvas.drawText(String.valueOf(transactionCount), center4, cardTop + 45, paintMainTitle);
 
-                // --- 5. DRAW TABLE HEADER ---
+                // --- 4. DRAW TABLE HEADER ---
                 yPos = cardBottom + 30;
 
-                // Table Column X Positions
                 int xDate = margin + 5;
-                int xDesc = margin + 80;
+                int xDesc = margin + 110;
                 int xDebit = pageWidth - margin - 150;
-                int xCredit = pageWidth - margin - 80;
-                int xBal = pageWidth - margin - 5;
+                int xCredit = pageWidth - margin - 15;
 
                 canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintTableBg);
                 canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintBorder);
@@ -455,12 +439,9 @@ public class LedgerExportManager {
                 canvas.drawText("Description", xDesc, yPos + 17, paintTextBold);
                 canvas.drawText("Debit (₹)", xDebit, yPos + 17, paintTextRight);
                 canvas.drawText("Credit (₹)", xCredit, yPos + 17, paintTextRight);
-                canvas.drawText("Balance (₹)", xBal, yPos + 17, paintTextRight);
                 yPos += 25;
 
-                // --- 6. DRAW TABLE ROWS ---
-                double runningBalance = 0.0;
-
+                // --- 5. DRAW TABLE ROWS ---
                 try (Cursor cursor = dbHelper.getUnifiedLedger(tripId)) {
                     while (cursor.moveToNext()) {
                         String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
@@ -482,11 +463,8 @@ public class LedgerExportManager {
                         }
 
                         if (involvesMember) {
-                            runningBalance = runningBalance + credit - debit;
-
                             // Pagination Check
-                            if (yPos > pageHeight - 150) {
-                                // Draw Footer before breaking page
+                            if (yPos > pageHeight - 120) {
                                 drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
                                 document.finishPage(page);
                                 pageNumber++;
@@ -494,26 +472,24 @@ public class LedgerExportManager {
                                 page = document.startPage(pageInfo);
                                 canvas = page.getCanvas();
 
-                                // Re-draw Table Header on new page
-                                yPos = margin + 20;
+                                // Re-draw Global Header & Table Header on new page
+                                yPos = drawPageHeader(canvas, pageWidth, margin, tripName, memberName, generatedOn, reportDate, paintMainTitle, paintSubTitle, paintTextBold, paintTextNormal, paintTextRight);
+
                                 canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintTableBg);
                                 canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintBorder);
                                 canvas.drawText("Date", xDate, yPos + 17, paintTextBold);
                                 canvas.drawText("Description", xDesc, yPos + 17, paintTextBold);
                                 canvas.drawText("Debit (₹)", xDebit, yPos + 17, paintTextRight);
                                 canvas.drawText("Credit (₹)", xCredit, yPos + 17, paintTextRight);
-                                canvas.drawText("Balance (₹)", xBal, yPos + 17, paintTextRight);
                                 yPos += 25;
                             }
 
-                            // Clean Data
                             String safeDate = (date != null) ? date : "N/A";
                             String safePurpose = (purpose != null) ? purpose : "";
-                            if (safePurpose.length() > 35) safePurpose = safePurpose.substring(0, 32) + "...";
+                            if (safePurpose.length() > 40) safePurpose = safePurpose.substring(0, 37) + "...";
 
                             String debitStr = debit > 0 ? String.format(Locale.US, "%,.2f", debit) : "";
                             String creditStr = credit > 0 ? String.format(Locale.US, "%,.2f", credit) : "";
-                            String balStr = String.format(Locale.US, "%,.2f", runningBalance);
 
                             yPos += 20;
                             canvas.drawText(safeDate, xDate, yPos, paintTextNormal);
@@ -521,42 +497,40 @@ public class LedgerExportManager {
                             canvas.drawText(debitStr, xDebit, yPos, paintTextRight);
                             canvas.drawText(creditStr, xCredit, yPos, paintTextRight);
 
-                            // Color balance based on positive/negative
-                            Paint balPaint = new Paint(paintTextRight);
-                            balPaint.setColor(runningBalance < 0 ? Color.parseColor("#C62828") : Color.parseColor("#2E7D32"));
-                            canvas.drawText(balStr, xBal, yPos, balPaint);
-
-                            // Draw dotted divider
                             yPos += 10;
                             canvas.drawLine(margin, yPos, pageWidth - margin, yPos, paintDottedLine);
                         }
                     }
                 }
 
-                // --- 7. DRAW TOTALS ROW ---
+                // --- 6. DRAW TOTALS ROW ---
                 yPos += 5;
-                canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintBorder); // Border around totals
+                canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintBorder);
                 canvas.drawText("TOTALS", xDesc, yPos + 17, paintTextBold);
                 canvas.drawText(String.format(Locale.US, "₹%,.2f", totalDebit), xDebit, yPos + 17, paintTextRight);
                 canvas.drawText(String.format(Locale.US, "₹%,.2f", totalCredit), xCredit, yPos + 17, paintTextRight);
-                canvas.drawText(String.format(Locale.US, "₹%,.2f", finalBalance), xBal, yPos + 17, paintTextRight);
 
-                // --- 8. DRAW REMARKS BOX ---
+                // --- 7. DRAW REMARKS BOX ---
                 yPos += 45;
-                if (yPos > pageHeight - 120) { // Push to next page if out of room
+                if (yPos > pageHeight - 140) {
                     drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
                     document.finishPage(page);
                     pageNumber++;
                     pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
                     page = document.startPage(pageInfo);
                     canvas = page.getCanvas();
-                    yPos = margin + 20;
+                    yPos = drawPageHeader(canvas, pageWidth, margin, tripName, memberName, generatedOn, reportDate, paintMainTitle, paintSubTitle, paintTextBold, paintTextNormal, paintTextRight);
                 }
 
                 canvas.drawRoundRect(new RectF(margin, yPos, pageWidth - margin, yPos + 55), 5, 5, paintBorder);
                 canvas.drawText("Remarks :", margin + 15, yPos + 20, paintTextBold);
                 canvas.drawText("• Positive balance (Green) means refundable to the member.", margin + 25, yPos + 35, paintTextNormal);
                 canvas.drawText("• Negative balance (Red) means amount payable by the member.", margin + 25, yPos + 48, paintTextNormal);
+
+                // --- 8. END OF PDF MARKER ---
+                yPos += 85;
+                Paint endPaint = new Paint(); endPaint.setTextSize(11f); endPaint.setFakeBoldText(true); endPaint.setColor(Color.parseColor("#85022E")); endPaint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText("End of the pdf. Total page: " + pageNumber + " page", pageWidth / 2f, yPos, endPaint);
 
                 // Draw final footer
                 drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
@@ -570,6 +544,31 @@ public class LedgerExportManager {
                 mainHandler.post(() -> Toast.makeText(context, "PDF Export Failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
+    }
+
+    // --- NEW HELPER: Draws the Repeating Header ---
+    private int drawPageHeader(Canvas canvas, int pageWidth, int margin, String tripName, String memberName, String generatedOn, String reportDate, Paint paintMainTitle, Paint paintSubTitle, Paint paintTextBold, Paint paintTextNormal, Paint paintTextRight) {
+        int yPos = margin + 20;
+
+        canvas.drawText("TRIP EXPENSE MANAGER", pageWidth / 2f, yPos, paintMainTitle);
+        yPos += 20;
+        canvas.drawText("— Individual Member Ledger —", pageWidth / 2f, yPos, paintSubTitle);
+
+        yPos += 35;
+
+        // Measure text so we can bold ONLY the dynamic values
+        canvas.drawText("Trip Name : ", margin, yPos, paintTextNormal);
+        float tripLabelWidth = paintTextNormal.measureText("Trip Name : ");
+        canvas.drawText(tripName, margin + tripLabelWidth, yPos, paintTextBold);
+        canvas.drawText("Generated On : " + generatedOn, pageWidth - margin, yPos, paintTextRight);
+
+        yPos += 15;
+        canvas.drawText("Member      : ", margin, yPos, paintTextNormal);
+        float memberLabelWidth = paintTextNormal.measureText("Member      : ");
+        canvas.drawText(memberName, margin + memberLabelWidth, yPos, paintTextBold);
+        canvas.drawText("Report Date   : " + reportDate, pageWidth - margin, yPos, paintTextRight);
+
+        return yPos + 25; // Returns the exact Y coordinate where the next element should start drawing
     }
 
     // Helper method to draw the footer on every page
