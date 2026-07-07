@@ -530,7 +530,7 @@ public class LedgerExportManager {
                 // --- 8. END OF PDF MARKER ---
                 yPos += 85;
                 Paint endPaint = new Paint(); endPaint.setTextSize(11f); endPaint.setFakeBoldText(true); endPaint.setColor(Color.parseColor("#85022E")); endPaint.setTextAlign(Paint.Align.CENTER);
-                canvas.drawText("End of the pdf. Total page: " + pageNumber + " page", pageWidth / 2f, yPos, endPaint);
+                canvas.drawText("End of PDF. Total Pages: " + pageNumber + " page", pageWidth / 2f, yPos, endPaint);
 
                 // Draw final footer
                 drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
@@ -539,7 +539,7 @@ public class LedgerExportManager {
                 document.writeTo(outputStream);
                 document.close();
 
-                mainHandler.post(() -> Toast.makeText(context, "Premium PDF Export Successful!", Toast.LENGTH_LONG).show());
+                mainHandler.post(() -> Toast.makeText(context, "PDF Export Successful!", Toast.LENGTH_LONG).show());
             } catch (Exception e) {
                 mainHandler.post(() -> Toast.makeText(context, "PDF Export Failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
