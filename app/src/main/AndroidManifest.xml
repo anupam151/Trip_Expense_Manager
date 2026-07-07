@@ -58,10 +58,23 @@
             android:parentActivityName=".DashboardActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".MemberLedgerActivity" />
+            android:name=".MemberLedgerActivity"
+            android:exported="false" />
         <activity
-            android:name=".CompleteLedgerActivity" />
+            android:name=".CompleteLedgerActivity"
+            android:exported="false" />
+
 
     </application>
-
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+        </intent>
+    </queries>
 </manifest>
