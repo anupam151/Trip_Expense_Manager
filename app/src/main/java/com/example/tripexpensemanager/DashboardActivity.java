@@ -17,7 +17,7 @@ public class DashboardActivity extends AppCompatActivity {
 
     private TextView lblRecentHeading;
     private LinearLayout containerPinnedTripsStack;
-    private LinearLayout layoutNoPinnedTrips; // Added for empty state
+    private LinearLayout layoutNoPinnedTrips;
     private TripDatabaseHelper dbHelper;
 
     @Override
@@ -31,7 +31,7 @@ public class DashboardActivity extends AppCompatActivity {
         MaterialButton btnViewTrips = findViewById(R.id.btn_dash_view_trips);
         lblRecentHeading = findViewById(R.id.lbl_recent_trip_heading);
         containerPinnedTripsStack = findViewById(R.id.container_pinned_trips_stack);
-        layoutNoPinnedTrips = findViewById(R.id.layout_no_pinned_trips); // Initialized
+        layoutNoPinnedTrips = findViewById(R.id.layout_no_pinned_trips);
 
         TextView txtDeveloperBranding = findViewById(R.id.txt_dash_developer_branding);
         String styledSignatureText = getString(R.string.dev_branding_signature_placeholder, "<b><font color='#1E88E5'>Anupam</font></b>");
@@ -73,6 +73,12 @@ public class DashboardActivity extends AppCompatActivity {
         int marginBottomPx = Math.round(8 * scale);
 
         while (cursor.moveToNext()) {
+            // --- NEW: Strictly limit the dashboard to exactly 1 pinned trip ---
+            if (itemIndex > 1) {
+                break;
+            }
+            // ------------------------------------------------------------------
+
             String tripId = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_ID));
             String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
             String destination = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_DESTINATION));

@@ -132,7 +132,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             trip.setIsPinnedState(0);
             Toast.makeText(this, "'" + trip.getTripName() + "' unpinned successfully!", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Limit reached! You can pin a maximum of 2 trips.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Limit reached! You can pin a maximum of 1 trips.", Toast.LENGTH_LONG).show();
             return;
         }
 

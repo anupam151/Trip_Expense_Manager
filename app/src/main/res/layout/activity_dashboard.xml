@@ -64,7 +64,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
-                android:padding="6dp">
+                android:padding="8dp">
                 <TextView
                     android:id="@+id/lbl_recent_trip_heading"
                     android:layout_width="match_parent"

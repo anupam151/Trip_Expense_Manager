@@ -159,7 +159,7 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
             getWritableDatabase().update(TABLE_TRIPS, values, COLUMN_TRIP_ID + " = ?", new String[]{tripId});
             return 0;
         } else {
-            if (getPinnedTripsCount() >= 2) return -1;
+            if (getPinnedTripsCount() >= 1) return -1;
             values.put(COLUMN_IS_PINNED, 1);
             getWritableDatabase().update(TABLE_TRIPS, values, COLUMN_TRIP_ID + " = ?", new String[]{tripId});
             return 1;
@@ -167,7 +167,8 @@ public class TripDatabaseHelper extends SQLiteOpenHelper {
     }
 
     public Cursor getPinnedTripsCursor() {
-        return getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_TRIPS + " WHERE " + COLUMN_IS_PINNED + " = 1 LIMIT 2", null);
+        // Changed LIMIT 2 to LIMIT 1
+        return getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_TRIPS + " WHERE " + COLUMN_IS_PINNED + " = 1 LIMIT 1", null);
     }
     @SuppressWarnings("UnusedReturnValue")
     public long insertExpense(String tripId, String purpose, double amount, String paidBy, String sharedWith, String dateStr) {
