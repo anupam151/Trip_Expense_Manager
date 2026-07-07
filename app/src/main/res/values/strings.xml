@@ -14,7 +14,7 @@
     <string name="dash_app_title">Trip Expense Manager</string>
     <string name="dash_btn_create_trip">Create Trip</string>
     <string name="dash_btn_view_trip">View Trips</string>
-    <string name="title_pinned_activity_workspace">Pinned Trips (for Quick Access)</string>
+    <string name="title_pinned_activity_workspace">Pinned Trip (for Quick Access)</string>
     <string name="msg_no_trip_added">No trip added</string>
 
     <string name="title_create_trip">Create New Trip</string>
@@ -124,10 +124,10 @@
     <string name="action_state_unpin">Unpin</string>
 
     <string name="fmt_dash_pinned_title">%1$d. 📌 %2$s</string>
-    <string name="fmt_dash_destination">✈︎  %1$s</string>
-    <string name="fmt_dash_member_count">👨🏻‍💼  %1$d</string>
+    <string name="fmt_dash_destination">Place: %1$s</string>
+    <string name="fmt_dash_member_count">Members:  %1$d</string>
     <string name="fmt_dash_trip_id">Trip ID: %1$s</string>
-    <string name="fmt_dash_start_date">🗓  %1$s</string>
+    <string name="fmt_dash_start_date">Date:  %1$s</string>
     <string name="fmt_dash_currency_rupees">₹%1$.2f</string>
     <string name="action_unpin">Unpin</string>
 
