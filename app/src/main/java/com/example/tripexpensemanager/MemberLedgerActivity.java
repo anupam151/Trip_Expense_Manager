@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import android.view.View;
 
 public class MemberLedgerActivity extends AppCompatActivity {
 
@@ -79,6 +80,15 @@ public class MemberLedgerActivity extends AppCompatActivity {
             findViewById(R.id.btn_export_to_pdf).setOnClickListener(v -> {
                 String fileName = memberName + "_Ledger.pdf";
                 createPdfLauncher.launch(fileName);
+            });
+        }
+        // --- HOOK UP THE DIRECT SHARE BUTTON ---
+        View btnShare = findViewById(R.id.btn_share);
+        if (btnShare != null) {
+            btnShare.setOnClickListener(v -> {
+                if (exportManager != null) {
+                    exportManager.shareIndividualMemberPdf(tripId, memberName);
+                }
             });
         }
     }
