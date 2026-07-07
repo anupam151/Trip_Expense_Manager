@@ -327,6 +327,268 @@ public class LedgerExportManager {
     // ==========================================
     // 5. EXPORT TO PDF - PREMIUM INDIVIDUAL LEDGER
     // ==========================================
+
+    // ==========================================
+    // 6. EXPORT TO PDF - ALL MEMBERS IN ONE PDF
+    // ==========================================
+    public void exportAllMembersToSinglePdf(Uri fileUri, String tripId) {
+        Toast.makeText(context, "Generating Master PDF...", Toast.LENGTH_SHORT).show();
+
+        executor.execute(() -> {
+            try (OutputStream outputStream = context.getContentResolver().openOutputStream(fileUri)) {
+                if (outputStream == null) return;
+
+                // --- 1. FETCH TRIP NAME & ALL MEMBERS (ACTIVE + INACTIVE) ---
+                String tripName = "Trip Ledger";
+                try (Cursor c = dbHelper.getReadableDatabase().rawQuery(
+                        "SELECT " + TripDatabaseHelper.COLUMN_TRIP_NAME + " FROM " + TripDatabaseHelper.TABLE_TRIPS + " WHERE " + TripDatabaseHelper.COLUMN_TRIP_ID + " = ?",
+                        new String[]{tripId})) {
+                    if (c.moveToFirst()) tripName = c.getString(0);
+                }
+
+                ArrayList<String> allMembers = new ArrayList<>();
+
+                // A. Get current active members
+                try (Cursor c = dbHelper.getReadableDatabase().rawQuery(
+                        "SELECT " + TripDatabaseHelper.COLUMN_MEMBERS + " FROM " + TripDatabaseHelper.TABLE_TRIPS + " WHERE " + TripDatabaseHelper.COLUMN_TRIP_ID + " = ?",
+                        new String[]{tripId})) {
+                    if (c.moveToFirst()) {
+                        String membersStr = c.getString(0);
+                        if (membersStr != null && !membersStr.isEmpty()) {
+                            for (String m : membersStr.split(",")) {
+                                String clean = m.trim();
+                                if (!clean.isEmpty() && !allMembers.contains(clean)) allMembers.add(clean);
+                            }
+                        }
+                    }
+                }
+
+                // B. Get historical/inactive members who PAID for something
+                String queryHist = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ? UNION SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
+                try (Cursor c = dbHelper.getReadableDatabase().rawQuery(queryHist, new String[]{tripId})) {
+                    while (c.moveToNext()) {
+                        String name = c.getString(0).trim();
+                        if (!"Fund".equalsIgnoreCase(name) && !name.isEmpty() && !allMembers.contains(name)) allMembers.add(name);
+                    }
+                }
+
+                // C. Get historical/inactive members who SHARED an expense
+                try (Cursor c = dbHelper.getReadableDatabase().rawQuery("SELECT expense_shared_with FROM expenses WHERE expense_trip_id = ?", new String[]{tripId})) {
+                    while (c.moveToNext()) {
+                        String sharedStr = c.getString(0);
+                        if (sharedStr != null && !sharedStr.isEmpty()) {
+                            for (String s : sharedStr.split(",")) {
+                                String cleanName = s.trim();
+                                if (!cleanName.isEmpty() && !allMembers.contains(cleanName)) allMembers.add(cleanName);
+                            }
+                        }
+                    }
+                }
+
+                // Also check trip_members table to ensure we catch inactive members
+                try (Cursor c = dbHelper.getReadableDatabase().rawQuery("SELECT DISTINCT member_name FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS + " WHERE trip_id = ?", new String[]{tripId})) {
+                    while (c.moveToNext()) {
+                        String m = c.getString(0).trim();
+                        if (!m.isEmpty() && !allMembers.contains(m)) allMembers.add(m);
+                    }
+                }
+
+                // --- 2. SETUP PDF & PAINTS (A4 Size) ---
+                PdfDocument document = new PdfDocument();
+                int pageWidth = 595, pageHeight = 842, margin = 40;
+
+                Paint paintMainTitle = new Paint(); paintMainTitle.setTextSize(22f); paintMainTitle.setFakeBoldText(true); paintMainTitle.setTextAlign(Paint.Align.CENTER); paintMainTitle.setColor(Color.parseColor("#85022E"));
+                Paint paintSubTitle = new Paint(); paintSubTitle.setTextSize(14f); paintSubTitle.setTextAlign(Paint.Align.CENTER); paintSubTitle.setColor(Color.DKGRAY);
+                Paint paintTextBold = new Paint(); paintTextBold.setTextSize(10f); paintTextBold.setFakeBoldText(true);
+                Paint paintTextNormal = new Paint(); paintTextNormal.setTextSize(10f);
+                Paint paintTextRight = new Paint(); paintTextRight.setTextSize(10f); paintTextRight.setTextAlign(Paint.Align.RIGHT);
+
+                Paint paintGreen = new Paint(); paintGreen.setTextSize(16f); paintGreen.setFakeBoldText(true); paintGreen.setColor(Color.parseColor("#2E7D32")); paintGreen.setTextAlign(Paint.Align.CENTER);
+                Paint paintRed = new Paint(); paintRed.setTextSize(16f); paintRed.setFakeBoldText(true); paintRed.setColor(Color.parseColor("#C62828")); paintRed.setTextAlign(Paint.Align.CENTER);
+                Paint paintBoxTitle = new Paint(); paintBoxTitle.setTextSize(9f); paintBoxTitle.setFakeBoldText(true); paintBoxTitle.setColor(Color.DKGRAY); paintBoxTitle.setTextAlign(Paint.Align.CENTER);
+
+                Paint paintLine = new Paint(); paintLine.setColor(Color.LTGRAY); paintLine.setStrokeWidth(1f);
+                Paint paintDottedLine = new Paint(); paintDottedLine.setColor(Color.LTGRAY); paintDottedLine.setStrokeWidth(1f); paintDottedLine.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
+                Paint paintTableBg = new Paint(); paintTableBg.setColor(Color.parseColor("#F5F5F5"));
+                Paint paintBorder = new Paint(); paintBorder.setStyle(Paint.Style.STROKE); paintBorder.setColor(Color.DKGRAY); paintBorder.setStrokeWidth(1f);
+
+                SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy hh:mm a", Locale.US);
+                SimpleDateFormat dateOnly = new SimpleDateFormat("dd MMM yyyy", Locale.US);
+                String generatedOn = sdf.format(new Date());
+                String reportDate = dateOnly.format(new Date());
+
+                int pageNumber = 1;
+                PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
+                PdfDocument.Page page = document.startPage(pageInfo);
+                Canvas canvas = page.getCanvas();
+
+                // --- 3. LOOP THROUGH EVERY MEMBER ---
+                for (int i = 0; i < allMembers.size(); i++) {
+                    String memberName = allMembers.get(i);
+
+                    // Force a new page if this isn't the first member!
+                    if (i > 0) {
+                        drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
+                        document.finishPage(page);
+                        pageNumber++;
+                        pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
+                        page = document.startPage(pageInfo);
+                        canvas = page.getCanvas();
+                    }
+
+                    double totalDebit = 0.0; double totalCredit = 0.0; int transactionCount = 0;
+
+                    // Calculate totals for THIS member
+                    try (Cursor cursor = dbHelper.getUnifiedLedger(tripId)) {
+                        while (cursor.moveToNext()) {
+                            String type = cursor.getString(cursor.getColumnIndexOrThrow("type"));
+                            double amount = cursor.getDouble(cursor.getColumnIndexOrThrow("amount"));
+                            String paidBy = cursor.getString(cursor.getColumnIndexOrThrow("paid_by"));
+                            String sharedWith = cursor.getString(cursor.getColumnIndexOrThrow("expense_shared_with"));
+                            String[] sharedArray = (sharedWith != null && !sharedWith.isEmpty()) ? sharedWith.split(",") : new String[0];
+
+                            if ("Expense".equals(type)) {
+                                if (memberName.equals(paidBy)) { totalCredit += amount; transactionCount++; }
+                                else if (isParticipant(memberName, sharedArray)) { totalDebit += (amount / sharedArray.length); transactionCount++; }
+                            } else if ("Payment".equals(type) && memberName.equals(paidBy)) {
+                                totalCredit += amount; transactionCount++;
+                            }
+                        }
+                    }
+                    double finalBalance = totalCredit - totalDebit;
+
+                    // Draw Header & Summary Cards
+                    int yPos = drawPageHeader(canvas, pageWidth, margin, tripName, memberName, generatedOn, reportDate, paintMainTitle, paintSubTitle, paintTextBold, paintTextNormal, paintTextRight);
+                    int cardTop = yPos;
+                    int cardBottom = yPos + 70;
+                    canvas.drawRoundRect(new RectF(margin, cardTop, pageWidth - margin, cardBottom), 5, 5, paintBorder);
+
+                    float colWidth = (pageWidth - (margin * 2)) / 4f;
+                    for (int div = 1; div <= 3; div++) {
+                        canvas.drawLine(margin + (colWidth * div), cardTop + 10, margin + (colWidth * div), cardBottom - 10, paintLine);
+                    }
+
+                    float center1 = margin + (colWidth * 0.5f); float center2 = margin + (colWidth * 1.5f);
+                    float center3 = margin + (colWidth * 2.5f); float center4 = margin + (colWidth * 3.5f);
+
+                    canvas.drawText("TOTAL PAID", center1, cardTop + 20, paintBoxTitle);
+                    canvas.drawText(String.format(Locale.US, "₹%,.2f", totalCredit), center1, cardTop + 45, paintGreen);
+                    canvas.drawText("TOTAL EXPENSE", center2, cardTop + 20, paintBoxTitle);
+                    canvas.drawText(String.format(Locale.US, "₹%,.2f", totalDebit), center2, cardTop + 45, paintRed);
+                    canvas.drawText("CURRENT BALANCE", center3, cardTop + 20, paintBoxTitle);
+                    canvas.drawText(String.format(Locale.US, "₹%,.2f", Math.abs(finalBalance)), center3, cardTop + 40, finalBalance >= 0 ? paintGreen : paintRed);
+                    canvas.drawText(finalBalance >= 0 ? "(CR - Refundable)" : "(DR - Payable)", center3, cardTop + 55, paintBoxTitle);
+                    canvas.drawText("TRANSACTIONS", center4, cardTop + 20, paintBoxTitle);
+                    canvas.drawText(String.valueOf(transactionCount), center4, cardTop + 45, paintMainTitle);
+
+                    // Draw Table Header
+                    yPos = cardBottom + 30;
+                    int xDate = margin + 5, xDesc = margin + 110, xDebit = pageWidth - margin - 150, xCredit = pageWidth - margin - 15;
+
+                    canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintTableBg);
+                    canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintBorder);
+                    canvas.drawText("Date", xDate, yPos + 17, paintTextBold);
+                    canvas.drawText("Description", xDesc, yPos + 17, paintTextBold);
+                    canvas.drawText("Debit (₹)", xDebit, yPos + 17, paintTextRight);
+                    canvas.drawText("Credit (₹)", xCredit, yPos + 17, paintTextRight);
+                    yPos += 25;
+
+                    // Draw Table Rows
+                    try (Cursor cursor = dbHelper.getUnifiedLedger(tripId)) {
+                        while (cursor.moveToNext()) {
+                            String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                            String purpose = cursor.getString(cursor.getColumnIndexOrThrow("purpose"));
+                            double amount = cursor.getDouble(cursor.getColumnIndexOrThrow("amount"));
+                            String paidBy = cursor.getString(cursor.getColumnIndexOrThrow("paid_by"));
+                            String type = cursor.getString(cursor.getColumnIndexOrThrow("type"));
+                            String sharedWith = cursor.getString(cursor.getColumnIndexOrThrow("expense_shared_with"));
+                            String[] sharedArray = (sharedWith != null && !sharedWith.isEmpty()) ? sharedWith.split(",") : new String[0];
+
+                            double debit = 0.0, credit = 0.0; boolean involvesMember = false;
+
+                            if ("Expense".equals(type)) {
+                                if (memberName.equals(paidBy)) { credit = amount; involvesMember = true; }
+                                if (isParticipant(memberName, sharedArray)) { debit = amount / sharedArray.length; involvesMember = true; }
+                            } else if ("Payment".equals(type) && memberName.equals(paidBy)) {
+                                credit = amount; involvesMember = true;
+                            }
+
+                            if (involvesMember) {
+                                // Pagination Check mid-table
+                                if (yPos > pageHeight - 120) {
+                                    drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
+                                    document.finishPage(page);
+                                    pageNumber++;
+                                    pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
+                                    page = document.startPage(pageInfo);
+                                    canvas = page.getCanvas();
+                                    yPos = drawPageHeader(canvas, pageWidth, margin, tripName, memberName, generatedOn, reportDate, paintMainTitle, paintSubTitle, paintTextBold, paintTextNormal, paintTextRight);
+
+                                    canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintTableBg);
+                                    canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintBorder);
+                                    canvas.drawText("Date", xDate, yPos + 17, paintTextBold); canvas.drawText("Description", xDesc, yPos + 17, paintTextBold);
+                                    canvas.drawText("Debit (₹)", xDebit, yPos + 17, paintTextRight); canvas.drawText("Credit (₹)", xCredit, yPos + 17, paintTextRight);
+                                    yPos += 25;
+                                }
+
+                                String safeDate = (date != null) ? date : "N/A";
+                                String safePurpose = (purpose != null) ? purpose : "";
+                                if (safePurpose.length() > 40) safePurpose = safePurpose.substring(0, 37) + "...";
+
+                                String debitStr = debit > 0 ? String.format(Locale.US, "%,.2f", debit) : "";
+                                String creditStr = credit > 0 ? String.format(Locale.US, "%,.2f", credit) : "";
+
+                                yPos += 20;
+                                canvas.drawText(safeDate, xDate, yPos, paintTextNormal); canvas.drawText(safePurpose, xDesc, yPos, paintTextNormal);
+                                canvas.drawText(debitStr, xDebit, yPos, paintTextRight); canvas.drawText(creditStr, xCredit, yPos, paintTextRight);
+                                yPos += 10;
+                                canvas.drawLine(margin, yPos, pageWidth - margin, yPos, paintDottedLine);
+                            }
+                        }
+                    }
+
+                    // Draw Totals Row
+                    yPos += 5;
+                    canvas.drawRect(margin, yPos, pageWidth - margin, yPos + 25, paintBorder);
+                    canvas.drawText("TOTALS", xDesc, yPos + 17, paintTextBold);
+                    canvas.drawText(String.format(Locale.US, "₹%,.2f", totalDebit), xDebit, yPos + 17, paintTextRight);
+                    canvas.drawText(String.format(Locale.US, "₹%,.2f", totalCredit), xCredit, yPos + 17, paintTextRight);
+
+                    // Draw Remarks Box
+                    yPos += 45;
+                    if (yPos > pageHeight - 140) {
+                        drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
+                        document.finishPage(page);
+                        pageNumber++;
+                        pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
+                        page = document.startPage(pageInfo);
+                        canvas = page.getCanvas();
+                        yPos = drawPageHeader(canvas, pageWidth, margin, tripName, memberName, generatedOn, reportDate, paintMainTitle, paintSubTitle, paintTextBold, paintTextNormal, paintTextRight);
+                    }
+
+                    canvas.drawRoundRect(new RectF(margin, yPos, pageWidth - margin, yPos + 55), 5, 5, paintBorder);
+                    canvas.drawText("Remarks :", margin + 15, yPos + 20, paintTextBold);
+                    canvas.drawText("• Positive balance (Green) means refundable to the member.", margin + 25, yPos + 35, paintTextNormal);
+                    canvas.drawText("• Negative balance (Red) means amount payable by the member.", margin + 25, yPos + 48, paintTextNormal);
+                }
+
+                // --- 4. END OF MASTER PDF MARKER ---
+                int finalYPos = page.getCanvas().getHeight() - margin - 60; // Print just above the final footer
+                Paint endPaint = new Paint(); endPaint.setTextSize(11f); endPaint.setFakeBoldText(true); endPaint.setColor(Color.parseColor("#85022E")); endPaint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText("End of the master pdf. Total pages: " + pageNumber, pageWidth / 2f, finalYPos, endPaint);
+
+                // Draw final footer and close document
+                drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
+                document.finishPage(page);
+                document.writeTo(outputStream);
+                document.close();
+
+                mainHandler.post(() -> Toast.makeText(context, "Master PDF Export Successful!", Toast.LENGTH_LONG).show());
+            } catch (Exception e) {
+                mainHandler.post(() -> Toast.makeText(context, "PDF Export Failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
     public void exportIndividualMemberToPdf(Uri fileUri, String tripId, String memberName) {
         Toast.makeText(context, "Generating Premium PDF...", Toast.LENGTH_SHORT).show();
 

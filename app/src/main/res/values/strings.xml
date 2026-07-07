@@ -276,10 +276,10 @@
 
     <string name="btn_export_excel">Export to Excel</string>
     <string name="btn_export_pdf">Export to PDF</string>
+    <string name="desc_share_ledger">Share PDF</string>
 
     <string name="txt_instruction_to_view_member_ledger">Tap on a member to view their individual ledger</string>
-
-
+    <string name="all_transactions_for_current_member">All Transactions for Current member</string>
 
 
 </resources>

@@ -21,6 +21,8 @@ import android.widget.Toast;
 import android.widget.LinearLayout;
 import androidx.appcompat.app.AlertDialog;
 import android.content.DialogInterface;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 public class TripDetailsActivity extends AppCompatActivity {
 
@@ -28,15 +30,29 @@ public class TripDetailsActivity extends AppCompatActivity {
     private String startDateFromDatabase;
     private String endDateFromDatabase;
     private String membersRaw;
-    private androidx.activity.result.ActivityResultLauncher<Intent> editTripLauncher;
+
+    private LedgerExportManager exportManager;
+    private ActivityResultLauncher<Intent> editTripLauncher;
+
+    // --- NEW: The SAF Launcher for the Master PDF Export ---
+    private final ActivityResultLauncher<String> createMasterPdfLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("application/pdf"),
+            uri -> {
+                if (uri != null && exportManager != null) {
+                    exportManager.exportAllMembersToSinglePdf(uri, tripId);
+                }
+            });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_details);
 
+        // Initialize the Export Manager
+        exportManager = new LedgerExportManager(this, new TripDatabaseHelper(this));
+
         editTripLauncher = registerForActivityResult(
-                new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK) {
                         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
@@ -46,7 +62,7 @@ public class TripDetailsActivity extends AppCompatActivity {
                     }
                 });
 
-        //Setup Home Button
+        // Setup Home Button
         ImageButton btnHome = findViewById(R.id.btnHome);
         btnHome.setOnClickListener(v -> {
             Intent intent = new Intent(TripDetailsActivity.this, DashboardActivity.class);
@@ -60,18 +76,16 @@ public class TripDetailsActivity extends AppCompatActivity {
             finish();
         });
 
-
         // Setup Refresh Button
         ImageButton btnRefresh = findViewById(R.id.btnRefresh);
         btnRefresh.setOnClickListener(v -> {
             try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
                 refreshSummaryCards(db);
-                // Add a small visual feedback so the user knows it refreshed
                 Toast.makeText(this, "Data Refreshed", Toast.LENGTH_SHORT).show();
             }
         });
 
-        //Setup Add Expense Button
+        // Setup Add Expense Button
         LinearLayout btnAddExpense = findViewById(R.id.btnAddExpense);
         btnAddExpense.setOnClickListener(v -> {
             Intent intent = new Intent(TripDetailsActivity.this, AddExpenseActivity.class);
@@ -81,7 +95,7 @@ public class TripDetailsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        //Setup Add Payment Button
+        // Setup Add Payment Button
         LinearLayout btnAddPayment = findViewById(R.id.btnAddPayment);
         if (btnAddPayment != null) {
             btnAddPayment.setOnClickListener(v -> {
@@ -100,7 +114,7 @@ public class TripDetailsActivity extends AppCompatActivity {
         endDateFromDatabase = getIntent().getStringExtra("END_DATE");
         membersRaw = getIntent().getStringExtra("MEMBERS");
 
-        //Setup Edit Trip Button
+        // Setup Edit Trip Button
         LinearLayout btnEditTrip = findViewById(R.id.btnEditTrip);
         btnEditTrip.setOnClickListener(v -> {
             Intent intent = new Intent(TripDetailsActivity.this, UpdateTripActivity.class);
@@ -117,35 +131,44 @@ public class TripDetailsActivity extends AppCompatActivity {
         });
 
         // --- HOOK UP THE DELETE TRIP BUTTON ---
-        View btnDeleteTrip = findViewById(R.id.btnDeleteTrip); // Update ID if yours is different!
-
+        View btnDeleteTrip = findViewById(R.id.btnDeleteTrip);
         if (btnDeleteTrip != null) {
             btnDeleteTrip.setOnClickListener(v -> {
-                // Show a safety confirmation dialog first
                 AlertDialog alertDialog = new AlertDialog.Builder(this)
                         .setTitle("Delete Trip")
                         .setMessage("Are you sure you want to completely delete this trip?")
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .setPositiveButton("Yes, Delete", (dialog, which) -> {
-                            // 1. Delete from database
                             try (TripDatabaseHelper dbHelper = new TripDatabaseHelper(this)) {
-                                dbHelper.deleteTrip(tripId); // Assuming your class has a 'tripId' variable!
+                                dbHelper.deleteTrip(tripId);
                             }
-
-                            // 2. Show a success message
                             Toast.makeText(this, "Trip deleted successfully!", Toast.LENGTH_SHORT).show();
-
-                            // 3. Close this screen and go back to the Dashboard/List
                             finish();
                         })
                         .setNegativeButton("Cancel", null)
                         .create();
-                alertDialog.show(); // Do nothing on cancel
+                alertDialog.show();
                 alertDialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextColor(0xFF000000);
                 alertDialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextColor(0xFF000000);
             });
         }
 
+        // --- NEW: HOOK UP THE EXPORT ALL PDF BUTTON ---
+        // --- HOOK UP THE EXPORT ALL PDF BUTTON ---
+        // MATCHED TO YOUR XML ID: btn_all_individual_to_one_pdf
+        View btnExportAllPdf = findViewById(R.id.btn_all_individual_to_one_pdf);
+
+        if (btnExportAllPdf != null) {
+            btnExportAllPdf.setOnClickListener(v -> {
+                TextView tripNameView = findViewById(R.id.txt_details_trip_name);
+                String safeTripName = "Trip";
+                if (tripNameView != null && tripNameView.getText() != null) {
+                    safeTripName = tripNameView.getText().toString().replaceAll("[^a-zA-Z0-9]", "_");
+                }
+                String fileName = safeTripName + "_Master_Ledger.pdf";
+                createMasterPdfLauncher.launch(fileName);
+            });
+        }
 
         // UI Binding
         if (name != null) {
@@ -155,12 +178,14 @@ public class TripDetailsActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(date));
 
         // Setup Complete Ledger Button
-        Button btnCompleteLedger = findViewById(R.id.btn_complete_ledger);
-        btnCompleteLedger.setOnClickListener(v -> {
-            Intent intent = new Intent(TripDetailsActivity.this, CompleteLedgerActivity.class);
-            intent.putExtra("TRIP_ID", tripId);
-            startActivity(intent);
-        });
+        View btnCompleteLedger = findViewById(R.id.btn_complete_ledger); // Kept as View to avoid cast issues
+        if (btnCompleteLedger != null) {
+            btnCompleteLedger.setOnClickListener(v -> {
+                Intent intent = new Intent(TripDetailsActivity.this, CompleteLedgerActivity.class);
+                intent.putExtra("TRIP_ID", tripId);
+                startActivity(intent);
+            });
+        }
 
         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
             // Initial load
@@ -207,7 +232,6 @@ public class TripDetailsActivity extends AppCompatActivity {
         }
     }
 
-    // --- NEW: Refreshes numbers every time user returns to this screen ---
     @Override
     protected void onResume() {
         super.onResume();
@@ -289,6 +313,7 @@ public class TripDetailsActivity extends AppCompatActivity {
         }
         return dateStr;
     }
+
     private void refreshTripDetails() {
         try (TripDatabaseHelper db = new TripDatabaseHelper(this);
              Cursor cursor = db.getReadableDatabase().rawQuery(
@@ -355,5 +380,4 @@ public class TripDetailsActivity extends AppCompatActivity {
             }
         }
     }
-
 }
