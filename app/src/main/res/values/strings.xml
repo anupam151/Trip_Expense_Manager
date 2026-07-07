@@ -270,7 +270,7 @@
     <string name="welcome_subtitle">Your ultimate companion for group travel budgeting and expense tracking.</string>
     <string name="dashboard_subtitle">Track Every Expense. Enjoy Every Journey</string>
     <string name="no_pinned_trips_icon_desc">No pinned trips icon</string>
-    <string name="no_pinned_trips_title">No Pinned Trips Yet</string>
+    <string name="no_pinned_trips_title">No Pinned Trip Yet</string>
     <string name="no_pinned_trips_description">Pin your most important trips to see their summary here for quick access.</string>
     <string name="btn_explore_trips">Explore Trips</string>
 
