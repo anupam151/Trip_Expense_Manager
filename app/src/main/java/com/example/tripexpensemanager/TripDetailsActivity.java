@@ -19,6 +19,8 @@ import java.util.Date;
 import java.util.Locale;
 import android.widget.Toast;
 import android.widget.LinearLayout;
+import androidx.appcompat.app.AlertDialog;
+import android.content.DialogInterface;
 
 public class TripDetailsActivity extends AppCompatActivity {
 
@@ -113,6 +115,36 @@ public class TripDetailsActivity extends AppCompatActivity {
 
             editTripLauncher.launch(intent);
         });
+
+        // --- HOOK UP THE DELETE TRIP BUTTON ---
+        View btnDeleteTrip = findViewById(R.id.btnDeleteTrip); // Update ID if yours is different!
+
+        if (btnDeleteTrip != null) {
+            btnDeleteTrip.setOnClickListener(v -> {
+                // Show a safety confirmation dialog first
+                AlertDialog alertDialog = new AlertDialog.Builder(this)
+                        .setTitle("Delete Trip")
+                        .setMessage("Are you sure you want to completely delete this trip?")
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setPositiveButton("Yes, Delete", (dialog, which) -> {
+                            // 1. Delete from database
+                            try (TripDatabaseHelper dbHelper = new TripDatabaseHelper(this)) {
+                                dbHelper.deleteTrip(tripId); // Assuming your class has a 'tripId' variable!
+                            }
+
+                            // 2. Show a success message
+                            Toast.makeText(this, "Trip deleted successfully!", Toast.LENGTH_SHORT).show();
+
+                            // 3. Close this screen and go back to the Dashboard/List
+                            finish();
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .create();
+                alertDialog.show(); // Do nothing on cancel
+                alertDialog.getButton(DialogInterface.BUTTON_POSITIVE).setTextColor(0xFF000000);
+                alertDialog.getButton(DialogInterface.BUTTON_NEGATIVE).setTextColor(0xFF000000);
+            });
+        }
 
 
         // UI Binding
