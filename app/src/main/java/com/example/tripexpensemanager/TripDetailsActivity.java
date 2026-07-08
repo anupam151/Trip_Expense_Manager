@@ -26,7 +26,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 
 public class TripDetailsActivity extends AppCompatActivity {
 
-    private String tripId; // Defined at class level for access in onResume
+    private String tripId;
     private String startDateFromDatabase;
     private String endDateFromDatabase;
     private String membersRaw;
@@ -34,7 +34,7 @@ public class TripDetailsActivity extends AppCompatActivity {
     private LedgerExportManager exportManager;
     private ActivityResultLauncher<Intent> editTripLauncher;
 
-    // --- NEW: The SAF Launcher for the Master PDF Export ---
+    // --- SAF Launcher for standard "Save to Device" Export ---
     private final ActivityResultLauncher<String> createMasterPdfLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/pdf"),
             uri -> {
@@ -76,15 +76,6 @@ public class TripDetailsActivity extends AppCompatActivity {
             finish();
         });
 
-        // Setup Refresh Button
-        ImageButton btnRefresh = findViewById(R.id.btnRefresh);
-        btnRefresh.setOnClickListener(v -> {
-            try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
-                refreshSummaryCards(db);
-                Toast.makeText(this, "Data Refreshed", Toast.LENGTH_SHORT).show();
-            }
-        });
-
         // Setup Add Expense Button
         LinearLayout btnAddExpense = findViewById(R.id.btnAddExpense);
         btnAddExpense.setOnClickListener(v -> {
@@ -101,7 +92,7 @@ public class TripDetailsActivity extends AppCompatActivity {
             btnAddPayment.setOnClickListener(v -> {
                 Intent intent = new Intent(TripDetailsActivity.this, AddPaymentActivity.class);
                 intent.putExtra("TRIP_ID", tripId);
-                intent.putExtra("TRIP_MEMBERS", this.membersRaw); // Always use the fresh global list
+                intent.putExtra("TRIP_MEMBERS", this.membersRaw);
                 startActivity(intent);
             });
         }
@@ -121,16 +112,13 @@ public class TripDetailsActivity extends AppCompatActivity {
             intent.putExtra("TRIP_ID", tripId);
             intent.putExtra("TRIP_NAME", ((TextView) findViewById(R.id.txt_details_trip_name)).getText().toString());
             intent.putExtra("TRIP_DESTINATION", ((TextView) findViewById(R.id.txt_details_destination)).getText().toString());
-
-            // Force the use of the global variables with 'this.'
             intent.putExtra("TRIP_START_DATE", this.startDateFromDatabase);
             intent.putExtra("TRIP_END_DATE", this.endDateFromDatabase);
             intent.putExtra("TRIP_MEMBERS", this.membersRaw);
-
             editTripLauncher.launch(intent);
         });
 
-        // --- HOOK UP THE DELETE TRIP BUTTON ---
+        // Setup Delete Trip Button
         View btnDeleteTrip = findViewById(R.id.btnDeleteTrip);
         if (btnDeleteTrip != null) {
             btnDeleteTrip.setOnClickListener(v -> {
@@ -153,11 +141,18 @@ public class TripDetailsActivity extends AppCompatActivity {
             });
         }
 
-        // --- NEW: HOOK UP THE EXPORT ALL PDF BUTTON ---
-        // --- HOOK UP THE EXPORT ALL PDF BUTTON ---
-        // MATCHED TO YOUR XML ID: btn_all_individual_to_one_pdf
-        View btnExportAllPdf = findViewById(R.id.btn_all_individual_to_one_pdf);
+        // --- DIRECT SHARE (Header Icon) ---
+        ImageButton btnShareAll = findViewById(R.id.btn_share_all);
+        if (btnShareAll != null) {
+            btnShareAll.setOnClickListener(v -> {
+                if (exportManager != null && tripId != null) {
+                    exportManager.shareMasterPdf(tripId);
+                }
+            });
+        }
 
+        // --- LOCAL EXPORT (Bottom Button) ---
+        View btnExportAllPdf = findViewById(R.id.btn_all_individual_to_one_pdf);
         if (btnExportAllPdf != null) {
             btnExportAllPdf.setOnClickListener(v -> {
                 TextView tripNameView = findViewById(R.id.txt_details_trip_name);
@@ -170,15 +165,8 @@ public class TripDetailsActivity extends AppCompatActivity {
             });
         }
 
-        // UI Binding
-        if (name != null) {
-            ((TextView) findViewById(R.id.txt_details_trip_name)).setText(String.format(Locale.US, "%s", name));
-        }
-        ((TextView) findViewById(R.id.txt_details_destination)).setText(dest != null ? dest : "N/A");
-        ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(date));
-
         // Setup Complete Ledger Button
-        View btnCompleteLedger = findViewById(R.id.btn_complete_ledger); // Kept as View to avoid cast issues
+        View btnCompleteLedger = findViewById(R.id.btn_complete_ledger);
         if (btnCompleteLedger != null) {
             btnCompleteLedger.setOnClickListener(v -> {
                 Intent intent = new Intent(TripDetailsActivity.this, CompleteLedgerActivity.class);
@@ -187,11 +175,15 @@ public class TripDetailsActivity extends AppCompatActivity {
             });
         }
 
-        try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
-            // Initial load
-            refreshSummaryCards(db);
+        // UI Binding
+        if (name != null) {
+            ((TextView) findViewById(R.id.txt_details_trip_name)).setText(String.format(Locale.US, "%s", name));
+        }
+        ((TextView) findViewById(R.id.txt_details_destination)).setText(dest != null ? dest : "N/A");
+        ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(date));
 
-            // 1. Process Active Members
+        try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
+            refreshSummaryCards(db);
             ArrayList<String> activeMembers = new ArrayList<>();
             if (membersRaw != null && !membersRaw.isEmpty()) {
                 String[] memberList = membersRaw.split(",");
@@ -208,7 +200,6 @@ public class TripDetailsActivity extends AppCompatActivity {
                 addMemberButton(activeName, gridActive, tripId, true);
             }
 
-            // 2. Process Inactive/Removed Members
             GridLayout gridInactive = findViewById(R.id.grid_inactive_members);
             TextView txtInactiveHeader = findViewById(R.id.txt_inactive_members_header);
 
@@ -321,23 +312,19 @@ public class TripDetailsActivity extends AppCompatActivity {
                      new String[]{tripId})) {
 
             if (cursor.moveToFirst()) {
-                // 1. Fetch Basic Info
                 String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
                 String dest = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_DESTINATION));
                 String sDate = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_START_DATE));
                 String eDate = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_END_DATE));
                 String currentMembersRaw = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBERS));
 
-                // 2. Update UI Fields
                 ((TextView) findViewById(R.id.txt_details_trip_name)).setText(name);
                 ((TextView) findViewById(R.id.txt_details_destination)).setText(dest);
                 ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(sDate));
 
-                // Update class-level variables
                 startDateFromDatabase = sDate;
                 endDateFromDatabase = eDate;
 
-                // 3. Refresh Active Members
                 ArrayList<String> activeMembers = new ArrayList<>();
                 if (currentMembersRaw != null && !currentMembersRaw.isEmpty()) {
                     for (String m : currentMembersRaw.split(",")) {
@@ -345,17 +332,14 @@ public class TripDetailsActivity extends AppCompatActivity {
                     }
                 }
 
-                // Update Member Count
                 ((TextView) findViewById(R.id.txt_details_member_count)).setText(String.valueOf(activeMembers.size()));
 
-                // Refresh Active Grid
                 GridLayout gridActive = findViewById(R.id.grid_members);
                 gridActive.removeAllViews();
                 for (String activeName : activeMembers) {
                     addMemberButton(activeName, gridActive, tripId, true);
                 }
 
-                // 4. Refresh Inactive Members
                 GridLayout gridInactive = findViewById(R.id.grid_inactive_members);
                 TextView txtInactiveHeader = findViewById(R.id.txt_inactive_members_header);
 

@@ -470,16 +470,15 @@
             app:autoSizeStepGranularity="1sp"
             android:layout_weight="8"/>
         <ImageButton
-            android:id="@+id/btnRefresh"
-            android:layout_width="43dp"
-            android:layout_height="43dp"
-            android:padding="6dp"
-            android:scaleType="fitEnd"
-            android:src="@drawable/ic_refresh"
+            android:id="@+id/btn_share_all"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:layout_weight="0.5"
-            android:contentDescription="@string/home"
-            app:tint="#FFFFFF" />
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/share"
+            android:contentDescription="@string/desc_share_ledger"
+            app:tint="#FFFFFF"  />
     </LinearLayout>
     <LinearLayout
         android:id="@+id/button_container"
