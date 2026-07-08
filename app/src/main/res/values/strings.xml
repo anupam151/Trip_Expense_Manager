@@ -284,5 +284,9 @@
 
     <string name="txt_all_trips">Trip List</string>
 
+    <string name="title_select_trip_export">Select Trip to Export in one PDF</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="pdf_icon">PDF file</string>
+
 
 </resources>

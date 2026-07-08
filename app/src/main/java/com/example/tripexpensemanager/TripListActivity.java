@@ -11,12 +11,26 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+// --- NEW IMPORTS FOR EXPORT LOGIC ---
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import com.google.android.material.button.MaterialButton;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.view.LayoutInflater;
+import android.view.Window;
+import android.view.ViewGroup;
+
+import android.widget.LinearLayout;
 
 public class TripListActivity extends AppCompatActivity implements TripAdapter.OnTripActionListener {
 
@@ -31,6 +45,19 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     // Suppress warning because we prefer this as a class-level variable for clarity
     @SuppressWarnings("FieldCanBeLocal")
     private ImageButton btnHeaderAddNewTrip;
+
+    // --- NEW EXPORT VARIABLES ---
+    private LedgerExportManager exportManager;
+    private String selectedTripIdForExport = null;
+
+    private final ActivityResultLauncher<String> createMasterPdfLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("application/pdf"),
+            uri -> {
+                if (uri != null && exportManager != null && selectedTripIdForExport != null) {
+                    exportManager.exportAllMembersToSinglePdf(uri, selectedTripIdForExport);
+                }
+            });
+    // ----------------------------
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,8 +91,119 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             btnHeaderAddNewTrip.setOnClickListener(v -> startActivity(new Intent(TripListActivity.this, CreateTripActivity.class)));
         }
 
+        // --- NEW EXPORT LOGIC INITIALIZATION ---
+        exportManager = new LedgerExportManager(this, dbHelper);
+
+        MaterialButton btnExportAll = findViewById(R.id.unv_btn_all_individual_to_one_pdf);
+        if (btnExportAll != null) {
+            btnExportAll.setOnClickListener(v -> showExportTripSelectionDialog());
+        }
+        // ---------------------------------------
+
         loadAndFilterTrips();
     }
+
+    // ==========================================
+    // EXPORT TRIP POP-UP LOGIC
+    // ==========================================
+
+    private void showExportTripSelectionDialog() {
+        ArrayList<TripModel> allTrips = getSortedTripsForExport();
+
+        if (allTrips.isEmpty()) {
+            Toast.makeText(this, "No trips available to export.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1. Create the Custom Dialog
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_export_trips);
+
+        // Make the system dialog background transparent so our rounded corners show
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        // 2. Find the container and inflate the rows
+        LinearLayout container = dialog.findViewById(R.id.container_dialog_trips);
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        for (TripModel trip : allTrips) {
+            // Inflate our custom row layout
+            View rowView = inflater.inflate(R.layout.item_dialog_trip, container, false);
+
+            TextView txtName = rowView.findViewById(R.id.txt_dialog_trip_name);
+            TextView txtDate = rowView.findViewById(R.id.txt_dialog_trip_date);
+
+            txtName.setText(trip.getTripName());
+            txtDate.setText(trip.getStartDate());
+
+            // Handle the click
+            rowView.setOnClickListener(v -> {
+                selectedTripIdForExport = trip.getTripId();
+                String safeTripName = trip.getTripName().replaceAll("[^a-zA-Z0-9]", "_");
+                String fileName = safeTripName + "_Master_Ledger.pdf";
+
+                dialog.dismiss(); // Close the dialog
+                createMasterPdfLauncher.launch(fileName); // Launch PDF generation
+            });
+
+            // Add the row to the dialog container
+            container.addView(rowView);
+        }
+
+        // 3. Handle Cancel Button
+        TextView btnCancel = dialog.findViewById(R.id.btn_dialog_cancel);
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        // 4. Show it!
+        dialog.show();
+    }
+
+    // METHOD 2: The "Extracted" method that only handles database and sorting
+    // 1. THE COORDINATOR: Gets the data, sorts it, and hands it back
+    private ArrayList<TripModel> getSortedTripsForExport() {
+        ArrayList<TripModel> tripList = fetchAllTripsFromDatabase();
+        sortTripsChronologically(tripList);
+        return tripList;
+    }
+
+    // 2. THE DATABASE METHOD: Only job is to read SQLite
+    private ArrayList<TripModel> fetchAllTripsFromDatabase() {
+        ArrayList<TripModel> list = new ArrayList<>();
+        try (Cursor cursor = dbHelper.getAllTripsCursor()) {
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    String id = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_ID));
+                    String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
+                    String date = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_START_DATE));
+
+                    list.add(new TripModel(id, name, "", "", 0, date, ""));
+                }
+            }
+        }
+        return list;
+    }
+
+    // 3. THE SORTING METHOD: Only job is to compare dates
+    private void sortTripsChronologically(ArrayList<TripModel> list) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+        list.sort((t1, t2) -> {
+            try {
+                Date d1 = sdf.parse(t1.getStartDate());
+                Date d2 = sdf.parse(t2.getStartDate());
+                if (d1 != null && d2 != null) {
+                    return d1.compareTo(d2);
+                }
+            } catch (Exception ignored) {
+                // Ignore parsing errors
+            }
+            return 0;
+        });
+    }
+    // --------------------------------
 
     private void loadAndFilterTrips() {
         int previousSize = tripList.size();
