@@ -287,6 +287,9 @@
     <string name="title_select_trip_export">Select Trip to Export in one PDF</string>
     <string name="action_cancel">Cancel</string>
     <string name="pdf_icon">PDF file</string>
+    <string name="title_select_trip_transactions">Select Trip to View Ledger</string>
+
+    <string name="msg_no_trips_available">No trips available.</string>
 
 
 </resources>

@@ -1,20 +1,27 @@
 package com.example.tripexpensemanager;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-// --- NEW IMPORTS FOR EXPORT LOGIC ---
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import com.google.android.material.button.MaterialButton;
 
 import java.text.ParseException;
@@ -23,14 +30,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import android.app.Dialog;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.view.LayoutInflater;
-import android.view.Window;
-import android.view.ViewGroup;
-
-import android.widget.LinearLayout;
 
 public class TripListActivity extends AppCompatActivity implements TripAdapter.OnTripActionListener {
 
@@ -42,7 +41,6 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     private String currentCategoryLabel;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
-    // Suppress warning because we prefer this as a class-level variable for clarity
     @SuppressWarnings("FieldCanBeLocal")
     private ImageButton btnHeaderAddNewTrip;
 
@@ -57,7 +55,6 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                     exportManager.exportAllMembersToSinglePdf(uri, selectedTripIdForExport);
                 }
             });
-    // ----------------------------
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,9 +65,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         txtEmptyMessage = findViewById(R.id.txt_empty_trips_message);
         TextView txtCategoryTitle = findViewById(R.id.txt_trip_list_category_title);
 
-        // Initialize the ImageButton correctly
         btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
-
         dbHelper = new TripDatabaseHelper(this);
 
         if (getIntent() != null && getIntent().getStringExtra("CATEGORY_TITLE") != null) {
@@ -86,52 +81,60 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         adapter = new TripAdapter(tripList, this);
         recyclerView.setAdapter(adapter);
 
-        // Set click listener for the ImageButton
         if (btnHeaderAddNewTrip != null) {
             btnHeaderAddNewTrip.setOnClickListener(v -> startActivity(new Intent(TripListActivity.this, CreateTripActivity.class)));
         }
 
-        // --- NEW EXPORT LOGIC INITIALIZATION ---
+        // --- NEW EXPORT & TRANSACTIONS LOGIC INITIALIZATION ---
         exportManager = new LedgerExportManager(this, dbHelper);
 
         MaterialButton btnExportAll = findViewById(R.id.unv_btn_all_individual_to_one_pdf);
         if (btnExportAll != null) {
-            btnExportAll.setOnClickListener(v -> showExportTripSelectionDialog());
+            btnExportAll.setOnClickListener(v -> showTripSelectionDialog(true)); // TRUE for Export PDF
         }
-        // ---------------------------------------
+
+        MaterialButton btnCompleteLedger = findViewById(R.id.unv_btn_complete_ledger);
+        if (btnCompleteLedger != null) {
+            btnCompleteLedger.setOnClickListener(v -> showTripSelectionDialog(false)); // FALSE for View Transactions
+        }
 
         loadAndFilterTrips();
     }
 
     // ==========================================
-    // EXPORT TRIP POP-UP LOGIC
+    // SMART TRIP POP-UP LOGIC (Handles both Export & View)
     // ==========================================
-
-    private void showExportTripSelectionDialog() {
+    private void showTripSelectionDialog(boolean isForExport) {
         ArrayList<TripModel> allTrips = getSortedTripsForExport();
 
         if (allTrips.isEmpty()) {
-            Toast.makeText(this, "No trips available to export.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No trips available.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 1. Create the Custom Dialog
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_export_trips);
 
-        // Make the system dialog background transparent so our rounded corners show
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
 
-        // 2. Find the container and inflate the rows
+        // Dynamically set title based on the action
+        TextView txtTitle = dialog.findViewById(R.id.txt_dialog_title);
+        if (txtTitle != null) {
+            if (isForExport) {
+                txtTitle.setText(R.string.title_select_trip_export);
+            } else {
+                txtTitle.setText(R.string.title_select_trip_transactions);
+            }
+        }
+
         LinearLayout container = dialog.findViewById(R.id.container_dialog_trips);
         LayoutInflater inflater = LayoutInflater.from(this);
 
         for (TripModel trip : allTrips) {
-            // Inflate our custom row layout
             View rowView = inflater.inflate(R.layout.item_dialog_trip, container, false);
 
             TextView txtName = rowView.findViewById(R.id.txt_dialog_trip_name);
@@ -140,29 +143,37 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             txtName.setText(trip.getTripName());
             txtDate.setText(trip.getStartDate());
 
-            // Handle the click
+            // Handle individual trip click
             rowView.setOnClickListener(v -> {
-                selectedTripIdForExport = trip.getTripId();
-                String safeTripName = trip.getTripName().replaceAll("[^a-zA-Z0-9]", "_");
-                String fileName = safeTripName + "_Master_Ledger.pdf";
+                dialog.dismiss(); // Always dismiss popup first
 
-                dialog.dismiss(); // Close the dialog
-                createMasterPdfLauncher.launch(fileName); // Launch PDF generation
+                if (isForExport) {
+                    // --- PDF EXPORT LOGIC ---
+                    selectedTripIdForExport = trip.getTripId();
+                    String safeTripName = trip.getTripName().replaceAll("[^a-zA-Z0-9]", "_");
+                    String fileName = safeTripName + "_Master_Ledger.pdf";
+                    createMasterPdfLauncher.launch(fileName);
+                } else {
+                    // --- VIEW TRANSACTIONS LOGIC ---
+                    Intent intent = new Intent(TripListActivity.this, TripDetailsActivity.class);
+                    intent.putExtra("TRIP_ID", trip.getTripId());
+                    intent.putExtra("TRIP_NAME", trip.getTripName());
+                    intent.putExtra("DESTINATION", trip.getDestination());
+                    intent.putExtra("START_DATE", trip.getStartDate());
+                    intent.putExtra("MEMBERS", trip.getMembersListString());
+                    startActivity(intent);
+                }
             });
 
-            // Add the row to the dialog container
             container.addView(rowView);
         }
 
-        // 3. Handle Cancel Button
         TextView btnCancel = dialog.findViewById(R.id.btn_dialog_cancel);
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-        // 4. Show it!
         dialog.show();
     }
 
-    // METHOD 2: The "Extracted" method that only handles database and sorting
     // 1. THE COORDINATOR: Gets the data, sorts it, and hands it back
     private ArrayList<TripModel> getSortedTripsForExport() {
         ArrayList<TripModel> tripList = fetchAllTripsFromDatabase();
@@ -203,7 +214,6 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             return 0;
         });
     }
-    // --------------------------------
 
     private void loadAndFilterTrips() {
         int previousSize = tripList.size();
