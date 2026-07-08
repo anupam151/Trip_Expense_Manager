@@ -110,7 +110,9 @@ public class TripDetailsActivity extends AppCompatActivity {
         btnEditTrip.setOnClickListener(v -> {
             Intent intent = new Intent(TripDetailsActivity.this, UpdateTripActivity.class);
             intent.putExtra("TRIP_ID", tripId);
-            intent.putExtra("TRIP_NAME", ((TextView) findViewById(R.id.txt_details_trip_name)).getText().toString());
+            // Notice we strip "Trip: " if we are passing it back to edit, or you can just let the edit screen handle it.
+            // Using the raw 'name' variable passed from the intent is safer here to avoid sending "Trip: Trip: name"
+            intent.putExtra("TRIP_NAME", name);
             intent.putExtra("TRIP_DESTINATION", ((TextView) findViewById(R.id.txt_details_destination)).getText().toString());
             intent.putExtra("TRIP_START_DATE", this.startDateFromDatabase);
             intent.putExtra("TRIP_END_DATE", this.endDateFromDatabase);
@@ -155,11 +157,7 @@ public class TripDetailsActivity extends AppCompatActivity {
         View btnExportAllPdf = findViewById(R.id.btn_all_individual_to_one_pdf);
         if (btnExportAllPdf != null) {
             btnExportAllPdf.setOnClickListener(v -> {
-                TextView tripNameView = findViewById(R.id.txt_details_trip_name);
-                String safeTripName = "Trip";
-                if (tripNameView != null && tripNameView.getText() != null) {
-                    safeTripName = tripNameView.getText().toString().replaceAll("[^a-zA-Z0-9]", "_");
-                }
+                String safeTripName = (name != null) ? name.replaceAll("[^a-zA-Z0-9]", "_") : "Trip";
                 String fileName = safeTripName + "_Master_Ledger.pdf";
                 createMasterPdfLauncher.launch(fileName);
             });
@@ -175,9 +173,9 @@ public class TripDetailsActivity extends AppCompatActivity {
             });
         }
 
-        // UI Binding
+        // UI Binding - UPDATED TO INCLUDE "Trip: "
         if (name != null) {
-            ((TextView) findViewById(R.id.txt_details_trip_name)).setText(String.format(Locale.US, "%s", name));
+            ((TextView) findViewById(R.id.txt_details_trip_name)).setText(getString(R.string.format_trip_name_header, name));
         }
         ((TextView) findViewById(R.id.txt_details_destination)).setText(dest != null ? dest : "N/A");
         ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(date));
@@ -318,7 +316,9 @@ public class TripDetailsActivity extends AppCompatActivity {
                 String eDate = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_END_DATE));
                 String currentMembersRaw = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBERS));
 
-                ((TextView) findViewById(R.id.txt_details_trip_name)).setText(name);
+                // UI Binding - UPDATED TO INCLUDE "Trip: "
+                ((TextView) findViewById(R.id.txt_details_trip_name)).setText(getString(R.string.format_trip_name_header, name));
+
                 ((TextView) findViewById(R.id.txt_details_destination)).setText(dest);
                 ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(sDate));
 
