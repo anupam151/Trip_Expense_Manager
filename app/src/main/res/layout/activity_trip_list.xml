@@ -109,7 +109,7 @@
             android:background="#E9E9E9"
             android:gravity="center">
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_all_individual_to_one_pdf"
+                android:id="@+id/unv_btn_all_individual_to_one_pdf"
                 android:layout_width="0dp"
                 app:icon="@drawable/pdf"
                 android:text="@string/all_in_one_pdf"
