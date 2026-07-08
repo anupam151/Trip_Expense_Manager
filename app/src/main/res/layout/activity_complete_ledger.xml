@@ -130,7 +130,7 @@
             app:iconGravity="textStart"
             app:iconTint="#FFFFFF" />
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_export_to_pdf"
+            android:id="@+id/btn_export_all_to_pdf"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#85022E"

@@ -1222,6 +1222,182 @@ public class LedgerExportManager {
             }
         });
     }
+    // ==========================================
+    // EXPORT ALL TRANSACTIONS (LANDSCAPE)
+    // ==========================================
+    public void exportAllTransactionsToPdf(android.net.Uri uri, String tripId) {
+        android.graphics.pdf.PdfDocument pdfDocument = new android.graphics.pdf.PdfDocument();
+
+        // Standard A4 dimensions in Landscape
+        int PAGE_WIDTH = 842;
+        int PAGE_HEIGHT = 595;
+        int MARGIN = 40;
+
+        android.graphics.Paint paint = new android.graphics.Paint();
+        android.graphics.Paint titlePaint = new android.graphics.Paint();
+        android.graphics.Paint headerPaint = new android.graphics.Paint();
+        android.graphics.Paint linePaint = new android.graphics.Paint();
+
+        titlePaint.setTextSize(22f);
+        titlePaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        titlePaint.setColor(android.graphics.Color.parseColor("#85022E")); // Maroon Theme
+
+        headerPaint.setTextSize(12f);
+        headerPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        headerPaint.setColor(android.graphics.Color.WHITE);
+
+        paint.setTextSize(11f);
+        paint.setColor(android.graphics.Color.BLACK);
+
+        linePaint.setColor(android.graphics.Color.LTGRAY);
+        linePaint.setStrokeWidth(1f);
+
+        android.graphics.pdf.PdfDocument.PageInfo pageInfo = new android.graphics.pdf.PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create();
+        android.graphics.pdf.PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+        android.graphics.Canvas canvas = page.getCanvas();
+
+        int yPosition = MARGIN;
+
+        // 1. Fetch Trip Details manually so you don't need a new Helper method
+        String tripName = "Unknown Trip", destination = "-", startDate = "-", endDate = "-", members = "-";
+        double totalExpense = 0.0, totalPayment = 0.0;
+
+        String tripQuery = "SELECT * FROM " + TripDatabaseHelper.TABLE_TRIPS + " WHERE " + TripDatabaseHelper.COLUMN_TRIP_ID + " = ?";
+        try (android.database.Cursor tripCursor = dbHelper.getReadableDatabase().rawQuery(tripQuery, new String[]{tripId})) {
+            if (tripCursor.moveToFirst()) {
+                tripName = tripCursor.getString(tripCursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
+                destination = tripCursor.getString(tripCursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_DESTINATION));
+                startDate = tripCursor.getString(tripCursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_START_DATE));
+                endDate = tripCursor.getString(tripCursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_END_DATE));
+                members = tripCursor.getString(tripCursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBERS));
+            }
+        } catch (Exception e) {
+            // FIXED WARNING: Using robust logging instead of printStackTrace
+            android.util.Log.e("LedgerExport", "Error fetching trip details for PDF", e);
+        }
+
+        // --- DRAW HEADER ---
+        canvas.drawText("COMPLETE TRIP LEDGER: " + tripName.toUpperCase(), MARGIN, yPosition, titlePaint);
+        yPosition += 30;
+
+        paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        canvas.drawText("Destination: " + destination, MARGIN, yPosition, paint);
+        canvas.drawText("Journey Dates: " + startDate + " to " + endDate, PAGE_WIDTH / 2f, yPosition, paint);
+        yPosition += 20;
+
+        canvas.drawText("Members (Active & Inactive): " + members, MARGIN, yPosition, paint);
+        yPosition += 30;
+
+        // --- DRAW TABLE HEADER ---
+        int[] columnX = {MARGIN, MARGIN + 80, MARGIN + 160, MARGIN + 280, MARGIN + 430, MARGIN + 530, MARGIN + 630};
+
+        android.graphics.Paint bgPaint = new android.graphics.Paint();
+        bgPaint.setColor(android.graphics.Color.parseColor("#85022E"));
+        canvas.drawRect(MARGIN, yPosition - 15, PAGE_WIDTH - MARGIN, yPosition + 10, bgPaint);
+
+        canvas.drawText("Date", columnX[0], yPosition, headerPaint);
+        canvas.drawText("Type", columnX[1], yPosition, headerPaint);
+        canvas.drawText("Member", columnX[2], yPosition, headerPaint);
+        canvas.drawText("Purpose", columnX[3], yPosition, headerPaint); // Using Purpose
+        canvas.drawText("Shared With", columnX[4], yPosition, headerPaint); // Using Shared With as Note
+        canvas.drawText("Amount", columnX[5], yPosition, headerPaint);
+
+        yPosition += 25;
+        paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL));
+
+        // --- DRAW TRANSACTIONS ---
+        // FIXED ERROR: Using your existing getUnifiedLedger method!
+        try (android.database.Cursor cursor = dbHelper.getUnifiedLedger(tripId)) {
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    if (yPosition > PAGE_HEIGHT - MARGIN - 30) {
+                        pdfDocument.finishPage(page);
+                        pageInfo = new android.graphics.pdf.PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pdfDocument.getPages().size() + 1).create();
+                        page = pdfDocument.startPage(pageInfo);
+                        canvas = page.getCanvas();
+                        yPosition = MARGIN + 20;
+
+                        canvas.drawRect(MARGIN, yPosition - 15, PAGE_WIDTH - MARGIN, yPosition + 10, bgPaint);
+                        canvas.drawText("Date", columnX[0], yPosition, headerPaint);
+                        canvas.drawText("Type", columnX[1], yPosition, headerPaint);
+                        canvas.drawText("Member", columnX[2], yPosition, headerPaint);
+                        canvas.drawText("Purpose", columnX[3], yPosition, headerPaint);
+                        canvas.drawText("Shared With", columnX[4], yPosition, headerPaint);
+                        canvas.drawText("Amount", columnX[5], yPosition, headerPaint);
+                        yPosition += 25;
+                    }
+
+                    // FIXED: Extracted matching your actual Unified Ledger columns
+                    String tDate = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                    String tType = cursor.getString(cursor.getColumnIndexOrThrow("type"));
+                    String tMember = cursor.getString(cursor.getColumnIndexOrThrow("paid_by"));
+                    String tPurpose = cursor.getString(cursor.getColumnIndexOrThrow("purpose"));
+                    double tAmount = cursor.getDouble(cursor.getColumnIndexOrThrow("amount"));
+                    String tShared = cursor.getString(cursor.getColumnIndexOrThrow("expense_shared_with"));
+
+                    if ("Expense".equalsIgnoreCase(tType)) totalExpense += tAmount;
+                    if ("Payment".equalsIgnoreCase(tType)) totalPayment += tAmount;
+
+                    canvas.drawText(tDate != null ? tDate : "-", columnX[0], yPosition, paint);
+
+                    // FIXED WARNING: Removed redundant null check on tType
+                    android.graphics.Paint typePaint = new android.graphics.Paint(paint);
+                    typePaint.setColor("Expense".equalsIgnoreCase(tType) ? android.graphics.Color.RED : android.graphics.Color.parseColor("#2E7D32"));
+                    canvas.drawText(tType, columnX[1], yPosition, typePaint);
+
+                    canvas.drawText(tMember != null ? tMember : "-", columnX[2], yPosition, paint);
+
+                    // Truncate long purpose text
+                    String displayPurpose = (tPurpose != null && tPurpose.length() > 20) ? tPurpose.substring(0, 17) + "..." : (tPurpose != null ? tPurpose : "-");
+                    canvas.drawText(displayPurpose, columnX[3], yPosition, paint);
+
+                    // Truncate shared with string
+                    String displayShared = (tShared != null && tShared.length() > 15) ? tShared.substring(0, 12) + "..." : (tShared != null && !tShared.isEmpty() ? tShared : "-");
+                    canvas.drawText(displayShared, columnX[4], yPosition, paint);
+
+                    canvas.drawText(String.format(java.util.Locale.US, "₹%.2f", tAmount), columnX[5], yPosition, paint);
+
+                    canvas.drawLine(MARGIN, yPosition + 8, PAGE_WIDTH - MARGIN, yPosition + 8, linePaint);
+                    yPosition += 25;
+                }
+            }
+        } catch (Exception e) {
+            // FIXED WARNING: Using robust logging instead of printStackTrace
+            android.util.Log.e("LedgerExport", "Error generating transaction rows", e);
+        }
+
+        // --- DRAW FINAL TOTALS ---
+        yPosition += 10;
+        if (yPosition > PAGE_HEIGHT - MARGIN - 40) {
+            pdfDocument.finishPage(page);
+            page = pdfDocument.startPage(new android.graphics.pdf.PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pdfDocument.getPages().size() + 1).create());
+            canvas = page.getCanvas();
+            yPosition = MARGIN + 20;
+        }
+
+        paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        paint.setTextSize(14f);
+        canvas.drawText(String.format(java.util.Locale.US, "TOTAL EXPENSE: ₹%.2f", totalExpense), MARGIN, yPosition, paint);
+        canvas.drawText(String.format(java.util.Locale.US, "TOTAL PAYMENT/RECEIVED: ₹%.2f", totalPayment), MARGIN + 300, yPosition, paint);
+
+        pdfDocument.finishPage(page);
+
+        // --- WRITE TO FILE ---
+        try {
+            java.io.OutputStream outputStream = context.getContentResolver().openOutputStream(uri);
+            if (outputStream != null) {
+                pdfDocument.writeTo(outputStream);
+                outputStream.close();
+                android.widget.Toast.makeText(context, "All Transactions PDF saved successfully!", android.widget.Toast.LENGTH_LONG).show();
+            }
+        } catch (java.io.IOException e) {
+            // FIXED WARNING: Using robust logging instead of printStackTrace
+            android.util.Log.e("LedgerExport", "Error saving PDF file", e);
+            android.widget.Toast.makeText(context, "Error saving PDF", android.widget.Toast.LENGTH_SHORT).show();
+        }
+
+        pdfDocument.close();
+    }
 
     // --- NEW HELPER: Draws the Repeating Header ---
     private int drawPageHeader(Canvas canvas, int pageWidth, int margin, String tripName, String memberName, String generatedOn, String reportDate, Paint paintMainTitle, Paint paintSubTitle, Paint paintTextBold, Paint paintTextNormal, Paint paintTextRight) {

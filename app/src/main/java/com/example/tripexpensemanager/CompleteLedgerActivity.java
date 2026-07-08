@@ -18,18 +18,27 @@ import java.util.Locale;
 
 public class CompleteLedgerActivity extends AppCompatActivity {
 
-    // --- NEW: Export Manager and Global Variables ---
+    // --- Export Manager and Global Variables ---
     private LedgerExportManager exportManager;
     private ArrayList<String> allMembersList;
     private String currentTripId;
     private String currentTripName = "Trip";
 
-    // --- NEW: The SAF Launcher that opens the "Save As" screen safely ---
+    // --- The SAF Launcher for EXCEL ---
     private final ActivityResultLauncher<String> createExcelLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("text/csv"),
             uri -> {
                 if (uri != null && exportManager != null) {
                     exportManager.exportCompleteLedgerToCsv(uri, currentTripId, allMembersList);
+                }
+            });
+
+    // --- NEW: The SAF Launcher for PDF ---
+    private final ActivityResultLauncher<String> createPdfLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("application/pdf"),
+            uri -> {
+                if (uri != null && exportManager != null && currentTripId != null) {
+                    exportManager.exportAllTransactionsToPdf(uri, currentTripId);
                 }
             });
 
@@ -42,7 +51,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         // Assign to our global variable instead of a local one
         currentTripId = getIntent().getStringExtra("TRIP_ID");
 
-        // --- UPDATED: Map the 3 separate tables from the new XML ---
+        // Map the 3 separate tables from the XML
         TableLayout tableHeader = findViewById(R.id.table_header);
         TableLayout tableData = findViewById(R.id.table_data);
         TableLayout tableTotal = findViewById(R.id.table_total);
@@ -53,7 +62,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         }
 
         try (TripDatabaseHelper db = new TripDatabaseHelper(this)) {
-            // --- NEW: Initialize the Export Engine ---
+            // Initialize the Export Engine
             exportManager = new LedgerExportManager(this, db);
             allMembersList = getAllHistoricalMembers(db, currentTripId);
             currentTripName = fetchTripName(db, currentTripId);
@@ -61,7 +70,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             double[] totalPaid = new double[allMembersList.size()];
             double[] totalUsed = new double[allMembersList.size()];
 
-            // --- UPDATED: Pass the Header Table ---
+            // Pass the Header Table
             buildHeaderRow(tableHeader, allMembersList);
 
             double currentBalance = 0.0;
@@ -77,19 +86,26 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                         currentBalance -= amount;
                     }
 
-                    // --- UPDATED: Pass the scrollable Data Table ---
+                    // Pass the scrollable Data Table
                     buildDataRow(tableData, cursor, allMembersList, totalPaid, totalUsed);
                 }
             }
 
-            // --- UPDATED: Pass the Footer (Total) Table ---
+            // Pass the Footer (Total) Table
             buildTotalRow(tableTotal, allMembersList, totalPaid, totalUsed);
         }
 
-        // --- NEW: Hook up the Export to Excel Button ---
+        // --- Hook up the Export to Excel Button ---
         if (findViewById(R.id.btn_export_to_excel) != null) {
             findViewById(R.id.btn_export_to_excel).setOnClickListener(v ->
                     createExcelLauncher.launch(currentTripName + "_Ledger.csv")
+            );
+        }
+
+        // --- NEW: Hook up the Export to PDF Button ---
+        if (findViewById(R.id.btn_export_all_to_pdf) != null) {
+            findViewById(R.id.btn_export_all_to_pdf).setOnClickListener(v ->
+                    createPdfLauncher.launch(currentTripName + "_All_Transactions.pdf")
             );
         }
     }
@@ -106,7 +122,6 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, m + "\nDebit", true);
         }
 
-        // addCell(row, "Fund", true);
         table.addView(row);
     }
 
@@ -114,7 +129,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         TableRow row = new TableRow(this);
         applyRowDividers(row);
 
-        // --- NEW: Grab the hidden Transaction ID ---
+        // Grab the hidden Transaction ID
         int transId = cursor.getInt(cursor.getColumnIndexOrThrow("trans_id"));
 
         String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
@@ -153,15 +168,15 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, String.format(Locale.US, "%.2f", usedVal), false);
         }
 
-        // --- NEW: Make Row Clickable for Edit/Delete ---
+        // Make Row Clickable for Edit/Delete
         row.setClickable(true);
         row.setBackgroundResource(android.R.drawable.list_selector_background);
-        row.setOnClickListener(v -> showTransactionOptions(transId, type, currentTripId)); // Used global variable here
+        row.setOnClickListener(v -> showTransactionOptions(transId, type, currentTripId));
 
         table.addView(row);
     }
 
-    // --- NEW EDIT & DELETE DIALOGS ---
+    // --- EDIT & DELETE DIALOGS ---
     private void showTransactionOptions(int transId, String type, String tripId) {
         String[] options = {"Edit", "Delete"};
         new AlertDialog.Builder(this)
@@ -225,7 +240,6 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, String.format(Locale.US, "%.2f", totalUsed[i]), true);
         }
 
-        // addCell(row, "-", true);
         table.addView(row);
     }
 
@@ -292,10 +306,9 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         tv.setPadding(16, 16, 16, 16);
         tv.setGravity(Gravity.CENTER);
 
-        // --- CRITICAL FIX: Force uniform width (80dp) so the 3 tables align horizontally ---
+        // Force uniform width (80dp) so the 3 tables align horizontally
         int widthInPx = (int) (80 * getResources().getDisplayMetrics().density);
         tv.setWidth(widthInPx);
-        // ------------------------------------------------------------------------------------
 
         if (isHeader) {
             tv.setBackgroundColor(Color.parseColor("#85022E"));
@@ -308,27 +321,21 @@ public class CompleteLedgerActivity extends AppCompatActivity {
     }
 
     private void applyRowDividers(TableRow row) {
-        // This tells the row to draw a line between every cell
         row.setShowDividers(android.widget.LinearLayout.SHOW_DIVIDER_MIDDLE);
-
-        // Create the physical line (2 pixels wide, light gray color)
         android.graphics.drawable.GradientDrawable divider = new android.graphics.drawable.GradientDrawable();
         divider.setColor(Color.parseColor("#CBD5E1"));
         divider.setSize(2, 0);
-
         row.setDividerDrawable(divider);
     }
-    //white vertical line for column divider
+
     private void applyRowDividersWhite(TableRow row) {
-        // This tells the row to draw a line between every cell
         row.setShowDividers(android.widget.LinearLayout.SHOW_DIVIDER_MIDDLE);
         android.graphics.drawable.GradientDrawable divider = new android.graphics.drawable.GradientDrawable();
         divider.setColor(Color.parseColor("#FFFFFF"));
         divider.setSize(2, 0);
-
         row.setDividerDrawable(divider);
     }
-    // --- NEW: Fetch and clean the trip name for the file export ---
+
     private String fetchTripName(TripDatabaseHelper db, String tripId) {
         String name = "Trip";
         String query = "SELECT " + TripDatabaseHelper.COLUMN_TRIP_NAME +
@@ -339,10 +346,8 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                 name = cursor.getString(0);
             }
         } catch (Exception e) {
-            // FIXED: Using Android's official Log system instead of printStackTrace
             android.util.Log.e("CompleteLedger", "Error fetching trip name", e);
         }
-        // Replace spaces and special characters with underscores for safe file saving
         return name.replaceAll("[^a-zA-Z0-9]", "_");
     }
 }
