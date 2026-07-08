@@ -4,13 +4,13 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.button.MaterialButton;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -28,6 +28,10 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     private String currentCategoryLabel;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
+    // Suppress warning because we prefer this as a class-level variable for clarity
+    @SuppressWarnings("FieldCanBeLocal")
+    private ImageButton btnHeaderAddNewTrip;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,7 +40,9 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         recyclerView = findViewById(R.id.recycler_view_trips);
         txtEmptyMessage = findViewById(R.id.txt_empty_trips_message);
         TextView txtCategoryTitle = findViewById(R.id.txt_trip_list_category_title);
-        MaterialButton btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
+
+        // Initialize the ImageButton correctly
+        btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
 
         dbHelper = new TripDatabaseHelper(this);
 
@@ -53,13 +59,15 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         adapter = new TripAdapter(tripList, this);
         recyclerView.setAdapter(adapter);
 
-        btnHeaderAddNewTrip.setOnClickListener(v -> startActivity(new Intent(TripListActivity.this, CreateTripActivity.class)));
+        // Set click listener for the ImageButton
+        if (btnHeaderAddNewTrip != null) {
+            btnHeaderAddNewTrip.setOnClickListener(v -> startActivity(new Intent(TripListActivity.this, CreateTripActivity.class)));
+        }
 
         loadAndFilterTrips();
     }
 
     private void loadAndFilterTrips() {
-        // FIXED: Eliminated notifyDataSetChanged() entirely in favor of high-efficiency specific range notifications
         int previousSize = tripList.size();
         tripList.clear();
 
@@ -115,7 +123,6 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
         recyclerView.setVisibility(tripList.isEmpty() ? View.GONE : View.VISIBLE);
 
-        // FIXED: Using highly specific item range insertion notifications
         if (!tripList.isEmpty()) {
             adapter.notifyItemRangeInserted(0, tripList.size());
         }
@@ -141,12 +148,8 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         }
     }
 
-    // Inside TripListActivity.java
     @Override
     public void onTripItemClick(TripModel trip) {
-        // OLD: Intent intent = new Intent(this, TripLedgerActivity.class);
-
-        // NEW:
         Intent intent = new Intent(this, TripDetailsActivity.class);
         intent.putExtra("TRIP_ID", trip.getTripId());
         intent.putExtra("TRIP_NAME", trip.getTripName());

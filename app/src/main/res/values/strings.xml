@@ -282,5 +282,7 @@
     <string name="all_transactions_for_current_member">All Transactions for Current member</string>
     <string name="format_trip_name_header">Trip: %1$s</string>
 
+    <string name="txt_all_trips">Trip List</string>
+
 
 </resources>

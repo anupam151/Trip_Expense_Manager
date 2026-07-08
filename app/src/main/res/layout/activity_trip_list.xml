@@ -7,54 +7,64 @@
     android:orientation="vertical"
     android:background="#F8F9FA"
     tools:context=".TripListActivity">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:gravity="center"
         android:orientation="vertical"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="12dp">
+        android:paddingBottom="4dp"
+        android:paddingTop="4dp">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/txt_trip_list_category_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:layout_toStartOf="@id/btn_header_add_new_trip"
-                android:textColor="#0D1A39"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                tools:text="Ongoing Trips" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_header_add_new_trip"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="@string/btn_label_add_new_trip"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:backgroundTint="#85022E"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                app:cornerRadius="6dp" />
-        </RelativeLayout>
-
-        <View
-            android:layout_width="60dp"
-            android:layout_height="4dp"
-            android:layout_marginTop="8dp"
-            android:background="#85022E" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:fontFamily="monospace"
+            android:textColor="#85022E"
+            android:textSize="15sp"
+            android:textStyle="bold" />
     </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="6dp"
+        android:background="#85022E">
 
+        <ImageButton
+            android:id="@+id/btnHome"
+            android:layout_width="43dp"
+            android:layout_height="43dp"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_home"
+            android:contentDescription="@string/home"
+            app:tint="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/txt_trip_list_category_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:text="@string/txt_all_trips"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="22sp"/>
+        <ImageButton
+            android:id="@+id/btn_header_add_new_trip"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/create_trip"
+            android:contentDescription="@string/desc_share_ledger"
+            app:tint="#FFFFFF" />
+    </LinearLayout>
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -81,4 +91,65 @@
             android:visibility="gone" />
 
     </FrameLayout>
+    <LinearLayout
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#E9E9E9"
+        android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="8dp"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:background="#E9E9E9"
+            android:gravity="center">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_all_individual_to_one_pdf"
+                android:layout_width="0dp"
+                app:icon="@drawable/pdf"
+                android:text="@string/all_in_one_pdf"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="#85022E"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="10dp"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                app:cornerRadius="8dp"
+                app:iconGravity="textStart"
+                android:textColor="#FFFFFF"/>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_complete_ledger"
+                android:layout_width="0dp"
+                app:icon="@drawable/bank"
+                android:text="@string/complete_ledger"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="#85022E"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="10dp"
+                android:textAllCaps="false"
+                android:textSize="13sp"
+                app:cornerRadius="8dp"
+                app:iconGravity="textStart"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/footer_text"
+            android:layout_marginBottom="10dp"
+            android:fontFamily="monospace"
+            android:textColor="#85022E"
+            android:textSize="12sp" />
+
+
+    </LinearLayout>
 </LinearLayout>
