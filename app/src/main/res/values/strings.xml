@@ -305,5 +305,8 @@
     <string name="app_version">Version 2.0</string>
     <string name="desc_home">Home</string>
 
+    <string name="app_description">Trip Expense Manager is a simple app to track trip expenses, payments, and member balances. Easily manage group travel finances, split costs, and stay organized throughout your journey.
+</string>
+
 
 </resources>

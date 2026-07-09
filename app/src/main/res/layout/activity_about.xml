@@ -8,31 +8,60 @@
     android:gravity="center_horizontal">
 
     <ImageView
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@mipmap/ic_launcher"
-        android:contentDescription="@null" /> <TextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/app_full_name"
-    android:textSize="22sp"
-    android:textStyle="bold" />
+        android:layout_width="175dp"
+        android:layout_height="175dp"
+        android:src="@drawable/app_logo"
+        android:layout_marginTop="40dp"
+        android:contentDescription="@null" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:textColor="#85022E"
+        android:text="@string/app_full_name"
+        android:textSize="22sp"
+        android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/app_version"
         android:layout_marginBottom="20dp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:fontFamily="monospace"
+        android:justificationMode="inter_word"
+        android:textStyle="bold"
+        android:textAlignment="viewStart"
+        android:lineSpacingExtra="4dp"
+        android:lineSpacingMultiplier="1.5"
+        android:text="@string/app_description"
+        android:layout_marginBottom="40dp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/footer_text"
+        android:layout_marginBottom="10dp"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
+        android:textColor="#85022E"
+        android:textSize="16sp" />
 
-    <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <ImageButton
         android:id="@+id/btn_about_home"
-        android:layout_width="43dp"
-        android:layout_height="43dp"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
         android:padding="6dp"
         android:scaleType="fitCenter"
         android:background="?attr/selectableItemBackgroundBorderless"
+        android:layout_marginBottom="30dp"
         android:src="@drawable/ic_home"
         android:contentDescription="@string/desc_go_back"
         app:tint="#85022E" />
