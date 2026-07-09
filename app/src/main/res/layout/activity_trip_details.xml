@@ -321,7 +321,7 @@
             android:ellipsize="none"
             app:autoSizeTextType="uniform"
             app:autoSizeMinTextSize="6sp"
-            app:autoSizeMaxTextSize="28sp"
+            app:autoSizeMaxTextSize="22sp"
             app:autoSizeStepGranularity="1sp" />
 
         <ImageButton

@@ -26,6 +26,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Window;
 // Rounded corner dialog End
+import android.widget.ImageButton;
 
 public class AddPaymentActivity extends AppCompatActivity {
 
@@ -49,6 +50,11 @@ public class AddPaymentActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_payment);
+
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
         spinnerPaymentBy = findViewById(R.id.spinner_payment_by);
         edtPaymentDate = findViewById(R.id.edt_payment_date);

@@ -85,6 +85,18 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             btnHeaderAddNewTrip.setOnClickListener(v -> startActivity(new Intent(TripListActivity.this, CreateTripActivity.class)));
         }
 
+        // --- ADD THIS TO HANDLE HOME BUTTON ---
+        ImageButton btnHome = findViewById(R.id.btnHome);
+        if (btnHome != null) {
+            btnHome.setOnClickListener(v -> {
+                Intent intent = new Intent(TripListActivity.this, DashboardActivity.class);
+                // Clear the backstack so the user doesn't get stuck
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish(); // Close TripListActivity
+            });
+        }
+
         // --- NEW EXPORT & TRANSACTIONS LOGIC INITIALIZATION ---
         exportManager = new LedgerExportManager(this, dbHelper);
 
@@ -155,12 +167,11 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                     createMasterPdfLauncher.launch(fileName);
                 } else {
                     // --- VIEW TRANSACTIONS LOGIC ---
-                    Intent intent = new Intent(TripListActivity.this, TripDetailsActivity.class);
+                    Intent intent = new Intent(TripListActivity.this, CompleteLedgerActivity.class);
+
                     intent.putExtra("TRIP_ID", trip.getTripId());
                     intent.putExtra("TRIP_NAME", trip.getTripName());
-                    intent.putExtra("DESTINATION", trip.getDestination());
-                    intent.putExtra("START_DATE", trip.getStartDate());
-                    intent.putExtra("MEMBERS", trip.getMembersListString());
+                    // Pass any other data your Ledger activity needs
                     startActivity(intent);
                 }
             });

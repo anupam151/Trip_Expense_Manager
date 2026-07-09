@@ -2,33 +2,77 @@ package com.example.tripexpensemanager;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AlertDialog;
+import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.navigation.NavigationView;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import androidx.appcompat.app.AlertDialog;
 
 public class DashboardActivity extends AppCompatActivity {
 
     private TextView lblRecentHeading;
-    private LinearLayout containerPinnedTripsStack;
-    private LinearLayout layoutNoPinnedTrips;
+    private LinearLayout containerPinnedTripsStack, layoutNoPinnedTrips;
     private TripDatabaseHelper dbHelper;
+    private DrawerLayout drawerLayout;
+
+    private final ActivityResultLauncher<String> backupLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("application/octet-stream"),
+            uri -> { if (uri != null) performBackup(uri); });
+
+    private final ActivityResultLauncher<String[]> restoreLauncher = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(),
+            uri -> { if (uri != null) performRestore(uri); });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
+        // 1. Initialize helper immediately
+        dbHelper = new TripDatabaseHelper(this);
+
+        // 2. Optimized First-Run Check
+        android.content.SharedPreferences appPrefs = getSharedPreferences("app_internal_prefs", MODE_PRIVATE);
+
+        // Simplified using the '!' operator
+        if (!appPrefs.getBoolean("is_first_launch_done", false)) {
+            // Wipe data on first run
+            android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIPS);
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_EXPENSES);
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_PAYMENTS);
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS);
+
+            // Mark that the first run is complete
+            appPrefs.edit().putBoolean("is_first_launch_done", true).apply();
+        }
         setContentView(R.layout.activity_dashboard);
 
         dbHelper = new TripDatabaseHelper(this);
 
-        MaterialButton btnCreateTrip = findViewById(R.id.btn_dash_create_trip);
-        MaterialButton btnViewTrips = findViewById(R.id.btn_dash_view_trips);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
+        NavigationView navView = findViewById(R.id.nav_view);
+
         lblRecentHeading = findViewById(R.id.lbl_recent_trip_heading);
         containerPinnedTripsStack = findViewById(R.id.container_pinned_trips_stack);
         layoutNoPinnedTrips = findViewById(R.id.layout_no_pinned_trips);
@@ -37,15 +81,70 @@ public class DashboardActivity extends AppCompatActivity {
         String styledSignatureText = getString(R.string.dev_branding_signature_placeholder, "<b><font color='#1E88E5'>Anupam</font></b>");
         txtDeveloperBranding.setText(Html.fromHtml(styledSignatureText, Html.FROM_HTML_MODE_LEGACY));
 
-        btnCreateTrip.setOnClickListener(v -> startActivity(new Intent(this, CreateTripActivity.class)));
-        btnViewTrips.setOnClickListener(v -> startActivity(new Intent(this, TripListActivity.class)));
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout.isDrawerOpen(GravityCompat.START)) drawerLayout.closeDrawer(GravityCompat.START);
+                else finish();
+            }
+        });
 
-        // Explore Trips button logic (redirects to the trip list)
-        findViewById(R.id.btn_create_new_trips).setOnClickListener(v ->
-                startActivity(new Intent(this, CreateTripActivity.class))
-        );
+        btnOpenDrawer.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
+        findViewById(R.id.btn_dash_create_trip).setOnClickListener(v -> startActivity(new Intent(this, CreateTripActivity.class)));
+        findViewById(R.id.btn_dash_view_trips).setOnClickListener(v -> startActivity(new Intent(this, TripListActivity.class)));
+        findViewById(R.id.btn_create_new_trips).setOnClickListener(v -> startActivity(new Intent(this, CreateTripActivity.class)));
+
+        navView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_create_trip) {
+                startActivity(new Intent(this, CreateTripActivity.class));
+            } else if (id == R.id.nav_view_trips) {
+                startActivity(new Intent(this, TripListActivity.class));
+            } else if (id == R.id.nav_about) {
+                startActivity(new Intent(this, AboutActivity.class));
+            } else if (id == R.id.nav_backup) {
+                backupLauncher.launch("TripManager_Backup.db");
+            } else if (id == R.id.nav_restore) {
+                restoreLauncher.launch(new String[]{"application/octet-stream"});
+            }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        });
 
         updatePinnedWorkspace();
+    }
+
+    private void performBackup(Uri uri) {
+        try (FileInputStream fis = new FileInputStream(getDatabasePath("TripManager.db"));
+             OutputStream fos = getContentResolver().openOutputStream(uri)) {
+            if (fos != null) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = fis.read(buffer)) > 0) fos.write(buffer, 0, length);
+                Toast.makeText(this, "Backup Successful!", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Backup Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void performRestore(Uri uri) {
+        try (InputStream is = getContentResolver().openInputStream(uri);
+             FileOutputStream fos = new FileOutputStream(getDatabasePath("TripManager.db"))) {
+            dbHelper.close();
+            if (is != null) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = is.read(buffer)) > 0) fos.write(buffer, 0, length);
+                Toast.makeText(this, "Restore Successful! Restarting...", Toast.LENGTH_LONG).show();
+                finishAffinity();
+                startActivity(new Intent(this, DashboardActivity.class));
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Restore Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void updatePinnedWorkspace() {

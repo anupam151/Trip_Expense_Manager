@@ -290,6 +290,20 @@
     <string name="title_select_trip_transactions">Select Trip to View Ledger</string>
 
     <string name="msg_no_trips_available">No trips available.</string>
+    <string name="desc_open_menu">Open Menu</string>
+
+    <string name="nav_create_trip">Create Trip</string>
+    <string name="nav_view_trips">View Trips</string>
+    <string name="nav_data_management">Data Management</string>
+    <string name="nav_backup_db">Backup Database</string>
+    <string name="nav_restore_db">Restore Database</string>
+    <string name="nav_about">About</string>
+    <string name="nav_close">Close Menu</string>
+
+    <string name="desc_back">Back</string>
+    <string name="app_full_name">Trip Expense Manager</string>
+    <string name="app_version">Version 2.0</string>
+    <string name="desc_home">Home</string>
 
 
 </resources>
