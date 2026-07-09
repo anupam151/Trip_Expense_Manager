@@ -259,8 +259,8 @@
         android:background="#FFFFFF"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingBottom="4dp"
-        android:paddingTop="4dp">
+        android:paddingBottom="6dp"
+        android:paddingTop="6dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -275,7 +275,7 @@
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="32dp"
         android:background="#85022E"
         android:gravity="center_vertical"
         android:orientation="horizontal">

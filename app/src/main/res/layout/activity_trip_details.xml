@@ -271,8 +271,8 @@
         android:background="#FFFFFF"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingBottom="4dp"
-        android:paddingTop="4dp">
+        android:paddingBottom="6dp"
+        android:paddingTop="6dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -287,7 +287,7 @@
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="32dp"
         android:paddingHorizontal="6dp"
         android:background="#85022E"
         android:gravity="center_vertical"
@@ -464,6 +464,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:layout_marginTop="2dp"
         android:layout_alignParentBottom="true"
         android:background="#F5F6F8"
         android:gravity="center">
@@ -485,7 +486,7 @@
                 android:layout_weight="1"
                 android:backgroundTint="#85022E"
                 android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="4dp"
                 android:layout_marginBottom="10dp"
                 android:textAllCaps="false"
                 android:textSize="13sp"
@@ -501,7 +502,7 @@
                 android:layout_weight="1"
                 android:backgroundTint="#85022E"
                 android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="4dp"
                 android:layout_marginBottom="10dp"
                 android:textAllCaps="false"
                 android:textSize="13sp"
@@ -513,7 +514,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/footer_text"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="14dp"
             android:fontFamily="monospace"
             android:textColor="#85022E"
             android:textSize="12sp" />

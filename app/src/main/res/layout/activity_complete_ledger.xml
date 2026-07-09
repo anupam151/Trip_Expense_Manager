@@ -9,7 +9,7 @@
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="86dp"
+        android:layout_marginTop="88dp"
         android:layout_marginHorizontal="10dp"
         android:layout_marginBottom="97dp"
         android:background="#FAFAFF"
@@ -58,7 +58,7 @@
         android:background="#FFFFFF"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingBottom="4dp"
+        android:paddingBottom="6dp"
         android:paddingTop="4dp">
 
         <TextView
@@ -74,7 +74,7 @@
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="32dp"
         android:background="#85022E"
         android:gravity="center_vertical"
         android:orientation="horizontal">
