@@ -2,7 +2,7 @@ package com.example.tripexpensemanager;
 
 import android.content.Intent;
 import android.database.Cursor;
-import android.net.Uri;
+//import android.net.Uri;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.LayoutInflater;
@@ -27,12 +27,26 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.navigation.NavigationView;
-import java.io.FileInputStream;
+
+import android.graphics.Color;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+
+// --- NEW: Google Drive & API Imports ---
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.Drive;
+import java.util.Collections;
+
+//import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+//import java.io.InputStream;
+//import java.io.OutputStream;
 
 import androidx.appcompat.app.AlertDialog;
+
 
 @SuppressWarnings("deprecation")
 public class DashboardActivity extends AppCompatActivity {
@@ -58,22 +72,15 @@ public class DashboardActivity extends AppCompatActivity {
                 }
             });
 
-    private final ActivityResultLauncher<String> backupLauncher = registerForActivityResult(
-            new ActivityResultContracts.CreateDocument("application/octet-stream"),
-            uri -> { if (uri != null) performBackup(uri); });
-
-    private final ActivityResultLauncher<String[]> restoreLauncher = registerForActivityResult(
-            new ActivityResultContracts.OpenDocument(),
-            uri -> { if (uri != null) performRestore(uri); });
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Configure Google Sign-In
+        // Configure Google Sign-In with Drive Scopes
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestIdToken(getString(R.string.default_web_client_id))
+                .requestScopes(new com.google.android.gms.common.api.Scope("https://www.googleapis.com/auth/drive.file"))
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
@@ -132,9 +139,11 @@ public class DashboardActivity extends AppCompatActivity {
             } else if (id == R.id.nav_about) {
                 startActivity(new Intent(this, AboutActivity.class));
             } else if (id == R.id.nav_backup) {
-                backupLauncher.launch("TripManager_Backup.db");
+                // --- UPDATED: Launch Cloud Backup instead of local backup ---
+                backupDatabaseToDrive();
             } else if (id == R.id.nav_restore) {
-                restoreLauncher.launch(new String[]{"application/octet-stream"});
+                // --- UPDATED: Launch Cloud Restore instead of local restore ---
+                restoreDatabaseFromDrive();
             }
 
             drawerLayout.closeDrawer(GravityCompat.START);
@@ -145,64 +154,172 @@ public class DashboardActivity extends AppCompatActivity {
         updateSignInUI(); // Set correct text on launch
     }
 
-    // --- NEW: UI Update Method ---
+    // --- NEW: Cloud Backup Method ---
+    private void backupDatabaseToDrive() {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null) {
+            Toast.makeText(this, "Please sign in to Google first!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Toast.makeText(this, "Preparing upload...", Toast.LENGTH_SHORT).show();
+
+        // Prepare credentials for Drive
+        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                this, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
+        credential.setSelectedAccount(account.getAccount());
+
+        Drive driveService = new Drive.Builder(
+                new NetHttpTransport(),
+                new GsonFactory(),
+                credential)
+                .setApplicationName("TripExpenseManager")
+                .build();
+
+        // Run the upload in a background thread to prevent app freeze
+        new Thread(() -> {
+            try {
+                GoogleDriveService driveUploader = new GoogleDriveService(driveService);
+                java.io.FileInputStream fis = new java.io.FileInputStream(getDatabasePath("TripManager.db"));
+
+                String fileId = driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
+
+                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Backup uploaded! File ID: " + fileId, Toast.LENGTH_LONG).show());
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    // --- NEW: Cloud Restore Method ---
+    private void restoreDatabaseFromDrive() {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null) {
+            Toast.makeText(this, "Please sign in to Google first!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Toast.makeText(this, "Searching for backup in Cloud...", Toast.LENGTH_SHORT).show();
+
+        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                this, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
+        credential.setSelectedAccount(account.getAccount());
+
+        Drive driveService = new Drive.Builder(
+                new NetHttpTransport(),
+                new GsonFactory(),
+                credential)
+                .setApplicationName("TripExpenseManager")
+                .build();
+
+        new Thread(() -> {
+            try {
+                GoogleDriveService driveUploader = new GoogleDriveService(driveService);
+
+                // 1. Find the backup file ID
+                String fileId = driveUploader.getLatestBackupFileId("TripManager_Backup.db");
+
+                if (fileId == null) {
+                    runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "No backup found in Google Drive!", Toast.LENGTH_LONG).show());
+                    return;
+                }
+
+                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Downloading backup...", Toast.LENGTH_SHORT).show());
+
+                // 2. Shut down the local database temporarily
+                dbHelper.close();
+
+                // 3. Open a stream to overwrite the local database file
+                java.io.File localDbFile = getDatabasePath("TripManager.db");
+                FileOutputStream fos = new FileOutputStream(localDbFile);
+
+                // 4. Download and save
+                driveUploader.downloadFile(fileId, fos);
+                fos.close();
+
+                // 5. Restart the app to apply the newly downloaded database
+                runOnUiThread(() -> {
+                    Toast.makeText(DashboardActivity.this, "Restore Successful! Restarting...", Toast.LENGTH_LONG).show();
+                    finishAffinity();
+                    startActivity(new Intent(DashboardActivity.this, DashboardActivity.class));
+                });
+
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Restore failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    // --- EXISTING METHODS BELOW ---
+
     private void updateSignInUI() {
         Menu menu = navView.getMenu();
         MenuItem loginItem = menu.findItem(R.id.nav_login);
+        MenuItem emailItem = menu.findItem(R.id.nav_user_email);
 
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null) {
             // User is signed in
-            loginItem.setTitle("Log Out (" + account.getEmail() + ")");
+            loginItem.setTitle("Log Out\n");
+
+            if (emailItem != null) {
+                // Create a SpannableString from the email
+                SpannableString styledEmail = new SpannableString(account.getEmail());
+
+                // 1. Change the color (e.g., to a muted gray)
+                styledEmail.setSpan(new ForegroundColorSpan(Color.parseColor("#808080")), 0, styledEmail.length(), 0);
+
+                // 2. Reduce the font size to 80% to ensure it fits on one line
+                styledEmail.setSpan(new RelativeSizeSpan(0.8f), 0, styledEmail.length(), 0);
+
+                // Apply the styled text to the menu item
+                emailItem.setTitle(styledEmail);
+                emailItem.setVisible(true);
+            }
         } else {
-            // User is not signed in
+            // User is logged out
             loginItem.setTitle("Google Sign-In");
+
+            if (emailItem != null) {
+                emailItem.setVisible(false);
+            }
         }
     }
 
-    // --- NEW: Sign Out Method ---
+    // --- UPDATED: Sign Out with Warning Dialog ---
     private void signOut() {
-        mGoogleSignInClient.signOut().addOnCompleteListener(this, task -> {
-            Toast.makeText(DashboardActivity.this, "Successfully Logged Out", Toast.LENGTH_SHORT).show();
-            updateSignInUI(); // Revert menu text back to Log-in.
-        });
+        new AlertDialog.Builder(this)
+                .setTitle("Log Out & Clear Data")
+                .setMessage("Logging out will erase all local trip data from this device to protect your privacy.\n\nPlease ensure you have tapped 'Backup' to save your latest changes to Google Drive before continuing.")
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setPositiveButton("Log Out", (dialog, which) -> performActualSignOut())
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
     }
-
     private void signInWithGoogle() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         signInLauncher.launch(signInIntent);
     }
 
-    private void performBackup(Uri uri) {
-        try (FileInputStream fis = new FileInputStream(getDatabasePath("TripManager.db"));
-             OutputStream fos = getContentResolver().openOutputStream(uri)) {
-            if (fos != null) {
-                byte[] buffer = new byte[1024];
-                int length;
-                while ((length = fis.read(buffer)) > 0) fos.write(buffer, 0, length);
-                Toast.makeText(this, "Backup Successful!", Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, "Backup Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+    private void performActualSignOut() {
+        mGoogleSignInClient.signOut().addOnCompleteListener(this, task -> {
+            // 1. Wipe all local tables clean
+            android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIPS);
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_EXPENSES);
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_PAYMENTS);
+            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS);
+
+            // 2. Refresh the UI to remove pinned trips from the screen
+            updatePinnedWorkspace();
+
+            // 3. Update the menu text back to "Google Sign-In"
+            updateSignInUI();
+
+            Toast.makeText(DashboardActivity.this, "Successfully Logged Out and Local Data Cleared", Toast.LENGTH_LONG).show();
+        });
     }
 
-    private void performRestore(Uri uri) {
-        try (InputStream is = getContentResolver().openInputStream(uri);
-             FileOutputStream fos = new FileOutputStream(getDatabasePath("TripManager.db"))) {
-            dbHelper.close();
-            if (is != null) {
-                byte[] buffer = new byte[1024];
-                int length;
-                while ((length = is.read(buffer)) > 0) fos.write(buffer, 0, length);
-                Toast.makeText(this, "Restore Successful! Restarting...", Toast.LENGTH_SHORT).show();
-                finishAffinity();
-                startActivity(new Intent(this, DashboardActivity.class));
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, "Restore Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
 
     private void updatePinnedWorkspace() {
         containerPinnedTripsStack.removeAllViews();
