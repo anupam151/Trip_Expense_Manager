@@ -254,6 +254,7 @@ public class AddPaymentActivity extends AppCompatActivity {
                 Intent intent = new Intent(this, CompleteLedgerActivity.class);
                 intent.putExtra("TRIP_ID", currentTripId);
                 startActivity(intent);
+                DashboardActivity.triggerAutoBackup(this);
                 finish();
             } else {
                 Toast.makeText(this, "Update failed!", Toast.LENGTH_SHORT).show();
@@ -262,6 +263,7 @@ public class AddPaymentActivity extends AppCompatActivity {
             long insertedRowId = dbHelper.insertPayment(currentTripId, selectedPayer, paymentDateStr, totalAmount);
             if (insertedRowId != -1) {
                 Toast.makeText(this, "Payment of ₹" + amountRaw + " successfully registered!", Toast.LENGTH_SHORT).show();
+                DashboardActivity.triggerAutoBackup(this);
                 finish();
             } else {
                 Toast.makeText(this, "Critical database failure!", Toast.LENGTH_LONG).show();

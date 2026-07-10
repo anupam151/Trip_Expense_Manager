@@ -324,6 +324,7 @@ public class CreateTripActivity extends AppCompatActivity {
 
         if (resultRowId != null && !resultRowId.equals("-1")) {
             Toast.makeText(this, "Trip created successfully!", Toast.LENGTH_SHORT).show();
+            DashboardActivity.triggerAutoBackup(this);
             finish();
         } else {
             Toast.makeText(this, "Failed to insert trip record details!", Toast.LENGTH_SHORT).show();

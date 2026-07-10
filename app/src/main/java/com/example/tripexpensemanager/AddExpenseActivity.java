@@ -379,6 +379,7 @@ public class AddExpenseActivity extends AppCompatActivity {
             dbHelper.insertExpense(currentTripId, purpose, totalAmount, selectedPayer, joinedSharedWithText, dateStr);
             Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
         }
+        DashboardActivity.triggerAutoBackup(this);
         finish();
     }
 }

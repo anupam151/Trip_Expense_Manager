@@ -368,6 +368,7 @@ public class UpdateTripActivity extends AppCompatActivity {
             // 1. Give the DB a tiny window to finish writing the file
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 Toast.makeText(this, "Trip Updated!", Toast.LENGTH_SHORT).show();
+                DashboardActivity.triggerAutoBackup(this);
                 setResult(RESULT_OK);
                 finish();
             }, 200); // 200ms delay is usually enough for SQLite to finalize

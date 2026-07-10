@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.io.FileOutputStream;
 //import java.io.InputStream;
 //import java.io.OutputStream;
+import android.util.Log;
 
 import androidx.appcompat.app.AlertDialog;
 
@@ -67,6 +68,10 @@ public class DashboardActivity extends AppCompatActivity {
                     GoogleSignInAccount account = task.getResult(ApiException.class);
                     Toast.makeText(this, "Signed in as: " + account.getEmail(), Toast.LENGTH_SHORT).show();
                     updateSignInUI(); // Update menu text to "Log Out"
+
+                    // --- NEW: Automatically trigger restore on successful sign in ---
+                    restoreDatabaseFromDrive();
+
                 } catch (ApiException e) {
                     Toast.makeText(this, "Sign-in failed", Toast.LENGTH_SHORT).show();
                 }
@@ -404,6 +409,7 @@ public class DashboardActivity extends AppCompatActivity {
                 dbHelper.toggleTripPinStatus(trip.getTripId());
                 Toast.makeText(DashboardActivity.this, "'" + name + "' unpinned successfully!", Toast.LENGTH_SHORT).show();
                 updatePinnedWorkspace();
+                DashboardActivity.triggerAutoBackup(this);
             });
 
             btnEdit.setOnClickListener(v -> {
@@ -425,6 +431,7 @@ public class DashboardActivity extends AppCompatActivity {
                         .setPositiveButton("Yes, Delete", (dialog, which) -> {
                             dbHelper.deleteTrip(tripId);
                             updatePinnedWorkspace();
+                            DashboardActivity.triggerAutoBackup(this);
                         })
                         .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                         .create();
@@ -473,5 +480,41 @@ public class DashboardActivity extends AppCompatActivity {
         if (dbHelper != null) {
             dbHelper.close();
         }
+    }
+
+    // --- NEW: Global Static Trigger for Auto-Backup ---
+    public static void triggerAutoBackup(android.content.Context context) {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(context);
+        // If the user isn't logged in, do nothing (silent fail)
+        if (account == null) {
+            return;
+        }
+
+        // Prepare credentials for Drive
+        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                context, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
+        credential.setSelectedAccount(account.getAccount());
+
+        Drive driveService = new Drive.Builder(
+                new NetHttpTransport(),
+                new GsonFactory(),
+                credential)
+                .setApplicationName("TripExpenseManager")
+                .build();
+
+        // Run the upload silently in a background thread
+        new Thread(() -> {
+            try {
+                GoogleDriveService driveUploader = new GoogleDriveService(driveService);
+                java.io.FileInputStream fis = new java.io.FileInputStream(context.getDatabasePath("TripManager.db"));
+
+                // Upload silently without popping up loud Toasts
+                driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
+
+            } catch (Exception e) {
+                // --- UPDATED: Professional Android Logging ---
+                Log.e("AutoSync", "Background backup to Google Drive failed", e);
+            }
+        }).start();
     }
 }

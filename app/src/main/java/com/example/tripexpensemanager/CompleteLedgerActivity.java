@@ -221,6 +221,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                         }
                     }
                     recreate(); // Instantly refresh the page
+                    DashboardActivity.triggerAutoBackup(this);
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
