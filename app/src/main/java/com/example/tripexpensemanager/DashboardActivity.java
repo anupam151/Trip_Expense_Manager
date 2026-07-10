@@ -6,6 +6,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.Html;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -17,7 +19,12 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.navigation.NavigationView;
 import java.io.FileInputStream;
@@ -27,12 +34,29 @@ import java.io.OutputStream;
 
 import androidx.appcompat.app.AlertDialog;
 
+@SuppressWarnings("deprecation")
 public class DashboardActivity extends AppCompatActivity {
 
     private TextView lblRecentHeading;
     private LinearLayout containerPinnedTripsStack, layoutNoPinnedTrips;
     private TripDatabaseHelper dbHelper;
     private DrawerLayout drawerLayout;
+    private NavigationView navView;
+
+    // Google Sign-In variables
+    private GoogleSignInClient mGoogleSignInClient;
+    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                try {
+                    GoogleSignInAccount account = task.getResult(ApiException.class);
+                    Toast.makeText(this, "Signed in as: " + account.getEmail(), Toast.LENGTH_SHORT).show();
+                    updateSignInUI(); // Update menu text to "Log Out"
+                } catch (ApiException e) {
+                    Toast.makeText(this, "Sign-in failed", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     private final ActivityResultLauncher<String> backupLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -46,32 +70,29 @@ public class DashboardActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Configure Google Sign-In
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .build();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // 1. Initialize helper immediately
         dbHelper = new TripDatabaseHelper(this);
-
-        // 2. Optimized First-Run Check
         android.content.SharedPreferences appPrefs = getSharedPreferences("app_internal_prefs", MODE_PRIVATE);
 
-        // Simplified using the '!' operator
         if (!appPrefs.getBoolean("is_first_launch_done", false)) {
-            // Wipe data on first run
             android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIPS);
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_EXPENSES);
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_PAYMENTS);
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS);
-
-            // Mark that the first run is complete
             appPrefs.edit().putBoolean("is_first_launch_done", true).apply();
         }
         setContentView(R.layout.activity_dashboard);
 
-        dbHelper = new TripDatabaseHelper(this);
-
         drawerLayout = findViewById(R.id.drawer_layout);
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
-        NavigationView navView = findViewById(R.id.nav_view);
+        navView = findViewById(R.id.nav_view);
 
         lblRecentHeading = findViewById(R.id.lbl_recent_trip_heading);
         containerPinnedTripsStack = findViewById(R.id.container_pinned_trips_stack);
@@ -97,7 +118,14 @@ public class DashboardActivity extends AppCompatActivity {
         navView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.nav_create_trip) {
+            if (id == R.id.nav_login) {
+                // Check if user is already logged in
+                if (GoogleSignIn.getLastSignedInAccount(this) != null) {
+                    signOut(); // If logged in, sign them out
+                } else {
+                    signInWithGoogle(); // If logged out, launch sign in
+                }
+            } else if (id == R.id.nav_create_trip) {
                 startActivity(new Intent(this, CreateTripActivity.class));
             } else if (id == R.id.nav_view_trips) {
                 startActivity(new Intent(this, TripListActivity.class));
@@ -114,6 +142,35 @@ public class DashboardActivity extends AppCompatActivity {
         });
 
         updatePinnedWorkspace();
+        updateSignInUI(); // Set correct text on launch
+    }
+
+    // --- NEW: UI Update Method ---
+    private void updateSignInUI() {
+        Menu menu = navView.getMenu();
+        MenuItem loginItem = menu.findItem(R.id.nav_login);
+
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null) {
+            // User is signed in
+            loginItem.setTitle("Log Out (" + account.getEmail() + ")");
+        } else {
+            // User is not signed in
+            loginItem.setTitle("Google Sign-In");
+        }
+    }
+
+    // --- NEW: Sign Out Method ---
+    private void signOut() {
+        mGoogleSignInClient.signOut().addOnCompleteListener(this, task -> {
+            Toast.makeText(DashboardActivity.this, "Successfully Logged Out", Toast.LENGTH_SHORT).show();
+            updateSignInUI(); // Revert menu text back to Log-in.
+        });
+    }
+
+    private void signInWithGoogle() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        signInLauncher.launch(signInIntent);
     }
 
     private void performBackup(Uri uri) {
@@ -138,7 +195,7 @@ public class DashboardActivity extends AppCompatActivity {
                 byte[] buffer = new byte[1024];
                 int length;
                 while ((length = is.read(buffer)) > 0) fos.write(buffer, 0, length);
-                Toast.makeText(this, "Restore Successful! Restarting...", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Restore Successful! Restarting...", Toast.LENGTH_SHORT).show();
                 finishAffinity();
                 startActivity(new Intent(this, DashboardActivity.class));
             }
@@ -151,19 +208,16 @@ public class DashboardActivity extends AppCompatActivity {
         containerPinnedTripsStack.removeAllViews();
         Cursor cursor = dbHelper.getPinnedTripsCursor();
 
-        // 1. EMPTY STATE LOGIC
         if (cursor == null || cursor.getCount() == 0) {
             lblRecentHeading.setVisibility(View.GONE);
-            containerPinnedTripsStack.setVisibility(View.GONE); // Hide the stack
-            layoutNoPinnedTrips.setVisibility(View.VISIBLE);    // Show the placeholder
-
+            containerPinnedTripsStack.setVisibility(View.GONE);
+            layoutNoPinnedTrips.setVisibility(View.VISIBLE);
             if (cursor != null) cursor.close();
             return;
         }
 
-        // 2. ACTIVE STATE LOGIC
-        layoutNoPinnedTrips.setVisibility(View.GONE);       // Hide the placeholder
-        containerPinnedTripsStack.setVisibility(View.VISIBLE); // Show the stack
+        layoutNoPinnedTrips.setVisibility(View.GONE);
+        containerPinnedTripsStack.setVisibility(View.VISIBLE);
         lblRecentHeading.setVisibility(View.VISIBLE);
 
         int itemIndex = 1;
@@ -172,11 +226,7 @@ public class DashboardActivity extends AppCompatActivity {
         int marginBottomPx = Math.round(8 * scale);
 
         while (cursor.moveToNext()) {
-            // --- NEW: Strictly limit the dashboard to exactly 1 pinned trip ---
-            if (itemIndex > 1) {
-                break;
-            }
-            // ------------------------------------------------------------------
+            if (itemIndex > 1) break;
 
             String tripId = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_ID));
             String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
@@ -297,6 +347,7 @@ public class DashboardActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updatePinnedWorkspace();
+        updateSignInUI(); // Ensure UI is correct when coming back to the screen
     }
 
     @Override

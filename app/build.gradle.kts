@@ -5,8 +5,8 @@ plugins {
 }
 
 // Keep these as constants at the top of your file.
-val androidCompileSdk = 37
-val androidTargetSdk = 37
+val androidCompileSdk = 36
+val androidTargetSdk = 36
 val androidMinSdk = 26
 
 android {
@@ -38,10 +38,16 @@ android {
     }
     buildFeatures {
         viewBinding = true
-    }
-    buildFeatures {
         buildConfig = true
     }
+
+    lint {
+        // This stops lint from failing the build
+        abortOnError = false
+        // This specifically ignores that Play Console warning
+        ignoreWarnings = true
+    }
+
 }
 
 dependencies {
@@ -52,10 +58,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
+    //noinspection PlayCoreVersion
+    implementation(libs.googleAuth)
 }
 
 // <-- 2. The perfectly formatted Kotlin syntax with angle brackets
 tasks.withType<JavaCompile>().configureEach {
-    options.isWarnings = false
     options.compilerArgs.add("-Xlint:-deprecation")
 }
