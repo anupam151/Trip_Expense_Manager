@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.google.api.client)
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.gson)
+    implementation("androidx.work:work-runtime:2.9.0")
 }
 
 // <-- 2. The perfectly formatted Kotlin syntax with angle brackets

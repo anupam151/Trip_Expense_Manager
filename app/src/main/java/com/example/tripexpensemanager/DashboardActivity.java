@@ -44,7 +44,7 @@ import java.util.Collections;
 import java.io.FileOutputStream;
 //import java.io.InputStream;
 //import java.io.OutputStream;
-import android.util.Log;
+//import android.util.Log;
 
 import androidx.appcompat.app.AlertDialog;
 
@@ -483,38 +483,24 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     // --- NEW: Global Static Trigger for Auto-Backup ---
+    // --- UPDATED: Bulletproof Offline-First Auto-Backup ---
     public static void triggerAutoBackup(android.content.Context context) {
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(context);
-        // If the user isn't logged in, do nothing (silent fail)
-        if (account == null) {
-            return;
-        }
-
-        // Prepare credentials for Drive
-        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
-                context, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
-        credential.setSelectedAccount(account.getAccount());
-
-        Drive driveService = new Drive.Builder(
-                new NetHttpTransport(),
-                new GsonFactory(),
-                credential)
-                .setApplicationName("TripExpenseManager")
+        // 1. Define the rule: ONLY run when the phone has internet
+        androidx.work.Constraints constraints = new androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
                 .build();
 
-        // Run the upload silently in a background thread
-        new Thread(() -> {
-            try {
-                GoogleDriveService driveUploader = new GoogleDriveService(driveService);
-                java.io.FileInputStream fis = new java.io.FileInputStream(context.getDatabasePath("TripManager.db"));
+        // 2. Build the work request pointing to our new class
+        androidx.work.OneTimeWorkRequest backupRequest = new androidx.work.OneTimeWorkRequest.Builder(DriveBackupWorker.class)
+                .setConstraints(constraints)
+                .build();
 
-                // Upload silently without popping up loud Toasts
-                driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
-
-            } catch (Exception e) {
-                // --- UPDATED: Professional Android Logging ---
-                Log.e("AutoSync", "Background backup to Google Drive failed", e);
-            }
-        }).start();
+        // 3. Queue it up! Using "REPLACE" ensures that if a user makes 5 quick edits offline,
+        // it only uploads the database once when they reconnect, saving data and battery.
+        androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+                "DriveBackupWork",
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                backupRequest
+        );
     }
 }
