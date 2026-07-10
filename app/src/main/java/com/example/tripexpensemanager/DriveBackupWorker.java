@@ -15,7 +15,8 @@ import com.google.api.services.drive.Drive;
 
 import java.io.FileInputStream;
 import java.util.Collections;
-
+import androidx.annotation.Keep;
+@Keep // <--- Add this annotation
 public class DriveBackupWorker extends Worker {
 
     public DriveBackupWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {

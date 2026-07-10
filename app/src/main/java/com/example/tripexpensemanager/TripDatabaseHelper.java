@@ -6,7 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import java.util.UUID;
+import androidx.annotation.Keep;
 
+@Keep // <--- Add this annotation
 public class TripDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "TripManager.db";
