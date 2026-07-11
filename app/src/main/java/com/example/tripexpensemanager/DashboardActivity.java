@@ -183,7 +183,7 @@ public class DashboardActivity extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, "Preparing upload...", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Preparing upload...", Toast.LENGTH_SHORT).show();
 
         // Prepare credentials for Drive
         GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
@@ -222,7 +222,7 @@ public class DashboardActivity extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, "Searching for backup in Cloud...", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Searching for backup in Cloud...", Toast.LENGTH_SHORT).show();
 
         GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
                 this, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
@@ -247,7 +247,7 @@ public class DashboardActivity extends AppCompatActivity {
                     return;
                 }
 
-                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Downloading backup...", Toast.LENGTH_SHORT).show());
+                //runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Downloading backup...", Toast.LENGTH_SHORT).show());
 
                 // 2. Shut down the local database temporarily
                 dbHelper.close();
@@ -312,11 +312,40 @@ public class DashboardActivity extends AppCompatActivity {
     // --- UPDATED: Sign Out with Warning Dialog ---
     private void signOut() {
         new AlertDialog.Builder(this)
-                .setTitle("Log Out & Clear Data")
-                .setMessage("Logging out will erase all local trip data from this device to protect your privacy.\n\nPlease ensure you have tapped 'Backup' to save your latest changes to Google Drive before continuing.")
+                .setTitle("Log Out")
+                // Updated message to reflect the new automatic backup feature
+                .setMessage("Are you sure you want to log out?")
                 .setIcon(android.R.drawable.ic_dialog_alert)
-                .setPositiveButton("Log Out", (dialog, which) -> performActualSignOut())
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .setPositiveButton("Yes, Log Out", (dialog, which) -> {
+
+                    // 1. Alert the user that the backup is starting
+
+                    //Toast.makeText(this, "Backing up data before sign out...", Toast.LENGTH_LONG).show();
+
+                    // 2. Start the background backup process
+                    new Thread(() -> {
+                        try {
+                            GoogleDriveService driveUploader = new GoogleDriveService(getDriveService());
+                            java.io.FileInputStream fis = new java.io.FileInputStream(getDatabasePath("TripManager.db"));
+
+                            // Perform the upload
+                            driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
+
+                            // Upload successful! Switch back to Main Thread to sign out
+                            // Upload successful! Switch back to Main Thread to sign out
+                            runOnUiThread(this::performActualSignOut);
+
+                        } catch (Exception e) {
+                            // If backup fails, alert the user but still let them out
+                            runOnUiThread(() -> {
+                                Toast.makeText(DashboardActivity.this, "Backup failed: " + e.getMessage() + ". Signing out anyway.", Toast.LENGTH_LONG).show();
+                                //performActualSignOut();
+                            });
+                        }
+                    }).start();
+
+                })
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
                 .show();
     }
     private void signInWithGoogle() {
@@ -344,7 +373,7 @@ public class DashboardActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
 
-            Toast.makeText(DashboardActivity.this, "Logged Out", Toast.LENGTH_SHORT).show();
+            Toast.makeText(DashboardActivity.this, "Successfully Logged Out", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -429,7 +458,7 @@ public class DashboardActivity extends AppCompatActivity {
 
             btnPin.setOnClickListener(v -> {
                 dbHelper.toggleTripPinStatus(trip.getTripId());
-                Toast.makeText(DashboardActivity.this, "'" + name + "' unpinned successfully!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(DashboardActivity.this, "'" + name + "' Unpinned successfully!", Toast.LENGTH_SHORT).show();
                 updatePinnedWorkspace();
                 DashboardActivity.triggerAutoBackup(this);
             });
@@ -524,5 +553,27 @@ public class DashboardActivity extends AppCompatActivity {
                 androidx.work.ExistingWorkPolicy.REPLACE,
                 backupRequest
         );
+    }
+    private com.google.api.services.drive.Drive getDriveService() {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null) {
+            return null;
+        }
+
+        // 1. Create the credential using the Drive File scope
+        com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential credential =
+                com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential.usingOAuth2(
+                        this, java.util.Collections.singleton("https://www.googleapis.com/auth/drive.file"));
+
+        // 2. Attach the signed-in user's email
+        credential.setSelectedAccount(account.getAccount());
+
+        // 3. Build and return the Drive service
+        return new com.google.api.services.drive.Drive.Builder(
+                new com.google.api.client.http.javanet.NetHttpTransport(),
+                new com.google.api.client.json.gson.GsonFactory(),
+                credential)
+                .setApplicationName(getString(R.string.app_name))
+                .build();
     }
 }
