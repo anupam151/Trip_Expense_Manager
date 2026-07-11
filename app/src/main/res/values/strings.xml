@@ -309,4 +309,9 @@
 </string>
     <string name="default_web_client_id">812985698918-tengminq735i89ljijc9qkcq7knjvt3u.apps.googleusercontent.com</string>
     <string name="nav_login">Google Sign-In</string>
+
+    <string name="login_header">Welcome</string>
+    <string name="login_subtext">Sign in to manage your trip expenses securely.</string>
+    <string name="btn_login_text">Sign in with Google</string>
+    <string name="login_footer">© 2026 Trip Expense Manager</string>
 </resources>

@@ -81,7 +81,29 @@ public class DashboardActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Configure Google Sign-In with Drive Scopes
+        // 3. Auto-Restore Trigger:
+        if (getIntent().getBooleanExtra("RESTORE_DATA", false)) {
+            // Set the value to false so it won't trigger again if the activity rotates
+            getIntent().putExtra("RESTORE_DATA", false);
+
+            // Using the clean method reference
+            new android.os.Handler(android.os.Looper.getMainLooper())
+                    .postDelayed(this::restoreDatabaseFromDrive, 400);
+        }
+
+        // 2. Set the UI layout first so views can be found
+        setContentView(R.layout.activity_dashboard);
+
+        // This block should be standalone, NOT inside an 'if' or after heavy database work
+        if (getIntent().getBooleanExtra("RESTORE_DATA", false)) {
+            getIntent().removeExtra("RESTORE_DATA");
+
+            // Using the clean method reference
+            new android.os.Handler(android.os.Looper.getMainLooper())
+                    .postDelayed(this::restoreDatabaseFromDrive, 800);
+        }
+
+        // 4. Configure Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -89,9 +111,9 @@ public class DashboardActivity extends AppCompatActivity {
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
+        // 5. Database Cleanup (One-time on first launch)
         dbHelper = new TripDatabaseHelper(this);
         android.content.SharedPreferences appPrefs = getSharedPreferences("app_internal_prefs", MODE_PRIVATE);
-
         if (!appPrefs.getBoolean("is_first_launch_done", false)) {
             android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIPS);
@@ -100,20 +122,21 @@ public class DashboardActivity extends AppCompatActivity {
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS);
             appPrefs.edit().putBoolean("is_first_launch_done", true).apply();
         }
-        setContentView(R.layout.activity_dashboard);
 
+        // 6. Initialize UI Components
         drawerLayout = findViewById(R.id.drawer_layout);
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
         navView = findViewById(R.id.nav_view);
-
         lblRecentHeading = findViewById(R.id.lbl_recent_trip_heading);
         containerPinnedTripsStack = findViewById(R.id.container_pinned_trips_stack);
         layoutNoPinnedTrips = findViewById(R.id.layout_no_pinned_trips);
 
+        // 7. Branding
         TextView txtDeveloperBranding = findViewById(R.id.txt_dash_developer_branding);
         String styledSignatureText = getString(R.string.dev_branding_signature_placeholder, "<b><font color='#1E88E5'>Anupam</font></b>");
         txtDeveloperBranding.setText(Html.fromHtml(styledSignatureText, Html.FROM_HTML_MODE_LEGACY));
 
+        // 8. Listeners and Navigation
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -129,14 +152,9 @@ public class DashboardActivity extends AppCompatActivity {
 
         navView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-
             if (id == R.id.nav_login) {
-                // Check if user is already logged in
-                if (GoogleSignIn.getLastSignedInAccount(this) != null) {
-                    signOut(); // If logged in, sign them out
-                } else {
-                    signInWithGoogle(); // If logged out, launch sign in
-                }
+                if (GoogleSignIn.getLastSignedInAccount(this) != null) signOut();
+                else signInWithGoogle();
             } else if (id == R.id.nav_create_trip) {
                 startActivity(new Intent(this, CreateTripActivity.class));
             } else if (id == R.id.nav_view_trips) {
@@ -144,19 +162,17 @@ public class DashboardActivity extends AppCompatActivity {
             } else if (id == R.id.nav_about) {
                 startActivity(new Intent(this, AboutActivity.class));
             } else if (id == R.id.nav_backup) {
-                // --- UPDATED: Launch Cloud Backup instead of local backup ---
                 backupDatabaseToDrive();
             } else if (id == R.id.nav_restore) {
-                // --- UPDATED: Launch Cloud Restore instead of local restore ---
                 restoreDatabaseFromDrive();
             }
-
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
 
+        // 9. Final UI Updates
         updatePinnedWorkspace();
-        updateSignInUI(); // Set correct text on launch
+        updateSignInUI();
     }
 
     // --- NEW: Cloud Backup Method ---
@@ -187,9 +203,11 @@ public class DashboardActivity extends AppCompatActivity {
                 GoogleDriveService driveUploader = new GoogleDriveService(driveService);
                 java.io.FileInputStream fis = new java.io.FileInputStream(getDatabasePath("TripManager.db"));
 
-                String fileId = driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
+                // Just run the upload. No need to store the return value!
+                driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
 
-                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Backup uploaded! File ID: " + fileId, Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Backup Successful", Toast.LENGTH_SHORT).show());
+
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
@@ -197,7 +215,7 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     // --- NEW: Cloud Restore Method ---
-    private void restoreDatabaseFromDrive() {
+    public void restoreDatabaseFromDrive() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null) {
             Toast.makeText(this, "Please sign in to Google first!", Toast.LENGTH_SHORT).show();
@@ -244,7 +262,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                 // 5. Restart the app to apply the newly downloaded database
                 runOnUiThread(() -> {
-                    Toast.makeText(DashboardActivity.this, "Restore Successful! Restarting...", Toast.LENGTH_LONG).show();
+                    Toast.makeText(DashboardActivity.this, "Restore Successful!", Toast.LENGTH_LONG).show();
                     finishAffinity();
                     startActivity(new Intent(DashboardActivity.this, DashboardActivity.class));
                 });
@@ -308,23 +326,27 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void performActualSignOut() {
         mGoogleSignInClient.signOut().addOnCompleteListener(this, task -> {
-            // 1. Wipe all local tables clean
+            // 1. Wipe local data
             android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIPS);
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_EXPENSES);
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_PAYMENTS);
             db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS);
 
-            // 2. Refresh the UI to remove pinned trips from the screen
+            // 2. Clear UI
             updatePinnedWorkspace();
-
-            // 3. Update the menu text back to "Google Sign-In"
             updateSignInUI();
 
-            Toast.makeText(DashboardActivity.this, "Successfully Logged Out and Local Data Cleared", Toast.LENGTH_LONG).show();
+            // 3. FORCE REDIRECT
+            Intent intent = new Intent(DashboardActivity.this, LoginActivity.class);
+            // Clear all previous activities so they can't go "back" to the Dashboard
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+
+            Toast.makeText(DashboardActivity.this, "Logged Out", Toast.LENGTH_SHORT).show();
         });
     }
-
 
     private void updatePinnedWorkspace() {
         containerPinnedTripsStack.removeAllViews();
