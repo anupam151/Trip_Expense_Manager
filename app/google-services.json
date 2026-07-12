@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "420627833043",
+    "project_id": "tripexpensemanager-716be51f",
+    "storage_bucket": "tripexpensemanager-716be51f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420627833043:android:c1c773f5d93105e7b03426",
+        "android_client_info": {
+          "package_name": "com.example.tripexpensemanager"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "420627833043-2ouka375890e8of2bnuk0h9cu2t0nulu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tripexpensemanager",
+            "certificate_hash": "cd6c9ba1ef29c38fdd78436cd16dd3ee1cc31ab2"
+          }
+        },
+        {
+          "client_id": "420627833043-c4j7r0hpigk87l5he9essl7i9fafmlvk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnRjLS8u3lwx54zY8eLIYbWlDQpryY5a8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "420627833043-c4j7r0hpigk87l5he9essl7i9fafmlvk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

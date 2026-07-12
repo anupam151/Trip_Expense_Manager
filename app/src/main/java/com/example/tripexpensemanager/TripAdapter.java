@@ -1,19 +1,21 @@
 package com.example.tripexpensemanager;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.button.MaterialButton;
+
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder> {
 
-    private static final String TAG = "TripAdapter";
     private final ArrayList<TripModel> tripList;
     private final OnTripActionListener actionListener;
 
@@ -47,25 +49,11 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
         holder.txtMemberCount.setText(context.getString(R.string.fmt_item_member_count, trip.getMemberCount()));
         holder.txtStartDate.setText(context.getString(R.string.fmt_item_start_date, trip.getStartDate()));
 
-        double expensesSum = 0.0;
-        double paymentsSum = 0.0;
-        double fundBalance = 0.0;
-
-        try (TripDatabaseHelper dbHelper = new TripDatabaseHelper(context)) {
-            expensesSum = dbHelper.getTripTotalExpenses(trip.getTripId());
-            paymentsSum = dbHelper.getTripTotalPaymentsReceived(trip.getTripId());
-
-            // FIXED: Fetch the real-time fund balance
-            fundBalance = dbHelper.getFundBalance(trip.getTripId());
-        } catch (Exception e) {
-            Log.e(TAG, "Database aggregate balance load error for trip ID: " + trip.getTripId(), e);
-        }
-
-        holder.txtTotalExpense.setText(context.getString(R.string.fmt_dash_currency_rupees, expensesSum));
-        holder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, paymentsSum));
-
-        // FIXED: Display the calculated fund balance instead of the Trip ID
-        holder.txtFundBalance.setText(String.format(java.util.Locale.US, "₹%.2f", fundBalance));
+        // --- UPDATED: Data now comes from the TripModel object directly ---
+        // Ensure your TripModel class has fields for these and getters
+        holder.txtTotalExpense.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses()));
+        holder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments()));
+        holder.txtFundBalance.setText(String.format(Locale.US, "₹%.2f", trip.getFundBalance()));
 
         if (trip.getIsPinnedState() == 1) {
             holder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getTripName()));
@@ -77,15 +65,9 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             holder.btnPin.setTextColor(0xFFC85A00);
         }
 
+        // Click Listeners
         holder.itemView.setOnClickListener(v -> actionListener.onTripItemClick(trip));
-
-        holder.btnPin.setOnClickListener(v -> {
-            int currentPos = holder.getBindingAdapterPosition();
-            if (currentPos != RecyclerView.NO_POSITION) {
-                actionListener.onPinToggleClick(trip, currentPos);
-            }
-        });
-
+        holder.btnPin.setOnClickListener(v -> actionListener.onPinToggleClick(trip, holder.getBindingAdapterPosition()));
         holder.btnEdit.setOnClickListener(v -> actionListener.onEditClick(trip));
         holder.btnDelete.setOnClickListener(v -> actionListener.onDeleteClick(trip));
         holder.btnAddExpense.setOnClickListener(v -> actionListener.onAddExpenseClick(trip));
@@ -106,10 +88,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             txtTripName = itemView.findViewById(R.id.txt_item_trip_name);
             txtDestination = itemView.findViewById(R.id.txt_item_destination);
             txtMemberCount = itemView.findViewById(R.id.txt_item_member_count);
-
-            // FIXED: Linked to the new XML ID
             txtFundBalance = itemView.findViewById(R.id.txt_item_fund_balance);
-
             txtStartDate = itemView.findViewById(R.id.txt_item_start_date);
             txtTotalExpense = itemView.findViewById(R.id.txt_item_total_expense);
             txtTotalReceived = itemView.findViewById(R.id.txt_item_total_received);

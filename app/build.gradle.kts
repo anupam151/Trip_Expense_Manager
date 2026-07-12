@@ -2,6 +2,7 @@ import org.gradle.api.tasks.compile.JavaCompile
 
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 val androidCompileSdk = 36
@@ -84,6 +85,13 @@ dependencies {
     implementation(libs.google.api.client)
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.gson)
+
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
+
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+
 
     val workVersion = "2.9.0"
     implementation("androidx.work:work-runtime:$workVersion")

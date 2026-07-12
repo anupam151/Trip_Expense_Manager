@@ -1,10 +1,12 @@
 package com.example.tripexpensemanager;
 
 import android.content.Intent;
-import android.database.Cursor;
-//import android.net.Uri;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Html;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,12 +15,15 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -28,102 +33,40 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.navigation.NavigationView;
 
-import android.graphics.Color;
-import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.RelativeSizeSpan;
+// --- Firebase Imports ---
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-// --- NEW: Google Drive & API Imports ---
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.services.drive.Drive;
-import java.util.Collections;
-
-//import java.io.FileInputStream;
-import java.io.FileOutputStream;
-//import java.io.InputStream;
-//import java.io.OutputStream;
-//import android.util.Log;
-
-import androidx.appcompat.app.AlertDialog;
-
+import java.util.Locale;
 
 @SuppressWarnings("deprecation")
 public class DashboardActivity extends AppCompatActivity {
 
     private TextView lblRecentHeading;
     private LinearLayout containerPinnedTripsStack, layoutNoPinnedTrips;
-    private TripDatabaseHelper dbHelper;
     private DrawerLayout drawerLayout;
     private NavigationView navView;
 
-    // Google Sign-In variables
+    private FirebaseFirestore db;
     private GoogleSignInClient mGoogleSignInClient;
+
+    // Converted to an expression lambda using a method reference to avoid warnings
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-                try {
-                    GoogleSignInAccount account = task.getResult(ApiException.class);
-                    Toast.makeText(this, "Signed in as: " + account.getEmail(), Toast.LENGTH_SHORT).show();
-                    updateSignInUI(); // Update menu text to "Log Out"
-
-                    // --- NEW: Automatically trigger restore on successful sign in ---
-                    restoreDatabaseFromDrive();
-
-                } catch (ApiException e) {
-                    Toast.makeText(this, "Sign-in failed", Toast.LENGTH_SHORT).show();
-                }
-            });
-
+            this::handleSignInResult);
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 3. Auto-Restore Trigger:
-        if (getIntent().getBooleanExtra("RESTORE_DATA", false)) {
-            // Set the value to false so it won't trigger again if the activity rotates
-            getIntent().putExtra("RESTORE_DATA", false);
-
-            // Using the clean method reference
-            new android.os.Handler(android.os.Looper.getMainLooper())
-                    .postDelayed(this::restoreDatabaseFromDrive, 400);
-        }
-
-        // 2. Set the UI layout first so views can be found
         setContentView(R.layout.activity_dashboard);
 
-        // This block should be standalone, NOT inside an 'if' or after heavy database work
-        if (getIntent().getBooleanExtra("RESTORE_DATA", false)) {
-            getIntent().removeExtra("RESTORE_DATA");
+        db = FirebaseFirestore.getInstance();
 
-            // Using the clean method reference
-            new android.os.Handler(android.os.Looper.getMainLooper())
-                    .postDelayed(this::restoreDatabaseFromDrive, 800);
-        }
-
-        // 4. Configure Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestIdToken(getString(R.string.default_web_client_id))
-                .requestScopes(new com.google.android.gms.common.api.Scope("https://www.googleapis.com/auth/drive.file"))
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // 5. Database Cleanup (One-time on first launch)
-        dbHelper = new TripDatabaseHelper(this);
-        android.content.SharedPreferences appPrefs = getSharedPreferences("app_internal_prefs", MODE_PRIVATE);
-        if (!appPrefs.getBoolean("is_first_launch_done", false)) {
-            android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIPS);
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_EXPENSES);
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_PAYMENTS);
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS);
-            appPrefs.edit().putBoolean("is_first_launch_done", true).apply();
-        }
-
-        // 6. Initialize UI Components
         drawerLayout = findViewById(R.id.drawer_layout);
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
         navView = findViewById(R.id.nav_view);
@@ -131,150 +74,295 @@ public class DashboardActivity extends AppCompatActivity {
         containerPinnedTripsStack = findViewById(R.id.container_pinned_trips_stack);
         layoutNoPinnedTrips = findViewById(R.id.layout_no_pinned_trips);
 
-        // 7. Branding
         TextView txtDeveloperBranding = findViewById(R.id.txt_dash_developer_branding);
         String styledSignatureText = getString(R.string.dev_branding_signature_placeholder, "<b><font color='#1E88E5'>Anupam</font></b>");
-        txtDeveloperBranding.setText(Html.fromHtml(styledSignatureText, Html.FROM_HTML_MODE_LEGACY));
+        if (txtDeveloperBranding != null) {
+            txtDeveloperBranding.setText(Html.fromHtml(styledSignatureText, Html.FROM_HTML_MODE_LEGACY));
+        }
 
-        // 8. Listeners and Navigation
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (drawerLayout.isDrawerOpen(GravityCompat.START)) drawerLayout.closeDrawer(GravityCompat.START);
-                else finish();
+                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                } else {
+                    finish();
+                }
             }
         });
 
+        // Expression lambdas!
         btnOpenDrawer.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
-        findViewById(R.id.btn_dash_create_trip).setOnClickListener(v -> startActivity(new Intent(this, CreateTripActivity.class)));
-        findViewById(R.id.btn_dash_view_trips).setOnClickListener(v -> startActivity(new Intent(this, TripListActivity.class)));
-        findViewById(R.id.btn_create_new_trips).setOnClickListener(v -> startActivity(new Intent(this, CreateTripActivity.class)));
+        findViewById(R.id.btn_dash_create_trip).setOnClickListener(v -> launchCreateTripActivity());
+        findViewById(R.id.btn_dash_view_trips).setOnClickListener(v -> launchTripListActivity());
+        findViewById(R.id.btn_create_new_trips).setOnClickListener(v -> launchCreateTripActivity());
 
-        navView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_login) {
-                if (GoogleSignIn.getLastSignedInAccount(this) != null) signOut();
-                else signInWithGoogle();
-            } else if (id == R.id.nav_create_trip) {
-                startActivity(new Intent(this, CreateTripActivity.class));
-            } else if (id == R.id.nav_view_trips) {
-                startActivity(new Intent(this, TripListActivity.class));
-            } else if (id == R.id.nav_about) {
-                startActivity(new Intent(this, AboutActivity.class));
-            } else if (id == R.id.nav_backup) {
-                backupDatabaseToDrive();
-            } else if (id == R.id.nav_restore) {
-                restoreDatabaseFromDrive();
-            }
-            drawerLayout.closeDrawer(GravityCompat.START);
-            return true;
-        });
+        navView.setNavigationItemSelectedListener(this::handleNavigationItemSelected);
 
-        // 9. Final UI Updates
-        updatePinnedWorkspace();
         updateSignInUI();
     }
 
-    // --- NEW: Cloud Backup Method ---
-    private void backupDatabaseToDrive() {
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
-            Toast.makeText(this, "Please sign in to Google first!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        //Toast.makeText(this, "Preparing upload...", Toast.LENGTH_SHORT).show();
-
-        // Prepare credentials for Drive
-        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
-                this, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
-        credential.setSelectedAccount(account.getAccount());
-
-        Drive driveService = new Drive.Builder(
-                new NetHttpTransport(),
-                new GsonFactory(),
-                credential)
-                .setApplicationName("TripExpenseManager")
-                .build();
-
-        // Run the upload in a background thread to prevent app freeze
-        new Thread(() -> {
-            try {
-                GoogleDriveService driveUploader = new GoogleDriveService(driveService);
-                java.io.FileInputStream fis = new java.io.FileInputStream(getDatabasePath("TripManager.db"));
-
-                // Just run the upload. No need to store the return value!
-                driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
-
-                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Backup Successful", Toast.LENGTH_SHORT).show());
-
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        }).start();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateSignInUI();
+        fetchTripsFromCloud();
     }
 
-    // --- NEW: Cloud Restore Method ---
-    public void restoreDatabaseFromDrive() {
+    // --- Extracted logic to fix block lambda warnings ---
+    private void handleSignInResult(androidx.activity.result.ActivityResult result) {
+        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+        try {
+            GoogleSignInAccount account = task.getResult(ApiException.class);
+            Toast.makeText(this, "Signed in as: " + account.getEmail(), Toast.LENGTH_SHORT).show();
+            updateSignInUI();
+            fetchTripsFromCloud();
+        } catch (ApiException e) {
+            Toast.makeText(this, "Sign-in failed", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean handleNavigationItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.nav_login) {
+            if (GoogleSignIn.getLastSignedInAccount(this) != null) signOut();
+            else signInWithGoogle();
+        } else if (id == R.id.nav_create_trip) {
+            launchCreateTripActivity();
+        } else if (id == R.id.nav_view_trips) {
+            launchTripListActivity();
+        } else if (id == R.id.nav_about) {
+            startActivity(new Intent(this, AboutActivity.class));
+        } else if (id == R.id.nav_backup || id == R.id.nav_restore) {
+            Toast.makeText(this, "Auto-Sync is active! Your data is safe in the Cloud.", Toast.LENGTH_LONG).show();
+        }
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    private void launchCreateTripActivity() {
+        startActivity(new Intent(this, CreateTripActivity.class));
+    }
+
+    private void launchTripListActivity() {
+        startActivity(new Intent(this, TripListActivity.class));
+    }
+
+    // --- Firebase Data Fetching ---
+    private void fetchTripsFromCloud() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null) {
-            Toast.makeText(this, "Please sign in to Google first!", Toast.LENGTH_SHORT).show();
+            clearWorkspace();
             return;
         }
 
-        //Toast.makeText(this, "Searching for backup in Cloud...", Toast.LENGTH_SHORT).show();
+        db.collection("Trips")
+                .whereEqualTo("ownerEmail", account.getEmail())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    DocumentSnapshot pinnedTripDoc = null;
 
-        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
-                this, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
-        credential.setSelectedAccount(account.getAccount());
+                    // Safely find the pinned trip client-side to prevent Index crash
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Object isPinnedObj = doc.get("isPinned");
+                        boolean isPinned = false;
 
-        Drive driveService = new Drive.Builder(
-                new NetHttpTransport(),
-                new GsonFactory(),
-                credential)
-                .setApplicationName("TripExpenseManager")
-                .build();
+                        if (isPinnedObj instanceof Boolean) {
+                            isPinned = (Boolean) isPinnedObj;
+                        } else if (isPinnedObj instanceof Number) {
+                            isPinned = ((Number) isPinnedObj).intValue() == 1;
+                        } else if (isPinnedObj instanceof String) {
+                            isPinned = Boolean.parseBoolean((String) isPinnedObj) || "1".equals(isPinnedObj);
+                        }
 
-        new Thread(() -> {
-            try {
-                GoogleDriveService driveUploader = new GoogleDriveService(driveService);
+                        if (isPinned) {
+                            pinnedTripDoc = doc;
+                            break; // Show only the top pinned trip
+                        }
+                    }
 
-                // 1. Find the backup file ID
-                String fileId = driveUploader.getLatestBackupFileId("TripManager_Backup.db");
+                    if (pinnedTripDoc == null) {
+                        clearWorkspace();
+                    } else {
+                        populateWorkspace(pinnedTripDoc);
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to fetch data", Toast.LENGTH_SHORT).show());
+    }
 
-                if (fileId == null) {
-                    runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "No backup found in Google Drive!", Toast.LENGTH_LONG).show());
-                    return;
-                }
+    // --- FIX: Modified to accept a single DocumentSnapshot ---
+    private void populateWorkspace(DocumentSnapshot doc) {
+        containerPinnedTripsStack.removeAllViews();
+        layoutNoPinnedTrips.setVisibility(View.GONE);
+        containerPinnedTripsStack.setVisibility(View.VISIBLE);
+        lblRecentHeading.setVisibility(View.VISIBLE);
 
-                //runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Downloading backup...", Toast.LENGTH_SHORT).show());
+        float scale = getResources().getDisplayMetrics().density;
+        int marginHorizontalPx = Math.round(2 * scale);
+        int marginBottomPx = Math.round(8 * scale);
 
-                // 2. Shut down the local database temporarily
-                dbHelper.close();
+        String tripId = doc.getId();
+        String name = doc.getString("tripName") != null ? doc.getString("tripName") : "Unnamed Trip";
+        String destination = doc.getString("destination") != null ? doc.getString("destination") : "Unknown";
+        String members = doc.getString("members") != null ? doc.getString("members") : "";
 
-                // 3. Open a stream to overwrite the local database file
-                java.io.File localDbFile = getDatabasePath("TripManager.db");
-                FileOutputStream fos = new FileOutputStream(localDbFile);
+        Long countLong = doc.getLong("memberCount");
+        int count = countLong != null ? countLong.intValue() : 1;
 
-                // 4. Download and save
-                driveUploader.downloadFile(fileId, fos);
-                fos.close();
+        String startDate = doc.getString("startDate") != null ? doc.getString("startDate") : "";
+        String endDate = doc.getString("endDate") != null ? doc.getString("endDate") : "";
 
-                // 5. Restart the app to apply the newly downloaded database
-                runOnUiThread(() -> {
-                    Toast.makeText(DashboardActivity.this, "Restore Successful!", Toast.LENGTH_LONG).show();
-                    finishAffinity();
-                    startActivity(new Intent(DashboardActivity.this, DashboardActivity.class));
+        View cardView = LayoutInflater.from(this)
+                .inflate(R.layout.item_trip, containerPinnedTripsStack, false);
+
+        TextView txtTripName = cardView.findViewById(R.id.txt_item_trip_name);
+        TextView txtDestination = cardView.findViewById(R.id.txt_item_destination);
+        TextView txtMemberCount = cardView.findViewById(R.id.txt_item_member_count);
+        TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
+        TextView txtStartDate = cardView.findViewById(R.id.txt_item_start_date);
+        TextView txtTotalExpense = cardView.findViewById(R.id.txt_item_total_expense);
+        TextView txtTotalReceived = cardView.findViewById(R.id.txt_item_total_received);
+
+        TextView btnPin = cardView.findViewById(R.id.btn_item_pin);
+        TextView btnEdit = cardView.findViewById(R.id.btn_item_edit);
+        TextView btnDelete = cardView.findViewById(R.id.btn_item_delete);
+        MaterialButton btnAddExpense = cardView.findViewById(R.id.btn_item_add_expense);
+        MaterialButton btnAddPayment = cardView.findViewById(R.id.btn_item_add_payment);
+
+        txtTripName.setText(getString(R.string.fmt_dash_pinned_title, 1, name));
+        txtDestination.setText(getString(R.string.fmt_dash_destination, destination));
+        txtMemberCount.setText(getString(R.string.fmt_dash_member_count, count));
+        txtStartDate.setText(getString(R.string.fmt_dash_start_date, startDate));
+
+        // --- Call our new Universal Brain! ---
+        TripFinanceCalculator.calculateFinances(tripId, (totalExp, totalRec, fundBal) -> {
+            if (txtTotalExpense != null) {
+                txtTotalExpense.setText(getString(R.string.fmt_dash_currency_rupees, totalExp));
+            }
+            if (txtTotalReceived != null) {
+                txtTotalReceived.setText(getString(R.string.fmt_dash_currency_rupees, totalRec));
+            }
+            if (txtFundBalance != null) {
+                txtFundBalance.setText(String.format(Locale.US, "₹%.2f", fundBal));
+            }
+        });
+
+        // This screen only shows pinned trips
+        btnPin.setText(getString(R.string.action_unpin));
+        btnPin.setTextColor(0xFF2E7D32);
+
+        btnPin.setOnClickListener(v -> handlePinToggle(tripId, name));
+        btnEdit.setOnClickListener(v ->
+                navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate));
+
+        btnDelete.setOnClickListener(v ->
+                showDeleteDialog(tripId, name));
+
+        btnAddExpense.setOnClickListener(v ->
+                navigateToAddExpense(tripId, members));
+
+        btnAddPayment.setOnClickListener(v ->
+                navigateToAddPayment(tripId, members));
+
+        cardView.setOnClickListener(v ->
+                navigateToTripDetails(tripId, name, destination, members, startDate, endDate));
+
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        layoutParams.setMargins(
+                marginHorizontalPx,
+                marginBottomPx,
+                marginHorizontalPx,
+                marginBottomPx
+        );
+
+        cardView.setLayoutParams(layoutParams);
+        containerPinnedTripsStack.addView(cardView);
+    }
+
+    private void clearWorkspace() {
+        lblRecentHeading.setVisibility(View.GONE);
+        containerPinnedTripsStack.setVisibility(View.GONE);
+        layoutNoPinnedTrips.setVisibility(View.VISIBLE);
+    }
+
+    // --- Extracted Helper Methods for Button Clicks ---
+    private void handlePinToggle(String tripId, String tripName) {
+        db.collection("Trips")
+                .document(tripId)
+                .update("isPinned", false)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(
+                            DashboardActivity.this,
+                            "'" + tripName + "' unpinned!",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    fetchTripsFromCloud();
                 });
-
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(DashboardActivity.this, "Restore failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        }).start();
     }
 
-    // --- EXISTING METHODS BELOW ---
+    private void showDeleteDialog(String tripId, String tripName) {
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setTitle("Delete Trip")
+                .setMessage("Are you sure you want to delete '" + tripName + "'?")
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setPositiveButton("Yes, Delete", (dialog, which) -> executeCloudDelete(tripId)) // Expression lambda for dialog!
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .create();
+        alertDialog.show();
+        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF000000);
+        alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF000000);
+    }
 
+    private void executeCloudDelete(String tripId) {
+        db.collection("Trips").document(tripId).delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Trip deleted from Cloud", Toast.LENGTH_SHORT).show();
+                    fetchTripsFromCloud();
+                });
+    }
+
+    private void navigateToUpdateTrip(String tripId, String name, String destination, String members, String startDate, String endDate) {
+        Intent intent = new Intent(this, UpdateTripActivity.class);
+        intent.putExtra("TRIP_ID", tripId);
+        intent.putExtra("TRIP_NAME", name);
+        intent.putExtra("TRIP_DESTINATION", destination);
+        intent.putExtra("TRIP_MEMBERS", members);
+        intent.putExtra("TRIP_START_DATE", startDate);
+        intent.putExtra("TRIP_END_DATE", endDate);
+        startActivity(intent);
+    }
+
+    private void navigateToTripDetails(String tripId, String name, String destination, String members, String startDate, String endDate) {
+        Intent intent = new Intent(this, TripDetailsActivity.class);
+        intent.putExtra("TRIP_ID", tripId);
+        intent.putExtra("TRIP_NAME", name);
+        intent.putExtra("DESTINATION", destination);
+        intent.putExtra("MEMBERS", members);
+        intent.putExtra("START_DATE", startDate);
+        intent.putExtra("END_DATE", endDate);
+        startActivity(intent);
+    }
+
+    private void navigateToAddExpense(String tripId, String members) {
+        Intent intent = new Intent(this, AddExpenseActivity.class);
+        intent.putExtra("TRIP_ID", tripId);
+        intent.putExtra("TRIP_MEMBERS", members);
+        startActivity(intent);
+    }
+
+    private void navigateToAddPayment(String tripId, String members) {
+        Intent intent = new Intent(this, AddPaymentActivity.class);
+        intent.putExtra("TRIP_ID", tripId);
+        intent.putExtra("TRIP_MEMBERS", members);
+        startActivity(intent);
+    }
+
+    // --- Authentication & UI Methods ---
     private void updateSignInUI() {
         Menu menu = navView.getMenu();
         MenuItem loginItem = menu.findItem(R.id.nav_login);
@@ -282,298 +370,45 @@ public class DashboardActivity extends AppCompatActivity {
 
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null) {
-            // User is signed in
             loginItem.setTitle("Log Out\n");
-
             if (emailItem != null) {
-                // Create a SpannableString from the email
                 SpannableString styledEmail = new SpannableString(account.getEmail());
-
-                // 1. Change the color (e.g., to a muted gray)
                 styledEmail.setSpan(new ForegroundColorSpan(Color.parseColor("#808080")), 0, styledEmail.length(), 0);
-
-                // 2. Reduce the font size to 80% to ensure it fits on one line
                 styledEmail.setSpan(new RelativeSizeSpan(0.8f), 0, styledEmail.length(), 0);
-
-                // Apply the styled text to the menu item
                 emailItem.setTitle(styledEmail);
                 emailItem.setVisible(true);
             }
         } else {
-            // User is logged out
             loginItem.setTitle("Google Sign-In");
-
             if (emailItem != null) {
                 emailItem.setVisible(false);
             }
         }
     }
 
-    // --- UPDATED: Sign Out with Warning Dialog ---
     private void signOut() {
         new AlertDialog.Builder(this)
                 .setTitle("Log Out")
-                // Updated message to reflect the new automatic backup feature
-                .setMessage("Are you sure you want to log out?")
+                .setMessage("Are you sure you want to log out? Your data is safely stored in the Cloud.")
                 .setIcon(android.R.drawable.ic_dialog_alert)
-                .setPositiveButton("Yes, Log Out", (dialog, which) -> {
-
-                    // 1. Alert the user that the backup is starting
-
-                    //Toast.makeText(this, "Backing up data before sign out...", Toast.LENGTH_LONG).show();
-
-                    // 2. Start the background backup process
-                    new Thread(() -> {
-                        try {
-                            GoogleDriveService driveUploader = new GoogleDriveService(getDriveService());
-                            java.io.FileInputStream fis = new java.io.FileInputStream(getDatabasePath("TripManager.db"));
-
-                            // Perform the upload
-                            driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
-
-                            // Upload successful! Switch back to Main Thread to sign out
-                            // Upload successful! Switch back to Main Thread to sign out
-                            runOnUiThread(this::performActualSignOut);
-
-                        } catch (Exception e) {
-                            // If backup fails, alert the user but still let them out
-                            runOnUiThread(() -> {
-                                Toast.makeText(DashboardActivity.this, "Backup failed: " + e.getMessage() + ". Signing out anyway.", Toast.LENGTH_LONG).show();
-                                //performActualSignOut();
-                            });
-                        }
-                    }).start();
-
-                })
+                .setPositiveButton("Yes, Log Out", (dialog, which) -> performActualSignOut()) // Expression lambda!
                 .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
                 .show();
     }
+
     private void signInWithGoogle() {
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        signInLauncher.launch(signInIntent);
+        signInLauncher.launch(mGoogleSignInClient.getSignInIntent());
     }
 
     private void performActualSignOut() {
         mGoogleSignInClient.signOut().addOnCompleteListener(this, task -> {
-            // 1. Wipe local data
-            android.database.sqlite.SQLiteDatabase db = dbHelper.getWritableDatabase();
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIPS);
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_EXPENSES);
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_PAYMENTS);
-            db.execSQL("DELETE FROM " + TripDatabaseHelper.TABLE_TRIP_MEMBERS);
-
-            // 2. Clear UI
-            updatePinnedWorkspace();
+            clearWorkspace();
             updateSignInUI();
-
-            // 3. FORCE REDIRECT
             Intent intent = new Intent(DashboardActivity.this, LoginActivity.class);
-            // Clear all previous activities so they can't go "back" to the Dashboard
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
-
             Toast.makeText(DashboardActivity.this, "Successfully Logged Out", Toast.LENGTH_SHORT).show();
         });
-    }
-
-    private void updatePinnedWorkspace() {
-        containerPinnedTripsStack.removeAllViews();
-        Cursor cursor = dbHelper.getPinnedTripsCursor();
-
-        if (cursor == null || cursor.getCount() == 0) {
-            lblRecentHeading.setVisibility(View.GONE);
-            containerPinnedTripsStack.setVisibility(View.GONE);
-            layoutNoPinnedTrips.setVisibility(View.VISIBLE);
-            if (cursor != null) cursor.close();
-            return;
-        }
-
-        layoutNoPinnedTrips.setVisibility(View.GONE);
-        containerPinnedTripsStack.setVisibility(View.VISIBLE);
-        lblRecentHeading.setVisibility(View.VISIBLE);
-
-        int itemIndex = 1;
-        float scale = getResources().getDisplayMetrics().density;
-        int marginHorizontalPx = Math.round(2 * scale);
-        int marginBottomPx = Math.round(8 * scale);
-
-        while (cursor.moveToNext()) {
-            if (itemIndex > 1) break;
-
-            String tripId = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_ID));
-            String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
-            String destination = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_DESTINATION));
-            String members = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBERS));
-            int count = cursor.getInt(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBER_COUNT));
-            String startDate = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_START_DATE));
-            String endDate = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_END_DATE));
-
-            TripModel trip = new TripModel(tripId, name, destination, members, count, startDate, endDate);
-            trip.setIsPinnedState(1);
-
-            View cardView = LayoutInflater.from(this).inflate(R.layout.item_trip, containerPinnedTripsStack, false);
-
-            TextView txtTripName = cardView.findViewById(R.id.txt_item_trip_name);
-            TextView txtDestination = cardView.findViewById(R.id.txt_item_destination);
-            TextView txtMemberCount = cardView.findViewById(R.id.txt_item_member_count);
-            TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
-            TextView txtStartDate = cardView.findViewById(R.id.txt_item_start_date);
-
-            TextView btnPin = cardView.findViewById(R.id.btn_item_pin);
-            TextView btnEdit = cardView.findViewById(R.id.btn_item_edit);
-            TextView btnDelete = cardView.findViewById(R.id.btn_item_delete);
-            MaterialButton btnAddExpense = cardView.findViewById(R.id.btn_item_add_expense);
-            MaterialButton btnAddPayment = cardView.findViewById(R.id.btn_item_add_payment);
-
-            double totalExpense = dbHelper.getTripTotalExpenses(tripId);
-            double totalReceived = dbHelper.getTripTotalPaymentsReceived(tripId);
-            double fundBalance = dbHelper.getFundBalance(tripId);
-
-            TextView txtTotalExpense = cardView.findViewById(R.id.txt_item_total_expense);
-            TextView txtTotalReceived = cardView.findViewById(R.id.txt_item_total_received);
-
-            if (txtTotalExpense != null) txtTotalExpense.setText(getString(R.string.fmt_dash_currency_rupees, totalExpense));
-            if (txtTotalReceived != null) txtTotalReceived.setText(getString(R.string.fmt_dash_currency_rupees, totalReceived));
-            if (txtFundBalance != null) txtFundBalance.setText(String.format(java.util.Locale.US, "₹%.2f", fundBalance));
-
-            txtTripName.setText(getString(R.string.fmt_dash_pinned_title, itemIndex, name));
-            txtDestination.setText(getString(R.string.fmt_dash_destination, destination));
-            txtMemberCount.setText(getString(R.string.fmt_dash_member_count, count));
-            txtStartDate.setText(getString(R.string.fmt_dash_start_date, startDate));
-
-            btnPin.setText(getString(R.string.action_unpin));
-            btnPin.setTextColor(0xFF2E7D32);
-
-            cardView.setOnClickListener(v -> {
-                Intent intent = new Intent(DashboardActivity.this, TripDetailsActivity.class);
-                intent.putExtra("TRIP_ID", trip.getTripId());
-                intent.putExtra("TRIP_NAME", trip.getTripName());
-                intent.putExtra("DESTINATION", trip.getDestination());
-                intent.putExtra("START_DATE", trip.getStartDate());
-                intent.putExtra("END_DATE", trip.getEndDate());
-                intent.putExtra("MEMBERS", trip.getMembersListString());
-                startActivity(intent);
-            });
-
-            btnPin.setOnClickListener(v -> {
-                dbHelper.toggleTripPinStatus(trip.getTripId());
-                Toast.makeText(DashboardActivity.this, "'" + name + "' Unpinned successfully!", Toast.LENGTH_SHORT).show();
-                updatePinnedWorkspace();
-                DashboardActivity.triggerAutoBackup(this);
-            });
-
-            btnEdit.setOnClickListener(v -> {
-                Intent intent = new Intent(DashboardActivity.this, UpdateTripActivity.class);
-                intent.putExtra("TRIP_ID", trip.getTripId());
-                intent.putExtra("TRIP_NAME", trip.getTripName());
-                intent.putExtra("TRIP_DESTINATION", trip.getDestination());
-                intent.putExtra("TRIP_MEMBERS", trip.getMembersListString());
-                intent.putExtra("TRIP_START_DATE", trip.getStartDate());
-                intent.putExtra("TRIP_END_DATE", trip.getEndDate());
-                startActivity(intent);
-            });
-
-            btnDelete.setOnClickListener(v -> {
-                AlertDialog alertDialog = new AlertDialog.Builder(DashboardActivity.this)
-                        .setTitle("Delete Trip")
-                        .setMessage("Are you sure you want to delete '" + name + "'?")
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setPositiveButton("Yes, Delete", (dialog, which) -> {
-                            dbHelper.deleteTrip(tripId);
-                            updatePinnedWorkspace();
-                            DashboardActivity.triggerAutoBackup(this);
-                        })
-                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                        .create();
-                alertDialog.show();
-                alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF000000);
-                alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF000000);
-            });
-
-            btnAddExpense.setOnClickListener(v -> {
-                Intent intent = new Intent(DashboardActivity.this, AddExpenseActivity.class);
-                intent.putExtra("TRIP_ID", tripId);
-                intent.putExtra("TRIP_MEMBERS", members);
-                startActivity(intent);
-            });
-
-            btnAddPayment.setOnClickListener(v -> {
-                Intent intent = new Intent(DashboardActivity.this, AddPaymentActivity.class);
-                intent.putExtra("TRIP_ID", tripId);
-                intent.putExtra("TRIP_MEMBERS", members);
-                startActivity(intent);
-            });
-
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            layoutParams.setMargins(marginHorizontalPx, marginBottomPx, marginHorizontalPx, marginBottomPx);
-            cardView.setLayoutParams(layoutParams);
-
-            containerPinnedTripsStack.addView(cardView);
-            itemIndex++;
-        }
-        cursor.close();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        updatePinnedWorkspace();
-        updateSignInUI(); // Ensure UI is correct when coming back to the screen
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (dbHelper != null) {
-            dbHelper.close();
-        }
-    }
-
-    // --- NEW: Global Static Trigger for Auto-Backup ---
-    // --- UPDATED: Bulletproof Offline-First Auto-Backup ---
-    public static void triggerAutoBackup(android.content.Context context) {
-        // 1. Define the rule: ONLY run when the phone has internet
-        androidx.work.Constraints constraints = new androidx.work.Constraints.Builder()
-                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
-                .build();
-
-        // 2. Build the work request pointing to our new class
-        androidx.work.OneTimeWorkRequest backupRequest = new androidx.work.OneTimeWorkRequest.Builder(DriveBackupWorker.class)
-                .setConstraints(constraints)
-                .build();
-
-        // 3. Queue it up! Using "REPLACE" ensures that if a user makes 5 quick edits offline,
-        // it only uploads the database once when they reconnect, saving data and battery.
-        androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
-                "DriveBackupWork",
-                androidx.work.ExistingWorkPolicy.REPLACE,
-                backupRequest
-        );
-    }
-    private com.google.api.services.drive.Drive getDriveService() {
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
-            return null;
-        }
-
-        // 1. Create the credential using the Drive File scope
-        com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential credential =
-                com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential.usingOAuth2(
-                        this, java.util.Collections.singleton("https://www.googleapis.com/auth/drive.file"));
-
-        // 2. Attach the signed-in user's email
-        credential.setSelectedAccount(account.getAccount());
-
-        // 3. Build and return the Drive service
-        return new com.google.api.services.drive.Drive.Builder(
-                new com.google.api.client.http.javanet.NetHttpTransport(),
-                new com.google.api.client.json.gson.GsonFactory(),
-                credential)
-                .setApplicationName(getString(R.string.app_name))
-                .build();
     }
 }

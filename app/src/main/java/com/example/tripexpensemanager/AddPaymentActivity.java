@@ -5,7 +5,6 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -19,14 +18,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
-import android.content.Intent;
-// Rounded corner dialog
+import java.util.Map;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Window;
 // Rounded corner dialog End
 import android.widget.ImageButton;
+
+// --- Firebase Imports ---
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class AddPaymentActivity extends AppCompatActivity {
 
@@ -38,18 +40,25 @@ public class AddPaymentActivity extends AppCompatActivity {
     private final Calendar calendar = Calendar.getInstance();
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
+    // --- Kept for Historical Member lookup ---
     private TripDatabaseHelper dbHelper;
     private String currentTripId;
     private final ArrayList<String> parsedMembersList = new ArrayList<>();
 
-    // --- NEW: Edit Mode Flags ---
+    // --- Firebase DB ---
+    private FirebaseFirestore db;
+
+    // --- Edit Mode Flags ---
     private boolean isEditMode = false;
-    private int editTransactionId = -1;
+    private String editPaymentId = null; // Firestore uses String IDs
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_payment);
+
+        db = FirebaseFirestore.getInstance();
+        dbHelper = new TripDatabaseHelper(this);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         if (btnBack != null) {
@@ -63,43 +72,46 @@ public class AddPaymentActivity extends AppCompatActivity {
         Button btnSavePayment = findViewById(R.id.btn_save_payment);
 
         edtPaymentDate.setShowSoftInputOnFocus(false);
-
-        dbHelper = new TripDatabaseHelper(this);
         edtPaymentDate.setText(dateFormatter.format(calendar.getTime()));
         edtPaymentDate.setOnClickListener(v -> showDatePicker());
 
         extractIncomingIntentData();
 
-        // --- NEW: Load Data if Editing ---
-        if (isEditMode && editTransactionId != -1) {
+        if (isEditMode && editPaymentId != null) {
             txtHeading.setText(R.string.edit_payment);
             btnSavePayment.setText(R.string.update_payment);
             loadExistingPaymentData();
+        } else {
+            txtHeading.setText(R.string.label_title_add_payment);
         }
 
         btnSavePayment.setOnClickListener(v -> executePaymentValidationPipeline());
     }
 
-    @SuppressWarnings("unchecked")
     private void loadExistingPaymentData() {
-        try (Cursor c = dbHelper.getPaymentById(editTransactionId)) {
-            if (c.moveToFirst()) {
-                edtPaymentAmount.setText(String.valueOf(c.getDouble(c.getColumnIndexOrThrow("payment_amount"))));
-                edtPaymentDate.setText(c.getString(c.getColumnIndexOrThrow("payment_date")));
+        if (editPaymentId == null) return;
 
-                String paidBy = c.getString(c.getColumnIndexOrThrow("payment_by"));
-                ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerPaymentBy.getAdapter();
+        db.collection("Trips").document(currentTripId).collection("Payments").document(editPaymentId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        edtPaymentAmount.setText(String.valueOf(doc.getDouble("amount")));
+                        edtPaymentDate.setText(doc.getString("date"));
 
-                if (adapter != null && paidBy != null) {
-                    for (int i = 0; i < adapter.getCount(); i++) {
-                        if (paidBy.equals(adapter.getItem(i))) {
-                            spinnerPaymentBy.setSelection(i);
-                            break;
+                        String paidBy = doc.getString("paymentBy"); // Corresponds to payment_by in DB
+                        @SuppressWarnings("unchecked")
+                        ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerPaymentBy.getAdapter();
+
+                        if (adapter != null && paidBy != null) {
+                            for (int i = 0; i < adapter.getCount(); i++) {
+                                if (paidBy.equals(adapter.getItem(i))) {
+                                    spinnerPaymentBy.setSelection(i);
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
-            }
-        }
+                });
     }
 
     private void showDatePicker() {
@@ -115,18 +127,11 @@ public class AddPaymentActivity extends AppCompatActivity {
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance();
         datePickerDialog.show();
 
-        // Rounded corner dialog
         Window window = datePickerDialog.getWindow();
         if (window != null) {
-            window.setBackgroundDrawable(
-                    new ColorDrawable(Color.TRANSPARENT)
-            );
-
-            window.setBackgroundDrawableResource(
-                    R.drawable.bg_date_picker_dialog
-            );
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setBackgroundDrawableResource(R.drawable.bg_date_picker_dialog);
         }
-        // Rounded corner dialog End
 
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
@@ -157,20 +162,15 @@ public class AddPaymentActivity extends AppCompatActivity {
         if (getIntent() != null) {
             currentTripId = getIntent().getStringExtra("TRIP_ID");
             String rawMembersStr = getIntent().getStringExtra("TRIP_MEMBERS");
-
             isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
-            editTransactionId = getIntent().getIntExtra("TRANS_ID", -1);
+            editPaymentId = getIntent().getStringExtra("TRANS_ID");
 
-            Log.d(TAG, "Initializing payment ledger environment for unique key: " + currentTripId);
-
-            // Fetch the compiled list using our helper method
             ArrayList<String> allMembers = compileCompleteMemberList(rawMembersStr);
-
             parsedMembersList.clear();
             parsedMembersList.addAll(allMembers);
 
             if (parsedMembersList.isEmpty()) {
-                Toast.makeText(this, "Error: No trip members found context packet!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Error: No members found!", Toast.LENGTH_SHORT).show();
                 finish();
             } else {
                 Collections.sort(parsedMembersList);
@@ -179,11 +179,8 @@ public class AddPaymentActivity extends AppCompatActivity {
         }
     }
 
-    // --- THIS IS THE METHOD THAT WAS MISSING ---
     private ArrayList<String> compileCompleteMemberList(String rawMembersStr) {
         ArrayList<String> allMembers = new ArrayList<>();
-
-        // 1. Add currently active members from intent
         if (rawMembersStr != null && !rawMembersStr.trim().isEmpty()) {
             for (String name : rawMembersStr.split(",")) {
                 if (!name.trim().isEmpty() && !allMembers.contains(name.trim())) {
@@ -191,34 +188,17 @@ public class AddPaymentActivity extends AppCompatActivity {
                 }
             }
         }
-
-        // 2. Add historical members if in edit mode
         if (isEditMode) {
             for (String historical : getHistoricalMembers()) {
-                if (!allMembers.contains(historical)) {
-                    allMembers.add(historical);
-                }
+                if (!allMembers.contains(historical)) allMembers.add(historical);
             }
         }
-
         return allMembers;
     }
 
     private void populatePaymentBySpinner() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, parsedMembersList) {
-            @NonNull
-            @Override
-            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-                return super.getView(position, convertView, parent);
-            }
-
-            @NonNull
-            @Override
-            public View getDropDownView(int position, View convertView, @NonNull ViewGroup parent) {
-                return super.getDropDownView(position, convertView, parent);
-            }
-        };
+                android.R.layout.simple_spinner_item, parsedMembersList);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerPaymentBy.setAdapter(adapter);
     }
@@ -236,53 +216,47 @@ public class AddPaymentActivity extends AppCompatActivity {
         try {
             totalAmount = Double.parseDouble(amountRaw);
             if (totalAmount <= 0) {
-                Toast.makeText(this, "Payment amount must be greater than zero!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Amount must be > 0!", Toast.LENGTH_SHORT).show();
                 return;
             }
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "Invalid numeric content structural format!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         String selectedPayer = spinnerPaymentBy.getSelectedItem().toString();
 
-        if (isEditMode) {
-            boolean success = dbHelper.updatePayment(editTransactionId, selectedPayer, paymentDateStr, totalAmount);
-            if (success) {
-                Toast.makeText(this, "Payment updated successfully!", Toast.LENGTH_SHORT).show();
+        Map<String, Object> paymentData = new HashMap<>();
+        paymentData.put("paymentBy", selectedPayer);
+        paymentData.put("paymentTo", "Fund"); // Default behavior
+        paymentData.put("date", paymentDateStr);
+        paymentData.put("amount", totalAmount);
 
-                Intent intent = new Intent(this, CompleteLedgerActivity.class);
-                intent.putExtra("TRIP_ID", currentTripId);
-                startActivity(intent);
-                DashboardActivity.triggerAutoBackup(this);
-                finish();
-            } else {
-                Toast.makeText(this, "Update failed!", Toast.LENGTH_SHORT).show();
-            }
+        if (isEditMode && editPaymentId != null) {
+            db.collection("Trips").document(currentTripId).collection("Payments").document(editPaymentId)
+                    .set(paymentData)
+                    .addOnSuccessListener(a -> {
+                        Toast.makeText(this, "Updated!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
         } else {
-            long insertedRowId = dbHelper.insertPayment(currentTripId, selectedPayer, paymentDateStr, totalAmount);
-            if (insertedRowId != -1) {
-                Toast.makeText(this, "Payment of ₹" + amountRaw + " successfully registered!", Toast.LENGTH_SHORT).show();
-                DashboardActivity.triggerAutoBackup(this);
-                finish();
-            } else {
-                Toast.makeText(this, "Critical database failure!", Toast.LENGTH_LONG).show();
-            }
+            db.collection("Trips").document(currentTripId).collection("Payments")
+                    .add(paymentData)
+                    .addOnSuccessListener(a -> {
+                        Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
         }
     }
 
-    // --- HISTORICAL MEMBER HELPER METHODS ---
+    // --- HISTORICAL MEMBER HELPER METHODS (Kept for local lookups) ---
     private ArrayList<String> getHistoricalMembers() {
         ArrayList<String> allMembers = new ArrayList<>();
-
         String query1 = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ?";
         String query2 = "SELECT DISTINCT expense_shared_with FROM expenses WHERE expense_trip_id = ?";
         String query3 = "SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
-
         addNamesToAllMembers(allMembers, query1);
         addNamesToAllMembers(allMembers, query2);
         addNamesToAllMembers(allMembers, query3);
-
         return allMembers;
     }
 
@@ -300,7 +274,7 @@ public class AddPaymentActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            android.util.Log.e("AddPaymentActivity", "Error fetching historical members: " + e.getMessage());
+            Log.e(TAG, "Historical lookup error: " + e.getMessage());
         }
     }
 }

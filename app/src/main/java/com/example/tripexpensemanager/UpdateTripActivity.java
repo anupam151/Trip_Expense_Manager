@@ -2,6 +2,7 @@ package com.example.tripexpensemanager;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -21,23 +22,31 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 // Rounded corner dialog
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Window;
 // Rounded corner dialog End
 
+// --- Firebase ---
+import com.google.firebase.firestore.FirebaseFirestore;
+
 public class UpdateTripActivity extends AppCompatActivity {
 
     private static final String TAG = "UpdateTripActivity";
     private EditText edtTripName, edtDestination, edtStartDate, edtEndDate;
     private LinearLayout layoutMemberList;
+
     private ArrayList<String> memberList;
+    private ArrayList<String> inactiveMembers;
+
     private int memberCounter = 1;
     private String tripId;
 
-    private TripDatabaseHelper dbHelper;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +55,6 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         android.widget.ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
-            // Safely close the keyboard if it is currently open
             android.view.View currentFocus = getCurrentFocus();
             if (currentFocus != null) {
                 android.view.inputmethod.InputMethodManager imm =
@@ -55,49 +63,32 @@ public class UpdateTripActivity extends AppCompatActivity {
                     imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
                 }
             }
-
-            // Close this screen and return to the previous one
             finish();
         });
 
-
-
-        dbHelper = new TripDatabaseHelper(this);
+        db = FirebaseFirestore.getInstance();
         memberList = new ArrayList<>();
+        inactiveMembers = new ArrayList<>();
 
-        // Binding layout elements
         edtTripName = findViewById(R.id.edt_update_trip_name);
         edtDestination = findViewById(R.id.edt_update_destination);
         edtStartDate = findViewById(R.id.edt_update_start_date);
         edtEndDate = findViewById(R.id.edt_update_end_date);
         layoutMemberList = findViewById(R.id.layout_update_member_list);
 
-        // Explicitly prevents the system keyboard layout from opening when fields gain focus
         edtStartDate.setShowSoftInputOnFocus(false);
         edtEndDate.setShowSoftInputOnFocus(false);
 
         Button btnAddMemberTrigger = findViewById(R.id.btn_update_member_trigger);
         Button btnUpdateTripSubmit = findViewById(R.id.btn_update_trip_submit);
 
-        // Calendar triggers
         edtStartDate.setOnClickListener(v -> showDatePicker(edtStartDate));
         edtEndDate.setOnClickListener(v -> showDatePicker(edtEndDate));
 
-        // + Add Member dialog pop-up hook
         btnAddMemberTrigger.setOnClickListener(v -> showAddMemberDialog());
-
-        // Final submission update trigger operation
         btnUpdateTripSubmit.setOnClickListener(v -> validateAndUpdateTrip());
 
-        // Extracting incoming bundle packets and auto-prefilling data fields
         extractAndPrefillData();
-        layoutMemberList.post(() -> {
-            if (layoutMemberList.getChildCount() > 0) {
-                findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.GONE);
-                findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.GONE);
-            }
-        });
-
     }
 
     private void extractAndPrefillData() {
@@ -107,138 +98,147 @@ public class UpdateTripActivity extends AppCompatActivity {
             String destination = getIntent().getStringExtra("TRIP_DESTINATION");
             String startDate = getIntent().getStringExtra("TRIP_START_DATE");
             String endDate = getIntent().getStringExtra("TRIP_END_DATE");
-            String rawMembers = getIntent().getStringExtra("TRIP_MEMBERS");
 
             edtTripName.setText(tripName);
             edtDestination.setText(destination);
             edtStartDate.setText(startDate);
             edtEndDate.setText(endDate);
 
-            // Parsing comma-separated string back to array stack and refreshing layout elements
-            if (rawMembers != null && !rawMembers.trim().isEmpty()) {
-                String[] splitNames = rawMembers.split(",");
-                for (String name : splitNames) {
-                    if (!name.trim().isEmpty()) {
-                        addMemberToLayout(name.trim());
+            if (tripId != null) {
+                db.collection("Trips").document(tripId).get().addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String rawActive = doc.getString("members");
+                        String rawInactive = doc.getString("inactiveMembers");
+
+                        memberList.clear();
+                        inactiveMembers.clear();
+
+                        if (rawActive != null && !rawActive.trim().isEmpty()) {
+                            for (String name : rawActive.split(",")) {
+                                if (!name.trim().isEmpty()) memberList.add(name.trim());
+                            }
+                        }
+
+                        if (rawInactive != null && !rawInactive.trim().isEmpty()) {
+                            for (String name : rawInactive.split(",")) {
+                                if (!name.trim().isEmpty()) inactiveMembers.add(name.trim());
+                            }
+                        }
+
+                        refreshMembersUI();
                     }
-                }
+                }).addOnFailureListener(e -> Log.e(TAG, "Failed to load members", e));
             }
         }
     }
 
-    private void addMemberToLayout(String name) {
-        memberList.add(name);
+    private void refreshMembersUI() {
+        layoutMemberList.removeAllViews();
+        memberCounter = 1;
 
+        for (String name : memberList) {
+            addMemberRow(name, true);
+        }
+
+        if (!inactiveMembers.isEmpty()) {
+            TextView header = new TextView(this);
+            header.setText("Inactive Members (Soft Deleted)");
+            header.setTextSize(14);
+            header.setTextColor(Color.GRAY);
+            header.setPadding(0, 32, 0, 16);
+            layoutMemberList.addView(header);
+
+            for (String name : inactiveMembers) {
+                addMemberRow(name, false);
+            }
+        }
+
+        if (memberList.isEmpty()) {
+            findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.VISIBLE);
+            findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.VISIBLE);
+        } else {
+            findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.GONE);
+            findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.GONE);
+        }
+    }
+
+    private void addMemberRow(final String name, boolean isActive) {
         final LinearLayout rowLayout = new LinearLayout(this);
         rowLayout.setOrientation(LinearLayout.HORIZONTAL);
         rowLayout.setGravity(Gravity.CENTER_VERTICAL);
         rowLayout.setPadding(0, 8, 0, 8);
 
         TextView txtMember = new TextView(this);
-        String displayedText = String.format(Locale.US, "%d. %s", memberCounter, name);
+        String displayedText = isActive ? String.format(Locale.US, "%d. %s", memberCounter, name) : "• " + name;
         txtMember.setText(displayedText);
         txtMember.setTextSize(16);
 
-        // Dynamically fetched contextual color token to adapt to both Light and Night themes
         TypedValue typedValue = new TypedValue();
         getTheme().resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
-        txtMember.setTextColor(0xFF000000);
+        txtMember.setTextColor(isActive ? 0xFF000000 : Color.GRAY);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         txtMember.setLayoutParams(params);
 
-        TextView btnRemove = createRemoveButtonNode(rowLayout, name);
+        // --- WARNING FIX: Extracted the button logic to a separate method! ---
+        TextView btnAction = createActionButton(name, isActive);
 
         rowLayout.addView(txtMember);
-        rowLayout.addView(btnRemove);
+        rowLayout.addView(btnAction);
 
         layoutMemberList.addView(rowLayout);
-        memberCounter++;
+        if (isActive) memberCounter++;
     }
 
-    private TextView createRemoveButtonNode(final LinearLayout rowLayout, final String name) {
-        TextView btnRemove = new TextView(this);
-        btnRemove.setText("✕");
-        btnRemove.setTextSize(18);
-        btnRemove.setTextColor(0xFFFF3B30); // Red Tint preserved for functional alert contexts
-        btnRemove.setPadding(16, 8, 16, 8);
-        btnRemove.setClickable(true);
-        btnRemove.setFocusable(true);
+    // --- NEW: Helper method to keep addMemberRow clean ---
+    private TextView createActionButton(final String name, boolean isActive) {
+        TextView btnAction = new TextView(this);
+        btnAction.setText(isActive ? "✕" : "↺");
+        btnAction.setTextSize(18);
+        btnAction.setTextColor(isActive ? 0xFFFF3B30 : 0xFF2E7D32);
+        btnAction.setPadding(16, 8, 16, 8);
+        btnAction.setClickable(true);
+        btnAction.setFocusable(true);
 
-        btnRemove.setOnClickListener(v -> {
-            layoutMemberList.removeView(rowLayout);
-            memberList.remove(name);
-            reorderMemberCounter();
-
-            if (memberList.isEmpty()) {
-                findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.VISIBLE);
-                findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.VISIBLE);
+        btnAction.setOnClickListener(v -> {
+            if (isActive) {
+                memberList.remove(name);
+                if (!inactiveMembers.contains(name)) inactiveMembers.add(name);
+            } else {
+                inactiveMembers.remove(name);
+                if (!memberList.contains(name)) memberList.add(name);
             }
+            refreshMembersUI();
         });
-        return btnRemove;
-    }
 
-    private void reorderMemberCounter() {
-        memberCounter = 1;
-        int childCount = layoutMemberList.getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            View child = layoutMemberList.getChildAt(i);
-            if (child instanceof LinearLayout) {
-                LinearLayout row = (LinearLayout) child;
-                View textNode = row.getChildAt(0);
-                if (textNode instanceof TextView) {
-                    TextView txtName = (TextView) textNode;
-                    String currentText = txtName.getText().toString();
-                    if (currentText.contains(". ")) {
-                        String cleanName = currentText.substring(currentText.indexOf(". ") + 2);
-                        txtName.setText(String.format(Locale.US, "%d. %s", memberCounter, cleanName));
-                    }
-                    memberCounter++;
-                }
-            }
-        }
+        return btnAction;
     }
 
     private void showDatePicker(EditText dateEditText) {
-        // Clear focus from whichever text input box currently holds it to hide the cursor
         View currentFocusView = getCurrentFocus();
-        if (currentFocusView != null) {
-            currentFocusView.clearFocus();
-        }
+        if (currentFocusView != null) currentFocusView.clearFocus();
 
-        // Force hide the soft keyboard completely
         InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (imm != null && currentFocusView != null) {
             imm.hideSoftInputFromWindow(currentFocusView.getWindowToken(), 0);
         }
 
-        // FIXED: Instantiated the extracted factory method below to satisfy the design warning cleanly
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance(dateEditText);
         datePickerDialog.show();
 
-        // Rounded corner dialog
         Window window = datePickerDialog.getWindow();
         if (window != null) {
-            window.setBackgroundDrawable(
-                    new ColorDrawable(Color.TRANSPARENT)
-            );
-
-            window.setBackgroundDrawableResource(
-                    R.drawable.bg_date_picker_dialog
-            );
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setBackgroundDrawableResource(R.drawable.bg_date_picker_dialog);
         }
-        // Rounded corner dialog End
 
-        // FIXED: Safely inject the background color into the action button container
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
             View buttonPanel = (View) positiveButton.getParent();
             buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
-
         }
     }
 
-    // EXTRACTION FACTORY METHOD: Isolates dialog construction from environmental layout managers
     @NonNull
     private DatePickerDialog createDatePickerDialogInstance(EditText dateEditText) {
         final Calendar calendar = Calendar.getInstance();
@@ -260,7 +260,7 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         TextView txtDialogTitle = view.findViewById(R.id.txt_dialog_title);
         final EditText edtDialogMemberName = view.findViewById(R.id.edt_dialog_member_name);
-        Button btnDialogAdd = view.findViewById(R.id.btn_dialog_add);
+        Button btnDialogAdd = view.findViewById(R.id.btn_dialog_add); // Ensure this ID matches your XML
         Button btnDialogBack = view.findViewById(R.id.btn_dialog_back);
 
         txtDialogTitle.setText(getString(R.string.fmt_dialog_member_count_label, memberCounter));
@@ -270,39 +270,45 @@ public class UpdateTripActivity extends AppCompatActivity {
             alertDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
-        alertDialog.setOnShowListener(dialogInterface -> {
-            edtDialogMemberName.requestFocus();
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                if (imm != null) {
-                    imm.showSoftInput(edtDialogMemberName, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
-                }
-            }, 100);
-        });
-
-        alertDialog.show();
-
         btnDialogAdd.setOnClickListener(v -> {
-            String memberName = edtDialogMemberName.getText().toString().trim();
-            if (memberName.isEmpty()) {
-                Toast.makeText(this, getString(R.string.err_empty_name), Toast.LENGTH_SHORT).show();
+            String newName = edtDialogMemberName.getText().toString().trim();
+
+            if (newName.isEmpty()) {
+                Toast.makeText(this, "Please enter a name", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // --- GLOBAL UNIQUENESS CHECK ---
+            boolean isDuplicate = false;
+            for (String name : memberList) {
+                if (name.equalsIgnoreCase(newName)) { isDuplicate = true; break; }
+            }
+            if (!isDuplicate) {
+                for (String name : inactiveMembers) {
+                    if (name.equalsIgnoreCase(newName)) { isDuplicate = true; break; }
+                }
+            }
+
+            if (isDuplicate) {
+                Toast.makeText(this, "Member '" + newName + "' already exists (Active or Inactive)!", Toast.LENGTH_SHORT).show();
             } else {
-                // HIDE KEYBOARD BEFORE DISMISSING
                 hideKeyboard(edtDialogMemberName);
-                addMemberToLayout(memberName);
+
+                // Add to active list
+                memberList.add(newName);
+                refreshMembersUI();
                 alertDialog.dismiss();
             }
         });
 
         btnDialogBack.setOnClickListener(v -> {
-            // HIDE KEYBOARD BEFORE DISMISSING
             hideKeyboard(edtDialogMemberName);
             alertDialog.dismiss();
         });
+
+        alertDialog.show();
     }
 
-    // Add this helper method to your Activity
     private void hideKeyboard(android.view.View view) {
         android.view.inputmethod.InputMethodManager imm =
                 (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -352,28 +358,26 @@ public class UpdateTripActivity extends AppCompatActivity {
             return;
         }
 
-        StringBuilder membersStringBuilder = new StringBuilder();
-        for (int i = 0; i < memberList.size(); i++) {
-            membersStringBuilder.append(memberList.get(i));
-            if (i < memberList.size() - 1) {
-                membersStringBuilder.append(",");
-            }
-        }
-        String allMembersStr = membersStringBuilder.toString();
+        String allMembersStr = TextUtils.join(",", memberList);
+        String allInactiveMembersStr = TextUtils.join(",", inactiveMembers);
         int totalMembersCount = memberList.size();
 
-        boolean isUpdated = dbHelper.updateTrip(tripId, tripName, destination, allMembersStr, totalMembersCount, startDate, endDate);
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("tripName", tripName);
+        updates.put("destination", destination);
+        updates.put("startDate", startDate);
+        updates.put("endDate", endDate);
+        updates.put("members", allMembersStr);
+        updates.put("inactiveMembers", allInactiveMembersStr);
+        updates.put("memberCount", totalMembersCount);
 
-        if (isUpdated) {
-            // 1. Give the DB a tiny window to finish writing the file
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                Toast.makeText(this, "Trip Updated!", Toast.LENGTH_SHORT).show();
-                DashboardActivity.triggerAutoBackup(this);
-                setResult(RESULT_OK);
-                finish();
-            }, 200); // 200ms delay is usually enough for SQLite to finalize
-        } else {
-            Toast.makeText(this, getString(R.string.err_trip_update_failed), Toast.LENGTH_SHORT).show();
-        }
+        db.collection("Trips").document(tripId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Trip Updated!", Toast.LENGTH_SHORT).show();
+                    setResult(RESULT_OK);
+                    finish();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, getString(R.string.err_trip_update_failed), Toast.LENGTH_SHORT).show());
     }
 }

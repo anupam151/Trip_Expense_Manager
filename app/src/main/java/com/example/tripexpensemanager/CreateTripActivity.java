@@ -28,6 +28,13 @@ import android.graphics.drawable.ColorDrawable;
 import android.view.Window;
 // Rounded corner dialog End
 
+// --- Firebase & Auth Imports ---
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
+
 public class CreateTripActivity extends AppCompatActivity {
 
     private static final String TAG = "CreateTripActivity";
@@ -36,14 +43,14 @@ public class CreateTripActivity extends AppCompatActivity {
     private ArrayList<String> memberList;
     private int memberCounter = 1;
 
-    private TripDatabaseHelper dbHelper;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_trip);
 
-        dbHelper = new TripDatabaseHelper(this);
+        db = FirebaseFirestore.getInstance();
         memberList = new ArrayList<>();
 
         edtTripName = findViewById(R.id.edt_trip_name);
@@ -69,7 +76,6 @@ public class CreateTripActivity extends AppCompatActivity {
         btnAddMemberTrigger.setOnClickListener(v -> showAddMemberDialog());
         btnCreateTripSubmit.setOnClickListener(v -> validateAndCreateTrip());
 
-        // --- NEW: Auto-focus and open keyboard for Trip Name ---
         edtTripName.requestFocus();
         edtTripName.postDelayed(() -> {
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -77,7 +83,6 @@ public class CreateTripActivity extends AppCompatActivity {
                 imm.showSoftInput(edtTripName, InputMethodManager.SHOW_IMPLICIT);
             }
         }, 200);
-        // -------------------------------------------------------
     }
 
     private void addMemberToLayout(String name) {
@@ -107,9 +112,7 @@ public class CreateTripActivity extends AppCompatActivity {
 
         layoutMemberList.addView(rowLayout);
         memberCounter++;
-        // 1. Make the dynamic list visible
         layoutMemberList.setVisibility(View.VISIBLE);
-        // 2. Hide the placeholder texts
         findViewById(R.id.txt_no_members).setVisibility(View.GONE);
         findViewById(R.id.txt_members_subtext).setVisibility(View.GONE);
     }
@@ -160,9 +163,7 @@ public class CreateTripActivity extends AppCompatActivity {
 
     private void showDatePicker(EditText dateEditText) {
         View currentFocusView = getCurrentFocus();
-        if (currentFocusView != null) {
-            currentFocusView.clearFocus();
-        }
+        if (currentFocusView != null) currentFocusView.clearFocus();
 
         InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (imm != null && currentFocusView != null) {
@@ -170,25 +171,14 @@ public class CreateTripActivity extends AppCompatActivity {
         }
 
         DatePickerDialog datePickerDialog = createDatePickerDialogInstance(dateEditText);
-
-        // FIXED: Show the dialog first to render the UI tree
         datePickerDialog.show();
 
-
-        // Rounded corner dialog
         Window window = datePickerDialog.getWindow();
         if (window != null) {
-            window.setBackgroundDrawable(
-                    new ColorDrawable(Color.TRANSPARENT)
-            );
-
-            window.setBackgroundDrawableResource(
-                    R.drawable.bg_date_picker_dialog
-            );
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setBackgroundDrawableResource(R.drawable.bg_date_picker_dialog);
         }
-        // Rounded corner dialog End
 
-        // FIXED: Safely inject the background color into the action button container
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
             View buttonPanel = (View) positiveButton.getParent();
@@ -203,7 +193,6 @@ public class CreateTripActivity extends AppCompatActivity {
         int month = calendar.get(Calendar.MONTH);
         int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-        // FIXED: Added R.style.CustomCalendarTheme to apply the XML typography constraints
         return new DatePickerDialog(this, R.style.CustomCalendarTheme,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
                     String formattedDate = String.format(Locale.US, "%02d/%02d/%04d", selectedDay, (selectedMonth + 1), selectedYear);
@@ -231,10 +220,9 @@ public class CreateTripActivity extends AppCompatActivity {
         alertDialog.setOnShowListener(dialogInterface -> {
             edtDialogMemberName.requestFocus();
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                 if (imm != null) {
-                    imm.showSoftInput(edtDialogMemberName, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                    imm.showSoftInput(edtDialogMemberName, InputMethodManager.SHOW_IMPLICIT);
                 }
             }, 100);
         });
@@ -243,32 +231,43 @@ public class CreateTripActivity extends AppCompatActivity {
 
         btnDialogAdd.setOnClickListener(v -> {
             String memberName = edtDialogMemberName.getText().toString().trim();
+
             if (memberName.isEmpty()) {
                 Toast.makeText(this, getString(R.string.err_empty_name), Toast.LENGTH_SHORT).show();
             } else {
-                // HIDE KEYBOARD BEFORE DISMISSING
-                hideKeyboard(edtDialogMemberName);
-                addMemberToLayout(memberName);
-                alertDialog.dismiss();
+                // --- UNIQUENESS VALIDATION ---
+                boolean exists = false;
+                for (String name : memberList) {
+                    if (name.equalsIgnoreCase(memberName)) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (exists) {
+                    Toast.makeText(this, "Member '" + memberName + "' is already in the list!", Toast.LENGTH_SHORT).show();
+                } else {
+                    hideKeyboard(edtDialogMemberName);
+                    addMemberToLayout(memberName);
+                    alertDialog.dismiss();
+                }
             }
         });
 
         btnDialogBack.setOnClickListener(v -> {
-            // HIDE KEYBOARD BEFORE DISMISSING
             hideKeyboard(edtDialogMemberName);
             alertDialog.dismiss();
         });
     }
 
-    // Add this helper method to your Activity
-    private void hideKeyboard(android.view.View view) {
-        android.view.inputmethod.InputMethodManager imm =
-                (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+    private void hideKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void validateAndCreateTrip() {
         String tripName = edtTripName.getText().toString().trim();
         String destination = edtDestination.getText().toString().trim();
@@ -320,14 +319,28 @@ public class CreateTripActivity extends AppCompatActivity {
         String allMembersStr = membersStringBuilder.toString();
         int totalMembersCount = memberList.size();
 
-        String resultRowId = dbHelper.insertTrip(tripName, destination, allMembersStr, totalMembersCount, startDate, endDate);
+        Map<String, Object> tripData = new HashMap<>();
+        tripData.put("tripName", tripName);
+        tripData.put("destination", destination);
+        tripData.put("startDate", startDate);
+        tripData.put("endDate", endDate);
+        tripData.put("members", allMembersStr);
+        tripData.put("inactiveMembers", ""); // Initialize with empty string
+        tripData.put("memberCount", totalMembersCount);
+        tripData.put("isPinned", false);
 
-        if (resultRowId != null && !resultRowId.equals("-1")) {
-            Toast.makeText(this, "Trip created successfully!", Toast.LENGTH_SHORT).show();
-            DashboardActivity.triggerAutoBackup(this);
-            finish();
-        } else {
-            Toast.makeText(this, "Failed to insert trip record details!", Toast.LENGTH_SHORT).show();
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null) {
+            tripData.put("ownerEmail", account.getEmail());
         }
+
+        db.collection("Trips").add(tripData)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(this, "Trip created successfully!", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to insert trip record details!", Toast.LENGTH_SHORT).show()
+                );
     }
 }

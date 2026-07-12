@@ -22,7 +22,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.material.button.MaterialButton;
+
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,20 +36,17 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+@SuppressWarnings("deprecation")
 public class TripListActivity extends AppCompatActivity implements TripAdapter.OnTripActionListener {
 
-    private RecyclerView recyclerView;
     private TextView txtEmptyMessage;
-    private TripDatabaseHelper dbHelper;
     private TripAdapter adapter;
     private final ArrayList<TripModel> tripList = new ArrayList<>();
     private String currentCategoryLabel;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private ImageButton btnHeaderAddNewTrip;
-
-    // --- NEW EXPORT VARIABLES ---
+    private FirebaseFirestore db;
+    private TripDatabaseHelper dbHelper;
     private LedgerExportManager exportManager;
     private String selectedTripIdForExport = null;
 
@@ -61,12 +63,17 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_list);
 
-        recyclerView = findViewById(R.id.recycler_view_trips);
+        // Warning fix: Moved recyclerView to a local variable
+        RecyclerView recyclerView = findViewById(R.id.recycler_view_trips);
         txtEmptyMessage = findViewById(R.id.txt_empty_trips_message);
         TextView txtCategoryTitle = findViewById(R.id.txt_trip_list_category_title);
 
-        btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
-        dbHelper = new TripDatabaseHelper(this);
+        // Warning fix: Kept as local variable since it's only used here
+        ImageButton btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
+
+        db = FirebaseFirestore.getInstance();
+        dbHelper = new TripDatabaseHelper(this); // Preserved for Legacy Export compatibility
+        exportManager = new LedgerExportManager(this, dbHelper);
 
         if (getIntent() != null && getIntent().getStringExtra("CATEGORY_TITLE") != null) {
             currentCategoryLabel = getIntent().getStringExtra("CATEGORY_TITLE");
@@ -85,40 +92,34 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             btnHeaderAddNewTrip.setOnClickListener(v -> startActivity(new Intent(TripListActivity.this, CreateTripActivity.class)));
         }
 
-        // --- ADD THIS TO HANDLE HOME BUTTON ---
         ImageButton btnHome = findViewById(R.id.btnHome);
         if (btnHome != null) {
             btnHome.setOnClickListener(v -> {
                 Intent intent = new Intent(TripListActivity.this, DashboardActivity.class);
-                // Clear the backstack so the user doesn't get stuck
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
-                finish(); // Close TripListActivity
+                finish();
             });
         }
 
-        // --- NEW EXPORT & TRANSACTIONS LOGIC INITIALIZATION ---
-        exportManager = new LedgerExportManager(this, dbHelper);
-
         MaterialButton btnExportAll = findViewById(R.id.unv_btn_all_individual_to_one_pdf);
         if (btnExportAll != null) {
-            btnExportAll.setOnClickListener(v -> showTripSelectionDialog(true)); // TRUE for Export PDF
+            btnExportAll.setOnClickListener(v -> fetchTripsAndShowSelectionDialog(true));
         }
 
         MaterialButton btnCompleteLedger = findViewById(R.id.unv_btn_complete_ledger);
         if (btnCompleteLedger != null) {
-            btnCompleteLedger.setOnClickListener(v -> showTripSelectionDialog(false)); // FALSE for View Transactions
+            btnCompleteLedger.setOnClickListener(v -> fetchTripsAndShowSelectionDialog(false));
         }
 
         loadAndFilterTrips();
     }
 
-    // ==========================================
-    // SMART TRIP POP-UP LOGIC (Handles both Export & View)
-    // ==========================================
-    private void showTripSelectionDialog(boolean isForExport) {
-        ArrayList<TripModel> allTrips = getSortedTripsForExport();
+    private void fetchTripsAndShowSelectionDialog(boolean isForExport) {
+        buildAndShowDialog(tripList, isForExport);
+    }
 
+    private void buildAndShowDialog(ArrayList<TripModel> allTrips, boolean isForExport) {
         if (allTrips.isEmpty()) {
             Toast.makeText(this, "No trips available.", Toast.LENGTH_SHORT).show();
             return;
@@ -133,178 +134,165 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
 
-        // Dynamically set title based on the action
         TextView txtTitle = dialog.findViewById(R.id.txt_dialog_title);
         if (txtTitle != null) {
-            if (isForExport) {
-                txtTitle.setText(R.string.title_select_trip_export);
-            } else {
-                txtTitle.setText(R.string.title_select_trip_transactions);
-            }
+            txtTitle.setText(isForExport ? R.string.title_select_trip_export : R.string.title_select_trip_transactions);
         }
 
         LinearLayout container = dialog.findViewById(R.id.container_dialog_trips);
-        LayoutInflater inflater = LayoutInflater.from(this);
-
         for (TripModel trip : allTrips) {
-            View rowView = inflater.inflate(R.layout.item_dialog_trip, container, false);
+            View rowView = LayoutInflater.from(this).inflate(R.layout.item_dialog_trip, container, false);
+            ((TextView) rowView.findViewById(R.id.txt_dialog_trip_name)).setText(trip.getTripName());
+            ((TextView) rowView.findViewById(R.id.txt_dialog_trip_date)).setText(trip.getStartDate());
 
-            TextView txtName = rowView.findViewById(R.id.txt_dialog_trip_name);
-            TextView txtDate = rowView.findViewById(R.id.txt_dialog_trip_date);
-
-            txtName.setText(trip.getTripName());
-            txtDate.setText(trip.getStartDate());
-
-            // Handle individual trip click
             rowView.setOnClickListener(v -> {
-                dialog.dismiss(); // Always dismiss popup first
-
+                dialog.dismiss();
                 if (isForExport) {
-                    // --- PDF EXPORT LOGIC ---
                     selectedTripIdForExport = trip.getTripId();
                     String safeTripName = trip.getTripName().replaceAll("[^a-zA-Z0-9]", "_");
-                    String fileName = safeTripName + "_Master_Ledger.pdf";
-                    createMasterPdfLauncher.launch(fileName);
+                    createMasterPdfLauncher.launch(safeTripName + "_Master_Ledger.pdf");
                 } else {
-                    // --- VIEW TRANSACTIONS LOGIC ---
-                    Intent intent = new Intent(TripListActivity.this, CompleteLedgerActivity.class);
-
+                    Intent intent = new Intent(this, CompleteLedgerActivity.class);
                     intent.putExtra("TRIP_ID", trip.getTripId());
                     intent.putExtra("TRIP_NAME", trip.getTripName());
-                    // Pass any other data your Ledger activity needs
                     startActivity(intent);
                 }
             });
-
             container.addView(rowView);
         }
 
-        TextView btnCancel = dialog.findViewById(R.id.btn_dialog_cancel);
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
-
+        dialog.findViewById(R.id.btn_dialog_cancel).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
     }
 
-    // 1. THE COORDINATOR: Gets the data, sorts it, and hands it back
-    private ArrayList<TripModel> getSortedTripsForExport() {
-        ArrayList<TripModel> tripList = fetchAllTripsFromDatabase();
-        sortTripsChronologically(tripList);
-        return tripList;
-    }
-
-    // 2. THE DATABASE METHOD: Only job is to read SQLite
-    private ArrayList<TripModel> fetchAllTripsFromDatabase() {
-        ArrayList<TripModel> list = new ArrayList<>();
-        try (Cursor cursor = dbHelper.getAllTripsCursor()) {
-            if (cursor != null) {
-                while (cursor.moveToNext()) {
-                    String id = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_ID));
-                    String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
-                    String date = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_START_DATE));
-
-                    list.add(new TripModel(id, name, "", "", 0, date, ""));
-                }
-            }
+    private void loadAndFilterTrips() {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null || account.getEmail() == null) {
+            tripList.clear();
+            adapter.notifyDataSetChanged();
+            txtEmptyMessage.setVisibility(View.VISIBLE);
+            return;
         }
-        return list;
+
+        db.collection("Trips").whereEqualTo("ownerEmail", account.getEmail()).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    tripList.clear();
+                    Calendar cal = Calendar.getInstance();
+                    cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
+                    Date today = cal.getTime();
+
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        String startStr = doc.getString("startDate") != null ? doc.getString("startDate") : "";
+                        String endStr = doc.getString("endDate") != null ? doc.getString("endDate") : "";
+
+                        boolean shouldAdd = false;
+                        if (currentCategoryLabel.equalsIgnoreCase("All Trips")) {
+                            shouldAdd = true;
+                        } else {
+                            try {
+                                // Warning fix: Safe null and empty checking
+                                Date sDate = (startStr != null && !startStr.isEmpty()) ? dateFormatter.parse(startStr) : null;
+                                Date eDate = (endStr != null && !endStr.isEmpty()) ? dateFormatter.parse(endStr) : null;
+
+                                if (currentCategoryLabel.equalsIgnoreCase("Upcoming Trips") && sDate != null && sDate.after(today)) {
+                                    shouldAdd = true;
+                                } else if (currentCategoryLabel.equalsIgnoreCase("Ongoing Trips") && sDate != null && eDate != null && !sDate.after(today) && !eDate.before(today)) {
+                                    shouldAdd = true;
+                                } else if (currentCategoryLabel.equalsIgnoreCase("Ended Trips") && eDate != null && eDate.before(today)) {
+                                    shouldAdd = true;
+                                }
+                            } catch (ParseException ignored) {
+                                shouldAdd = true;
+                            }
+                        }
+
+                        if (shouldAdd) {
+                            // Warning fix: Safe Long to int conversion
+                            Long countLong = doc.getLong("memberCount");
+                            int memberCount = (countLong != null) ? countLong.intValue() : 0;
+
+                            TripModel trip = new TripModel(
+                                    doc.getId(),
+                                    doc.getString("tripName"),
+                                    doc.getString("destination"),
+                                    doc.getString("members"),
+                                    memberCount,
+                                    startStr,
+                                    endStr
+                            );
+
+                            trip.setIsPinnedState(Boolean.TRUE.equals(doc.getBoolean("isPinned")) ? 1 : 0);
+                            tripList.add(trip);
+
+                            // Execute the background math
+                            calculateTripFinance(trip);
+                        }
+                    }
+
+                    txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
+                    adapter.notifyDataSetChanged();
+                });
     }
 
-    // 3. THE SORTING METHOD: Only job is to compare dates
-    private void sortTripsChronologically(ArrayList<TripModel> list) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
-        list.sort((t1, t2) -> {
-            try {
-                Date d1 = sdf.parse(t1.getStartDate());
-                Date d2 = sdf.parse(t2.getStartDate());
-                if (d1 != null && d2 != null) {
-                    return d1.compareTo(d2);
-                }
-            } catch (Exception ignored) {
-                // Ignore parsing errors
-            }
-            return 0;
+    private void calculateTripFinance(TripModel trip) {
+        TripFinanceCalculator.calculateFinances(trip.getTripId(), (totalExp, totalRec, fundBal) -> {
+            trip.setTotalExpenses(totalExp);
+            trip.setTotalPayments(totalRec);
+            trip.setFundBalance(fundBal);
+            adapter.notifyDataSetChanged();
         });
     }
 
-    private void loadAndFilterTrips() {
-        int previousSize = tripList.size();
-        tripList.clear();
-
-        if (previousSize > 0) {
-            adapter.notifyItemRangeRemoved(0, previousSize);
-        }
-
-        Cursor cursor = dbHelper.getAllTripsCursor();
-
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
-        Date todayDate = cal.getTime();
-
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                String tripId = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_ID));
-                String name = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_TRIP_NAME));
-                String destination = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_DESTINATION));
-                String members = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBERS));
-                int count = cursor.getInt(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_MEMBER_COUNT));
-                String startStr = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_START_DATE));
-                String endStr = cursor.getString(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_END_DATE));
-                int pinnedVal = cursor.getInt(cursor.getColumnIndexOrThrow(TripDatabaseHelper.COLUMN_IS_PINNED));
-
-                boolean shouldAddTrip = false;
-                if (currentCategoryLabel.equalsIgnoreCase("All Trips")) {
-                    shouldAddTrip = true;
-                } else {
-                    try {
-                        Date startDate = dateFormatter.parse(startStr.trim());
-                        Date endDate = dateFormatter.parse(endStr.trim());
-                        if (currentCategoryLabel.equalsIgnoreCase("Upcoming Trips") && startDate != null && startDate.after(todayDate)) {
-                            shouldAddTrip = true;
-                        } else if (currentCategoryLabel.equalsIgnoreCase("Ongoing Trips") && startDate != null && endDate != null && !startDate.after(todayDate) && !endDate.before(todayDate)) {
-                            shouldAddTrip = true;
-                        } else if (currentCategoryLabel.equalsIgnoreCase("Ended Trips") && endDate != null && endDate.before(todayDate)) {
-                            shouldAddTrip = true;
-                        }
-                    } catch (ParseException ignored) {
-                        shouldAddTrip = true;
-                    }
-                }
-
-                if (shouldAddTrip) {
-                    TripModel tripObj = new TripModel(tripId, name, destination, members, count, startStr, endStr);
-                    tripObj.setIsPinnedState(pinnedVal);
-                    tripList.add(tripObj);
-                }
+    @SuppressWarnings("unused")
+    private ArrayList<String> getHistoricalMembers(String tripId) {
+        ArrayList<String> members = new ArrayList<>();
+        String query = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ? UNION SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
+        try (Cursor c = dbHelper.getReadableDatabase().rawQuery(query, new String[]{tripId, tripId})) {
+            while (c.moveToNext()) {
+                String name = c.getString(0).trim();
+                if (!"Fund".equalsIgnoreCase(name) && !members.contains(name)) members.add(name);
             }
-            cursor.close();
         }
-
-        txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
-        recyclerView.setVisibility(tripList.isEmpty() ? View.GONE : View.VISIBLE);
-
-        if (!tripList.isEmpty()) {
-            adapter.notifyItemRangeInserted(0, tripList.size());
-        }
+        return members;
     }
 
     @Override
     public void onPinToggleClick(TripModel trip, int position) {
-        int result = dbHelper.toggleTripPinStatus(trip.getTripId());
+        boolean currentlyPinned = trip.getIsPinnedState() == 1;
 
-        if (result == 1) {
-            trip.setIsPinnedState(1);
-            Toast.makeText(this, "'" + trip.getTripName() + "' pinned successfully!", Toast.LENGTH_SHORT).show();
-        } else if (result == 0) {
-            trip.setIsPinnedState(0);
-            Toast.makeText(this, "'" + trip.getTripName() + "' unpinned successfully!", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Limit reached! You can pin a maximum of 1 trips.", Toast.LENGTH_LONG).show();
-            return;
+        // If we are trying to PIN a new trip, we must unpin all others first
+        if (!currentlyPinned) {
+            for (int i = 0; i < tripList.size(); i++) {
+                TripModel t = tripList.get(i);
+                if (t.getIsPinnedState() == 1) {
+                    t.setIsPinnedState(0);
+                    // Update Cloud
+                    db.collection("Trips").document(t.getTripId()).update("isPinned", false);
+                    // Update UI for the old pinned trip
+                    adapter.notifyItemChanged(i);
+                }
+            }
         }
 
-        if (position >= 0 && position < tripList.size()) {
-            adapter.notifyItemChanged(position);
-        }
+        // Now, update the Cloud for the trip we actually clicked
+        db.collection("Trips").document(trip.getTripId()).update("isPinned", !currentlyPinned)
+                .addOnSuccessListener(a -> {
+                    trip.setIsPinnedState(currentlyPinned ? 0 : 1);
+                    adapter.notifyItemChanged(position);
+                    Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    @Override
+    public void onDeleteClick(TripModel trip) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Trip")
+                .setMessage("Are you sure you want to delete '" + trip.getTripName() + "'?")
+                .setPositiveButton("Yes, Delete", (dialog, which) ->
+                        db.collection("Trips").document(trip.getTripId()).delete().addOnSuccessListener(a -> loadAndFilterTrips())
+                )
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override
@@ -328,23 +316,6 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         intent.putExtra("TRIP_START_DATE", trip.getStartDate());
         intent.putExtra("TRIP_END_DATE", trip.getEndDate());
         startActivity(intent);
-    }
-
-    @Override
-    public void onDeleteClick(TripModel trip) {
-        AlertDialog alertDialog = new AlertDialog.Builder(this)
-                .setTitle("Delete Trip")
-                .setMessage("Are you sure you want to delete '" + trip.getTripName() + "'?")
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .setPositiveButton("Yes, Delete", (dialog, which) -> {
-                    dbHelper.deleteTrip(trip.getTripId());
-                    loadAndFilterTrips();
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                .create();
-        alertDialog.show();
-        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF000000);
-        alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF000000);
     }
 
     @Override
