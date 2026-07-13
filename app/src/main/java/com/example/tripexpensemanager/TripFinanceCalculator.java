@@ -2,65 +2,68 @@ package com.example.tripexpensemanager;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.Source;
 
 public class TripFinanceCalculator {
 
-    // Interface to send the calculated data back to the UI screen
+    // Interface with onStart to handle the "0" flicker problem
     public interface FinanceResultListener {
+        void onStart();
         void onResult(double totalExpense, double totalReceived, double fundBalance);
     }
 
-    // Universal method to calculate everything from one place
     public static void calculateFinances(String tripId, FinanceResultListener listener) {
+        // 1. Tell the UI to show the loading spinner immediately
+        listener.onStart();
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        db.collection("Trips").document(tripId).collection("Expenses").get().addOnSuccessListener(expSnaps -> {
-            // Temporary variables for the first calculation loop
-            double tempTotalExpense = 0.0;
-            double tempExpensesPaidByFund = 0.0;
-            double tempExpensesPaidByMembers = 0.0;
+        // 2. Fetch Expenses (Using DEFAULT to sync if online, cache if offline)
+        db.collection("Trips").document(tripId).collection("Expenses")
+                .get(Source.DEFAULT)
+                .addOnCompleteListener(expTask -> {
+                    double totalExpense = 0.0;
+                    double expensesPaidByFund = 0.0;
+                    double expensesPaidByMembers = 0.0;
 
-            for (QueryDocumentSnapshot exp : expSnaps) {
-                double amount = getSafeAmount(exp);
-                tempTotalExpense += amount; // 1. ALL Expenses
+                    if (expTask.isSuccessful() && expTask.getResult() != null) {
+                        for (DocumentSnapshot exp : expTask.getResult()) {
+                            double amount = getSafeAmount(exp);
+                            totalExpense += amount;
+                            String paidBy = exp.getString("paidBy");
+                            if ("Fund".equalsIgnoreCase(paidBy)) {
+                                expensesPaidByFund += amount;
+                            } else {
+                                expensesPaidByMembers += amount;
+                            }
+                        }
+                    }
 
-                String paidBy = exp.getString("paidBy");
-                if ("Fund".equalsIgnoreCase(paidBy)) {
-                    tempExpensesPaidByFund += amount; // Used by Fund
-                } else {
-                    tempExpensesPaidByMembers += amount; // Paid directly by Members
-                }
-            }
+                    final double finalTotalExpense = totalExpense;
+                    final double finalExpensesPaidByFund = expensesPaidByFund;
+                    final double finalExpensesPaidByMembers = expensesPaidByMembers;
 
-            // --- WARNING FIX: The Final Bridge ---
-            // Java requires variables used in a nested callback to be "final" (locked in).
-            final double finalTotalExpense = tempTotalExpense;
-            final double finalExpensesPaidByFund = tempExpensesPaidByFund;
-            final double finalExpensesPaidByMembers = tempExpensesPaidByMembers;
+                    // 3. Chain Payment Fetch after Expenses are done
+                    db.collection("Trips").document(tripId).collection("Payments")
+                            .get(Source.DEFAULT)
+                            .addOnCompleteListener(payTask -> {
+                                double totalPayments = 0.0;
+                                if (payTask.isSuccessful() && payTask.getResult() != null) {
+                                    for (DocumentSnapshot pay : payTask.getResult()) {
+                                        totalPayments += getSafeAmount(pay);
+                                    }
+                                }
 
-            db.collection("Trips").document(tripId).collection("Payments").get().addOnSuccessListener(paySnaps -> {
-                double totalPayments = 0.0;
-                for (QueryDocumentSnapshot pay : paySnaps) {
-                    totalPayments += getSafeAmount(pay);
-                }
+                                // Final Math
+                                double totalReceived = totalPayments + finalExpensesPaidByMembers;
+                                double fundBalance = totalPayments - finalExpensesPaidByFund;
 
-                // --- YOUR EXACT CALCULATION FORMULAS ---
-
-                // 2. Total Received: Add Payments + Expenses paid by members
-                double totalReceived = totalPayments + finalExpensesPaidByMembers;
-
-                // 3. Fund Balance: Add Payments - Expenses paid by Fund
-                double fundBalance = totalPayments - finalExpensesPaidByFund;
-
-                // Return the calculated data to whatever page requested it
-                listener.onResult(finalTotalExpense, totalReceived, fundBalance);
-            });
-        });
+                                // 4. Return results (UI will hide spinner here)
+                                listener.onResult(finalTotalExpense, totalReceived, fundBalance);
+                            });
+                });
     }
 
-    // --- WARNING FIX: Removed 'field' parameter since we only calculate amounts ---
-    // Prevents crashes if Firestore data is formatted weirdly
     private static double getSafeAmount(DocumentSnapshot doc) {
         Object obj = doc.get("amount");
         if (obj instanceof Number) return ((Number) obj).doubleValue();

@@ -50,6 +50,7 @@ public class AddPaymentActivity extends AppCompatActivity {
 
     // --- Edit Mode Flags ---
     private boolean isEditMode = false;
+    private Button btnSavePayment;
     private String editPaymentId = null; // Firestore uses String IDs
 
     @Override
@@ -69,7 +70,7 @@ public class AddPaymentActivity extends AppCompatActivity {
         edtPaymentDate = findViewById(R.id.edt_payment_date);
         edtPaymentAmount = findViewById(R.id.edt_payment_amount);
         TextView txtHeading = findViewById(R.id.txt_payment_heading);
-        Button btnSavePayment = findViewById(R.id.btn_save_payment);
+        btnSavePayment = findViewById(R.id.btn_save_payment);
 
         edtPaymentDate.setShowSoftInputOnFocus(false);
         edtPaymentDate.setText(dateFormatter.format(calendar.getTime()));
@@ -223,29 +224,39 @@ public class AddPaymentActivity extends AppCompatActivity {
             return;
         }
 
+        // 1. Lock the button so user can't click twice
+        btnSavePayment.setEnabled(false);
+        btnSavePayment.setText("Saving...");
+
         String selectedPayer = spinnerPaymentBy.getSelectedItem().toString();
 
         Map<String, Object> paymentData = new HashMap<>();
         paymentData.put("paymentBy", selectedPayer);
-        paymentData.put("paymentTo", "Fund"); // Default behavior
+        paymentData.put("paymentTo", "Fund");
         paymentData.put("date", paymentDateStr);
         paymentData.put("amount", totalAmount);
 
         if (isEditMode && editPaymentId != null) {
             db.collection("Trips").document(currentTripId).collection("Payments").document(editPaymentId)
                     .set(paymentData)
-                    .addOnSuccessListener(a -> {
-                        Toast.makeText(this, "Updated!", Toast.LENGTH_SHORT).show();
-                        finish();
+                    .addOnFailureListener(e -> {
+                        btnSavePayment.setEnabled(true);
+                        btnSavePayment.setText(R.string.update_payment);
+                        Toast.makeText(this, "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         } else {
             db.collection("Trips").document(currentTripId).collection("Payments")
                     .add(paymentData)
-                    .addOnSuccessListener(a -> {
-                        Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
-                        finish();
+                    .addOnFailureListener(e -> {
+                        btnSavePayment.setEnabled(true);
+                        btnSavePayment.setText(R.string.label_title_add_payment);
+                        Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         }
+
+        // 2. Close immediately (Offline or Online)
+        Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
+        finish();
     }
 
     // --- HISTORICAL MEMBER HELPER METHODS (Kept for local lookups) ---

@@ -235,14 +235,24 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     }
 
     private void calculateTripFinance(TripModel trip) {
-        TripFinanceCalculator.calculateFinances(trip.getTripId(), (totalExp, totalRec, fundBal) -> {
-            trip.setTotalExpenses(totalExp);
-            trip.setTotalPayments(totalRec);
-            trip.setFundBalance(fundBal);
-            adapter.notifyDataSetChanged();
+        TripFinanceCalculator.calculateFinances(trip.getTripId(), new TripFinanceCalculator.FinanceResultListener() {
+            @Override
+            public void onStart() {
+                // Optional: You can update the UI or leave this empty
+            }
+
+            @Override
+            public void onResult(double totalExp, double totalRec, double fundBal) {
+                // Update your model data
+                trip.setTotalExpenses(totalExp);
+                trip.setTotalPayments(totalRec);
+                trip.setFundBalance(fundBal);
+
+                // Notify the adapter only once the calculation is done
+                adapter.notifyDataSetChanged();
+            }
         });
     }
-
     @SuppressWarnings("unused")
     private ArrayList<String> getHistoricalMembers(String tripId) {
         ArrayList<String> members = new ArrayList<>();

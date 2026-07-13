@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Source;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -122,7 +123,7 @@ public class TripDetailsActivity extends AppCompatActivity {
     }
 
     private void refreshTripDetails() {
-        db.collection("Trips").document(tripId).get().addOnSuccessListener(doc -> {
+        db.collection("Trips").document(tripId).get(Source.DEFAULT).addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 tripName = doc.getString("tripName");
                 ((TextView) findViewById(R.id.txt_details_trip_name)).setText(getString(R.string.format_trip_name_header, tripName));
@@ -178,16 +179,34 @@ public class TripDetailsActivity extends AppCompatActivity {
         }
     }
 
+    // 1. Update your refreshSummaryCards to use the helper method
     private void refreshSummaryCards() {
-        TripFinanceCalculator.calculateFinances(tripId, (totalExp, totalRec, fundBal) -> {
-            TextView txtExpenses = findViewById(R.id.txt_details_total_expenses);
-            TextView txtReceipts = findViewById(R.id.txt_details_total_receipts);
-            TextView txtFundBalance = findViewById(R.id.txt_details_fund_balance);
+        // We use "new" to implement the interface properly
+        TripFinanceCalculator.calculateFinances(tripId, new TripFinanceCalculator.FinanceResultListener() {
+            @Override
+            public void onStart() {
+                // Logic for onStart (e.g., show loading)
+                TextView txtExpenses = findViewById(R.id.txt_details_total_expenses);
+                if (txtExpenses != null) txtExpenses.setText("Loading...");
+            }
 
-            if (txtExpenses != null) txtExpenses.setText(String.format(Locale.US, "₹%.2f", totalExp));
-            if (txtReceipts != null) txtReceipts.setText(String.format(Locale.US, "₹%.2f", totalRec));
-            if (txtFundBalance != null) txtFundBalance.setText(String.format(Locale.US, "₹%.2f", fundBal));
+            @Override
+            public void onResult(double totalExp, double totalRec, double fundBal) {
+                // Logic for onResult (update UI)
+                TextView txtExpenses = findViewById(R.id.txt_details_total_expenses);
+                TextView txtReceipts = findViewById(R.id.txt_details_total_receipts);
+                TextView txtFundBalance = findViewById(R.id.txt_details_fund_balance);
+
+                if (txtExpenses != null) txtExpenses.setText(formatCurrency(totalExp));
+                if (txtReceipts != null) txtReceipts.setText(formatCurrency(totalRec));
+                if (txtFundBalance != null) txtFundBalance.setText(formatCurrency(fundBal));
+            }
         });
+    }
+
+    private String formatCurrency(double amount) {
+        // Cleaned up the 'format:' artifact that was causing the syntax error
+        return String.format(java.util.Locale.US, "₹%.2f", amount);
     }
 
     private void addMemberButton(String mName, GridLayout grid) {

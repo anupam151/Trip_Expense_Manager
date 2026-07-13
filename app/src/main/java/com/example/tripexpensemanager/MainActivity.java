@@ -19,13 +19,13 @@ public class MainActivity extends AppCompatActivity {
             @SuppressWarnings("deprecation")
             boolean isSignedIn = GoogleSignIn.getLastSignedInAccount(this) != null;
 
-            if (isSignedIn) {
-                Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
-                startActivity(intent);
-            } else {
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(intent);
-            }
+            // 1. Determine the destination class first
+            Class<?> destinationClass = isSignedIn ? DashboardActivity.class : LoginActivity.class;
+
+// 2. Write the Intent logic once
+            startActivity(new Intent(MainActivity.this, destinationClass));
+
+// 3. Finish activity
             finish();
         }, 1000);
     }

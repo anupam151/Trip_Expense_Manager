@@ -156,130 +156,129 @@ public class DashboardActivity extends AppCompatActivity {
             return;
         }
 
+        // 1. Try Server (Source.DEFAULT)
         db.collection("Trips")
                 .whereEqualTo("ownerEmail", account.getEmail())
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    DocumentSnapshot pinnedTripDoc = null;
+                .get(com.google.firebase.firestore.Source.DEFAULT)
+                .addOnSuccessListener(this::processTripData)
+                .addOnFailureListener(e -> {
+                    // 2. If Server Fails (Offline), Fallback to Cache
+                    db.collection("Trips")
+                            .whereEqualTo("ownerEmail", account.getEmail())
+                            .get(com.google.firebase.firestore.Source.CACHE)
+                            .addOnSuccessListener(this::processTripData)
+                            .addOnFailureListener(err -> {
+                                // Truly no data found
+                                clearWorkspace();
+                            });
+                });
+    }
 
-                    // Safely find the pinned trip client-side to prevent Index crash
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        Object isPinnedObj = doc.get("isPinned");
-                        boolean isPinned = false;
+    // 3. Helper Method to process the results (The logic you already had)
+    private void processTripData(com.google.firebase.firestore.QuerySnapshot queryDocumentSnapshots) {
+        DocumentSnapshot pinnedTripDoc = null;
 
-                        if (isPinnedObj instanceof Boolean) {
-                            isPinned = (Boolean) isPinnedObj;
-                        } else if (isPinnedObj instanceof Number) {
-                            isPinned = ((Number) isPinnedObj).intValue() == 1;
-                        } else if (isPinnedObj instanceof String) {
-                            isPinned = Boolean.parseBoolean((String) isPinnedObj) || "1".equals(isPinnedObj);
-                        }
+        // Safely find the pinned trip
+        for (DocumentSnapshot doc : queryDocumentSnapshots) {
+            Object isPinnedObj = doc.get("isPinned");
+            boolean isPinned = false;
 
-                        if (isPinned) {
-                            pinnedTripDoc = doc;
-                            break; // Show only the top pinned trip
-                        }
-                    }
+            if (isPinnedObj instanceof Boolean) {
+                isPinned = (Boolean) isPinnedObj;
+            } else if (isPinnedObj instanceof Number) {
+                isPinned = ((Number) isPinnedObj).intValue() == 1;
+            } else if (isPinnedObj instanceof String) {
+                isPinned = Boolean.parseBoolean((String) isPinnedObj) || "1".equals(isPinnedObj);
+            }
 
-                    if (pinnedTripDoc == null) {
-                        clearWorkspace();
-                    } else {
-                        populateWorkspace(pinnedTripDoc);
-                    }
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, "Failed to fetch data", Toast.LENGTH_SHORT).show());
+            if (isPinned) {
+                pinnedTripDoc = doc;
+                break;
+            }
+        }
+
+        if (pinnedTripDoc == null) {
+            clearWorkspace();
+        } else {
+            populateWorkspace(pinnedTripDoc);
+        }
     }
 
     // --- FIX: Modified to accept a single DocumentSnapshot ---
     private void populateWorkspace(DocumentSnapshot doc) {
+        // 1. Prepare the UI
         containerPinnedTripsStack.removeAllViews();
         layoutNoPinnedTrips.setVisibility(View.GONE);
         containerPinnedTripsStack.setVisibility(View.VISIBLE);
         lblRecentHeading.setVisibility(View.VISIBLE);
 
-        float scale = getResources().getDisplayMetrics().density;
-        int marginHorizontalPx = Math.round(2 * scale);
-        int marginBottomPx = Math.round(8 * scale);
-
+        // 2. Extract Data Safely
         String tripId = doc.getId();
         String name = doc.getString("tripName") != null ? doc.getString("tripName") : "Unnamed Trip";
         String destination = doc.getString("destination") != null ? doc.getString("destination") : "Unknown";
         String members = doc.getString("members") != null ? doc.getString("members") : "";
-
-        Long countLong = doc.getLong("memberCount");
-        int count = countLong != null ? countLong.intValue() : 1;
-
         String startDate = doc.getString("startDate") != null ? doc.getString("startDate") : "";
         String endDate = doc.getString("endDate") != null ? doc.getString("endDate") : "";
 
+        Long countLong = doc.getLong("memberCount");
+        int count = (countLong != null) ? countLong.intValue() : 1;
+
+        // 3. Inflate the Card
         View cardView = LayoutInflater.from(this)
                 .inflate(R.layout.item_trip, containerPinnedTripsStack, false);
 
         TextView txtTripName = cardView.findViewById(R.id.txt_item_trip_name);
         TextView txtDestination = cardView.findViewById(R.id.txt_item_destination);
         TextView txtMemberCount = cardView.findViewById(R.id.txt_item_member_count);
-        TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
         TextView txtStartDate = cardView.findViewById(R.id.txt_item_start_date);
         TextView txtTotalExpense = cardView.findViewById(R.id.txt_item_total_expense);
         TextView txtTotalReceived = cardView.findViewById(R.id.txt_item_total_received);
+        TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
 
+        // Buttons
         TextView btnPin = cardView.findViewById(R.id.btn_item_pin);
         TextView btnEdit = cardView.findViewById(R.id.btn_item_edit);
         TextView btnDelete = cardView.findViewById(R.id.btn_item_delete);
         MaterialButton btnAddExpense = cardView.findViewById(R.id.btn_item_add_expense);
         MaterialButton btnAddPayment = cardView.findViewById(R.id.btn_item_add_payment);
 
+        // 4. Bind static data
         txtTripName.setText(getString(R.string.fmt_dash_pinned_title, 1, name));
         txtDestination.setText(getString(R.string.fmt_dash_destination, destination));
         txtMemberCount.setText(getString(R.string.fmt_dash_member_count, count));
         txtStartDate.setText(getString(R.string.fmt_dash_start_date, startDate));
 
-        // --- Call our new Universal Brain! ---
-        TripFinanceCalculator.calculateFinances(tripId, (totalExp, totalRec, fundBal) -> {
-            if (txtTotalExpense != null) {
-                txtTotalExpense.setText(getString(R.string.fmt_dash_currency_rupees, totalExp));
+        // 5. THE "UNIVERSAL BRAIN" CALL
+        // --- THE UNIVERSAL BRAIN CALL ---
+        TripFinanceCalculator.calculateFinances(tripId, new TripFinanceCalculator.FinanceResultListener() {
+            @Override
+            public void onStart() {
+                // Optional: Clear text so user doesn't see "0"
+                txtTotalExpense.setText("...");
+                txtTotalReceived.setText("...");
+                txtFundBalance.setText("...");
             }
-            if (txtTotalReceived != null) {
-                txtTotalReceived.setText(getString(R.string.fmt_dash_currency_rupees, totalRec));
-            }
-            if (txtFundBalance != null) {
+
+            @Override
+            public void onResult(double totalExp, double totalRec, double fundBal) {
+                // No need for (Double) cast - Java handles this automatically!
+                txtTotalExpense.setText(DashboardActivity.this.getString(R.string.fmt_dash_currency_rupees, totalExp));
+                txtTotalReceived.setText(DashboardActivity.this.getString(R.string.fmt_dash_currency_rupees, totalRec));
                 txtFundBalance.setText(String.format(Locale.US, "₹%.2f", fundBal));
             }
         });
 
-        // This screen only shows pinned trips
+        // 6. Set Listeners
         btnPin.setText(getString(R.string.action_unpin));
         btnPin.setTextColor(0xFF2E7D32);
-
         btnPin.setOnClickListener(v -> handlePinToggle(tripId, name));
-        btnEdit.setOnClickListener(v ->
-                navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate));
+        btnEdit.setOnClickListener(v -> navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate));
+        btnDelete.setOnClickListener(v -> showDeleteDialog(tripId, name));
+        btnAddExpense.setOnClickListener(v -> navigateToAddExpense(tripId, members));
+        btnAddPayment.setOnClickListener(v -> navigateToAddPayment(tripId, members));
+        cardView.setOnClickListener(v -> navigateToTripDetails(tripId, name, destination, members, startDate, endDate));
 
-        btnDelete.setOnClickListener(v ->
-                showDeleteDialog(tripId, name));
-
-        btnAddExpense.setOnClickListener(v ->
-                navigateToAddExpense(tripId, members));
-
-        btnAddPayment.setOnClickListener(v ->
-                navigateToAddPayment(tripId, members));
-
-        cardView.setOnClickListener(v ->
-                navigateToTripDetails(tripId, name, destination, members, startDate, endDate));
-
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-
-        layoutParams.setMargins(
-                marginHorizontalPx,
-                marginBottomPx,
-                marginHorizontalPx,
-                marginBottomPx
-        );
-
-        cardView.setLayoutParams(layoutParams);
+        // 7. Add to UI
         containerPinnedTripsStack.addView(cardView);
     }
 

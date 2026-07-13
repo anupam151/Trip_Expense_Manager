@@ -16,26 +16,34 @@ import com.google.api.services.drive.Drive;
 import java.io.FileInputStream;
 import java.util.Collections;
 import androidx.annotation.Keep;
-@Keep // <--- Add this annotation
+@Keep
+@SuppressWarnings({"unused", "FieldCanBeLocal","deprecation"}) // This tells the IDE to ignore the unused warnings
 public class DriveBackupWorker extends Worker {
 
     public DriveBackupWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
     }
 
-    @SuppressWarnings("deprecation") // <--- ADD THIS LINE
     @NonNull
     @Override
     public Result doWork() {
         Context context = getApplicationContext();
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(context);
 
+        // --- IMPORTANT: Check if file exists to prevent crash ---
+        java.io.File dbFile = context.getDatabasePath("TripManager.db");
+        if (!dbFile.exists()) {
+            Log.w("AutoSync", "Backup skipped: Database file does not exist.");
+            return Result.success(); // Not a failure, just nothing to back up
+        }
+
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(context);
         if (account == null) {
             Log.e("AutoSync", "Backup aborted: User not signed in.");
             return Result.failure();
         }
 
         try {
+            // ... (Rest of your code remains the same) ...
             GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
                     context, Collections.singletonList("https://www.googleapis.com/auth/drive.file"));
             credential.setSelectedAccount(account.getAccount());
@@ -48,7 +56,7 @@ public class DriveBackupWorker extends Worker {
                     .build();
 
             GoogleDriveService driveUploader = new GoogleDriveService(driveService);
-            FileInputStream fis = new FileInputStream(context.getDatabasePath("TripManager.db"));
+            FileInputStream fis = new FileInputStream(dbFile);
 
             driveUploader.uploadDatabase(fis, "TripManager_Backup.db");
 
@@ -57,7 +65,6 @@ public class DriveBackupWorker extends Worker {
 
         } catch (Exception e) {
             Log.e("AutoSync", "Background backup failed. Will retry.", e);
-            // Telling WorkManager to try again later if something breaks!
             return Result.retry();
         }
     }

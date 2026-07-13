@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.Window;
@@ -360,63 +361,63 @@ public class AddExpenseActivity extends AppCompatActivity {
     }
 
     private void validateFundAndSave(Map<String, Object> expenseData, double totalAmount) {
-        // 1. Fetch total Payments to Fund
+        // We use OnCompleteListener because it ALWAYS fires, even if the cache is empty/fails.
         db.collection("Trips").document(currentTripId).collection("Payments")
                 .whereEqualTo("paymentTo", "Fund")
-                .get()
-                .addOnSuccessListener(paySnaps -> {
+                .get(com.google.firebase.firestore.Source.CACHE)
+                .addOnCompleteListener(task -> {
                     double totalPayments = 0.0;
-                    for (DocumentSnapshot ds : paySnaps) {
-                        Double amt = ds.getDouble("amount");
-                        if (amt != null) totalPayments += amt;
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        for (DocumentSnapshot ds : task.getResult()) {
+                            Double amt = ds.getDouble("amount");
+                            if (amt != null) totalPayments += amt;
+                        }
                     }
 
-                    // Create a local final copy for the next listener
                     final double finalTotalPayments = totalPayments;
 
-                    // 2. Fetch total Expenses from Fund
+                    // Chain the next call
                     db.collection("Trips").document(currentTripId).collection("Expenses")
                             .whereEqualTo("paidBy", "Fund")
-                            .get()
-                            .addOnSuccessListener(expSnaps -> {
+                            .get(com.google.firebase.firestore.Source.CACHE)
+                            .addOnCompleteListener(task2 -> {
                                 double totalFundExpenses = 0.0;
-                                for (DocumentSnapshot ds : expSnaps) {
-                                    Double amt = ds.getDouble("amount");
-                                    if (amt != null) totalFundExpenses += amt;
+                                if (task2.isSuccessful() && task2.getResult() != null) {
+                                    for (DocumentSnapshot ds : task2.getResult()) {
+                                        Double amt = ds.getDouble("amount");
+                                        if (amt != null) totalFundExpenses += amt;
+                                    }
                                 }
 
-                                // 3. Calculate balance HERE, where both values are now available
-                                double currentFundBalance = finalTotalPayments - totalFundExpenses;
-                                double effectiveBalance = currentFundBalance + (isEditMode ? oldAmount : 0.0);
+                                double effectiveBalance = (finalTotalPayments - totalFundExpenses) + (isEditMode ? oldAmount : 0.0);
 
+                                // Validation Logic
                                 if (totalAmount > effectiveBalance) {
-                                    Toast.makeText(this, "Insufficient Fund Balance! Available: ₹" + String.format(Locale.US, "%.2f", effectiveBalance), Toast.LENGTH_LONG).show();
+                                    Toast.makeText(this, "Insufficient Fund! Available: ₹" + String.format(Locale.US, "%.2f", effectiveBalance), Toast.LENGTH_LONG).show();
                                 } else {
                                     saveToCloud(expenseData);
                                 }
-                            })
-                            .addOnFailureListener(e -> Toast.makeText(this, "Failed to verify fund expenses", Toast.LENGTH_SHORT).show());
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, "Failed to verify fund payments", Toast.LENGTH_SHORT).show());
+                            });
+                });
     }
 
     private void saveToCloud(Map<String, Object> expenseData) {
+        Log.d("AddExpenseActivity", "saveToCloud started...");
+
+        // 1. Force the UI update immediately.
+        // Since the database operation is offline-first, it will sync automatically later.
+        Toast.makeText(this, "Processing save...", Toast.LENGTH_SHORT).show();
+
         if (isEditMode && editExpenseId != null) {
             db.collection("Trips").document(currentTripId).collection("Expenses").document(editExpenseId)
-                    .set(expenseData)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Updated!", Toast.LENGTH_SHORT).show();
-                        finish();
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to update expense", Toast.LENGTH_SHORT).show());
+                    .set(expenseData); // We don't even need the listener to be the only path to finish()
         } else {
             db.collection("Trips").document(currentTripId).collection("Expenses")
-                    .add(expenseData)
-                    .addOnSuccessListener(docRef -> {
-                        Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
-                        finish();
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to save expense", Toast.LENGTH_SHORT).show());
+                    .add(expenseData);
         }
+
+        // 2. Close the activity immediately.
+        // We don't need to wait for the database "handshake" to close the screen.
+        finish();
     }
 }
