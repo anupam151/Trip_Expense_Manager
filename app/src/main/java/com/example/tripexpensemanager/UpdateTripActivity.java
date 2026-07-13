@@ -45,7 +45,7 @@ public class UpdateTripActivity extends AppCompatActivity {
 
     private int memberCounter = 1;
     private String tripId;
-
+    private Button btnUpdateTripSubmit;
     private FirebaseFirestore db;
 
     @Override
@@ -80,7 +80,7 @@ public class UpdateTripActivity extends AppCompatActivity {
         edtEndDate.setShowSoftInputOnFocus(false);
 
         Button btnAddMemberTrigger = findViewById(R.id.btn_update_member_trigger);
-        Button btnUpdateTripSubmit = findViewById(R.id.btn_update_trip_submit);
+        btnUpdateTripSubmit = findViewById(R.id.btn_update_trip_submit);
 
         edtStartDate.setOnClickListener(v -> showDatePicker(edtStartDate));
         edtEndDate.setOnClickListener(v -> showDatePicker(edtEndDate));
@@ -90,7 +90,6 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         extractAndPrefillData();
     }
-
     private void extractAndPrefillData() {
         if (getIntent() != null) {
             tripId = getIntent().getStringExtra("TRIP_ID");
@@ -131,7 +130,6 @@ public class UpdateTripActivity extends AppCompatActivity {
             }
         }
     }
-
     private void refreshMembersUI() {
         layoutMemberList.removeAllViews();
         memberCounter = 1;
@@ -161,7 +159,6 @@ public class UpdateTripActivity extends AppCompatActivity {
             findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.GONE);
         }
     }
-
     private void addMemberRow(final String name, boolean isActive) {
         final LinearLayout rowLayout = new LinearLayout(this);
         rowLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -189,7 +186,6 @@ public class UpdateTripActivity extends AppCompatActivity {
         layoutMemberList.addView(rowLayout);
         if (isActive) memberCounter++;
     }
-
     // --- NEW: Helper method to keep addMemberRow clean ---
     private TextView createActionButton(final String name, boolean isActive) {
         TextView btnAction = new TextView(this);
@@ -213,7 +209,6 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         return btnAction;
     }
-
     private void showDatePicker(EditText dateEditText) {
         View currentFocusView = getCurrentFocus();
         if (currentFocusView != null) currentFocusView.clearFocus();
@@ -238,7 +233,6 @@ public class UpdateTripActivity extends AppCompatActivity {
             buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
         }
     }
-
     @NonNull
     private DatePickerDialog createDatePickerDialogInstance(EditText dateEditText) {
         final Calendar calendar = Calendar.getInstance();
@@ -252,7 +246,6 @@ public class UpdateTripActivity extends AppCompatActivity {
                     dateEditText.setText(formattedDate);
                 }, year, month, day);
     }
-
     private void showAddMemberDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_member, null);
@@ -308,7 +301,6 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         alertDialog.show();
     }
-
     private void hideKeyboard(android.view.View view) {
         android.view.inputmethod.InputMethodManager imm =
                 (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -316,13 +308,13 @@ public class UpdateTripActivity extends AppCompatActivity {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
-
     private void validateAndUpdateTrip() {
         String tripName = edtTripName.getText().toString().trim();
         String destination = edtDestination.getText().toString().trim();
         String startDate = edtStartDate.getText().toString().trim();
         String endDate = edtEndDate.getText().toString().trim();
 
+        // --- Validation Checks ---
         if (tripName.isEmpty() || destination.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
             Toast.makeText(this, getString(R.string.err_mandatory_fields), Toast.LENGTH_SHORT).show();
             return;
@@ -342,13 +334,12 @@ public class UpdateTripActivity extends AppCompatActivity {
         try {
             Date dateStart = sdf.parse(startDate);
             Date dateEnd = sdf.parse(endDate);
-
             if (dateStart != null && dateEnd != null && dateStart.after(dateEnd)) {
                 Toast.makeText(this, getString(R.string.err_date_chronology_mismatch), Toast.LENGTH_LONG).show();
                 return;
             }
         } catch (ParseException e) {
-            Log.e(TAG, "Timestamp format calculation failure check", e);
+            Log.e(TAG, "Timestamp calculation error", e);
             Toast.makeText(this, getString(R.string.err_invalid_date_format), Toast.LENGTH_SHORT).show();
             return;
         }
@@ -358,6 +349,7 @@ public class UpdateTripActivity extends AppCompatActivity {
             return;
         }
 
+        // --- Prepare Updates ---
         String allMembersStr = TextUtils.join(",", memberList);
         String allInactiveMembersStr = TextUtils.join(",", inactiveMembers);
         int totalMembersCount = memberList.size();
@@ -371,13 +363,23 @@ public class UpdateTripActivity extends AppCompatActivity {
         updates.put("inactiveMembers", allInactiveMembersStr);
         updates.put("memberCount", totalMembersCount);
 
+        // --- Perform Update (Offline-First) ---
+        btnUpdateTripSubmit.setEnabled(false);
+        btnUpdateTripSubmit.setText("Updating...");
+
         db.collection("Trips").document(tripId)
                 .update(updates)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Trip Updated!", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK);
-                    finish();
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, getString(R.string.err_trip_update_failed), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    // If it fails (e.g., permissions), re-enable the button
+                    btnUpdateTripSubmit.setEnabled(true);
+                    btnUpdateTripSubmit.setText("Update Trip");
+                    Toast.makeText(this, getString(R.string.err_trip_update_failed) + ": " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+
+        // --- Close Immediately ---
+        // This executes whether online or offline
+        Toast.makeText(this, "Trip Updated!", Toast.LENGTH_SHORT).show();
+        setResult(RESULT_OK);
+        finish();
     }
 }
