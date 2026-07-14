@@ -1,30 +1,30 @@
 package com.example.tripexpensemanager;
 
-import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import android.view.View;
 
 public class MemberLedgerActivity extends AppCompatActivity {
 
     private String memberName, tripId;
-    private TripDatabaseHelper dbHelper;
     private final List<Transaction> transactionList = new ArrayList<>();
 
-    // --- NEW: Export Manager ---
+    // Export Manager
     private LedgerExportManager exportManager;
 
-    // --- NEW: The SAF Launcher for Individual Excel Export ---
+    // SAF Launcher for Individual Excel Export
     private final ActivityResultLauncher<String> createExcelLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("text/csv"),
             uri -> {
@@ -33,7 +33,7 @@ public class MemberLedgerActivity extends AppCompatActivity {
                 }
             });
 
-    // --- NEW: The SAF Launcher for Individual PDF Export ---
+    // SAF Launcher for Individual PDF Export
     private final ActivityResultLauncher<String> createPdfLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/pdf"),
             uri -> {
@@ -50,10 +50,9 @@ public class MemberLedgerActivity extends AppCompatActivity {
         // Retrieve passed data
         memberName = getIntent().getStringExtra("MEMBER_NAME");
         tripId = getIntent().getStringExtra("TRIP_ID");
-        dbHelper = new TripDatabaseHelper(this);
 
-        // --- NEW: Initialize the Export Engine ---
-        exportManager = new LedgerExportManager(this, dbHelper);
+        // Initialize Export Engine (Passing a dummy helper to satisfy constructor)
+        exportManager = new LedgerExportManager(this, new TripDatabaseHelper(this));
 
         // Bind UI
         ImageButton btnBack = findViewById(R.id.btn_back);
@@ -65,25 +64,27 @@ public class MemberLedgerActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recycler_transactions);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Load data using Firestore Engine
         loadLedgerData();
 
-        // --- NEW: Hook up the Export to Excel Button ---
+        // Hook up the Export to Excel Button
         if (findViewById(R.id.btn_export_to_excel) != null) {
             findViewById(R.id.btn_export_to_excel).setOnClickListener(v -> {
-                // Dynamically sets the default file name to match the member!
-                String fileName = memberName + "_Ledger.csv";
+                String fileName = memberName.replaceAll("[^a-zA-Z0-9]", "_") + "_Ledger.csv";
                 createExcelLauncher.launch(fileName);
             });
         }
-        // --- NEW: Hook up the Export to PDF Button ---
+
+        // Hook up the Export to PDF Button
         if (findViewById(R.id.btn_export_to_pdf) != null) {
             findViewById(R.id.btn_export_to_pdf).setOnClickListener(v -> {
-                String fileName = memberName + "_Ledger.pdf";
+                String fileName = memberName.replaceAll("[^a-zA-Z0-9]", "_") + "_Ledger.pdf";
                 createPdfLauncher.launch(fileName);
             });
         }
-        // --- HOOK UP THE DIRECT SHARE BUTTON ---
-        View btnShare = findViewById(R.id.btn_share);
+
+        // Hook up the Direct Share Button
+        android.view.View btnShare = findViewById(R.id.btn_share);
         if (btnShare != null) {
             btnShare.setOnClickListener(v -> {
                 if (exportManager != null) {
@@ -94,61 +95,69 @@ public class MemberLedgerActivity extends AppCompatActivity {
     }
 
     private void loadLedgerData() {
-        transactionList.clear();
-        double totalDebit = 0;
-        double totalCredit = 0;
+        new LedgerDataService().fetchUnifiedLedger(tripId, new LedgerDataService.LedgerCallback() {
+            @Override
+            public void onResult(List<LedgerEntry> entries) {
+                transactionList.clear();
+                double totalDebit = 0;
+                double totalCredit = 0;
+                int mockIdCounter = 1; // Used to supply an ID to the Transaction object
 
-        // 1. Fetch Expenses - Using expense_id as unique ID
-        try (Cursor c = dbHelper.getReadableDatabase().rawQuery(
-                "SELECT expense_id, expense_date, expense_purpose, expense_amount, expense_paid_by, expense_shared_with FROM expenses WHERE expense_trip_id = ?",
-                new String[]{tripId})) {
+                for (LedgerEntry entry : entries) {
+                    String[] sharedArray = (entry.getSharedWith() != null && !entry.getSharedWith().isEmpty()) ? entry.getSharedWith().split(",\\s*") : new String[0];
+                    double debit = 0.0;
+                    double credit = 0.0;
+                    boolean involvesMember = false;
 
-            while (c.moveToNext()) {
-                int id = c.getInt(0);
-                String date = c.getString(1);
-                String purpose = c.getString(2);
-                double fullAmount = c.getDouble(3);
-                String paidBy = c.getString(4);
-                String sharedWith = c.getString(5);
-                String timestamp = date + " 00:00:00"; // Fallback timestamp
+                    // Apply Double-Entry Rules
+                    if (entry.isExpense()) {
+                        if (memberName.equals(entry.getPaidBy())) {
+                            credit = entry.getAmount();
+                            involvesMember = true;
+                        }
+                        if (isParticipant(memberName, sharedArray)) {
+                            debit = entry.getAmount() / sharedArray.length;
+                            involvesMember = true;
+                        }
+                    } else if (memberName.equals(entry.getPaidBy())) {
+                        credit = entry.getAmount();
+                        involvesMember = true;
+                    }
 
-                String[] members = sharedWith.split(",");
-                double share = fullAmount / members.length;
+                    // If member is involved, add to list and calculate totals
+                    if (involvesMember) {
+                        totalDebit += debit;
+                        totalCredit += credit;
 
-                if (paidBy.equals(memberName) && sharedWith.contains(memberName)) {
-                    transactionList.add(new Transaction(id, date, timestamp, purpose, share, fullAmount));
-                    totalDebit += share; totalCredit += fullAmount;
-                } else if (sharedWith.contains(memberName)) {
-                    transactionList.add(new Transaction(id, date, timestamp, purpose, share, 0));
-                    totalDebit += share;
-                } else if (paidBy.equals(memberName)) {
-                    transactionList.add(new Transaction(id, date, timestamp, purpose, 0, fullAmount));
-                    totalCredit += fullAmount;
+                        String safeDate = (entry.getDate() != null) ? entry.getDate() : "N/A";
+                        String safePurpose = (entry.getPurpose() != null) ? entry.getPurpose() : "Cash Settlement";
+
+                        transactionList.add(new Transaction(
+                                mockIdCounter++,
+                                safeDate,
+                                safeDate + " 00:00:00", // Fallback timestamp, not used for sorting anymore
+                                safePurpose,
+                                debit,
+                                credit
+                        ));
+                    }
                 }
+                // 1. Create final copies of the calculated totals
+                final double finalTotalDebit = totalDebit;
+                final double finalTotalCredit = totalCredit;
+
+                // Update UI on Main Thread
+                runOnUiThread(() -> updateUI(finalTotalDebit, finalTotalCredit));
             }
-        } catch (Exception e) {
-            android.util.Log.e("LEDGER_ERROR", "Expense Query Failed: " + e.getMessage());
-        }
 
-        // 2. Fetch Payments - Using payment_id
-        try (Cursor c = dbHelper.getReadableDatabase().rawQuery(
-                "SELECT payment_id, payment_date, payment_amount FROM payments WHERE payment_trip_id = ? AND payment_by = ?",
-                new String[]{tripId, memberName})) {
-            while (c.moveToNext()) {
-                int id = c.getInt(0);
-                double amount = c.getDouble(2);
-                String timestamp = c.getString(1) + " 00:00:00";
-                transactionList.add(new Transaction(id, c.getString(1), timestamp, "Cash Settlement", 0, amount));
-                totalCredit += amount;
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> Toast.makeText(MemberLedgerActivity.this, "Failed to load data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
-        } catch (Exception e) {
-            android.util.Log.e("LEDGER_ERROR", "Payment Query Failed: " + e.getMessage());
-        }
+        });
+    }
 
-        // 3. Sort and Refresh
-        sortTransactionsByTimestamp();
-
-        // 4. Update UI
+    private void updateUI(double totalDebit, double totalCredit) {
         ((TextView) findViewById(R.id.txt_total_expenses)).setText(String.format(Locale.US, "₹%.2f", totalDebit));
         ((TextView) findViewById(R.id.txt_total_payments)).setText(String.format(Locale.US, "₹%.2f", totalCredit));
         ((TextView) findViewById(R.id.txt_footer_total_debit)).setText(String.format(Locale.US, "₹%.2f", totalDebit));
@@ -160,38 +169,14 @@ public class MemberLedgerActivity extends AppCompatActivity {
         txtBalance.setText(String.format(Locale.US, "₹%.2f", Math.abs(balance)));
         txtBalance.setTextColor(balance < 0 ? Color.parseColor("#85022E") : Color.parseColor("#2E7D32"));
 
-        // Final Adapter assignment
         RecyclerView recyclerView = findViewById(R.id.recycler_transactions);
         recyclerView.setAdapter(new LedgerAdapter(transactionList));
     }
 
-    private void sortTransactionsByTimestamp() {
-        // 1. Define the format to match your data (dd/MM/yyyy HH:mm:ss)
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-
-        transactionList.sort((t1, t2) -> {
-            try {
-                // 2. Parse the timestamps
-                java.util.Date date1 = sdf.parse(t1.timestamp);
-                java.util.Date date2 = sdf.parse(t2.timestamp);
-
-                if (date1 == null || date2 == null) return 0;
-
-                // 3. Compare the dates
-                int dateComparison = date1.compareTo(date2);
-
-                // 4. If dates are different, return the date comparison
-                if (dateComparison != 0) {
-                    return dateComparison;
-                } else {
-                    // 5. TIE-BREAKER: If dates are identical, use the database ID.
-                    // This ensures that items entered later always appear later.
-                    return Integer.compare(t1.id, t2.id);
-                }
-            } catch (java.text.ParseException e) {
-                // If parsing fails, don't change the order
-                return 0;
-            }
-        });
+    private boolean isParticipant(String memberName, String[] sharedArray) {
+        for (String s : sharedArray) {
+            if (s.trim().equalsIgnoreCase(memberName.trim())) return true;
+        }
+        return false;
     }
 }
