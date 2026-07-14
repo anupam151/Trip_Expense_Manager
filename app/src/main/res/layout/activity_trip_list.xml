@@ -7,94 +7,95 @@
     android:orientation="vertical"
     android:background="#F8F9FA"
     tools:context=".TripListActivity">
-    <LinearLayout
+
+    <RelativeLayout
+        android:id="@+id/top_app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#FFFFFF"
-        android:gravity="center"
-        android:orientation="vertical"
         android:paddingBottom="6dp"
         android:paddingTop="6dp">
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:text="@string/app_name"
             android:fontFamily="monospace"
             android:textColor="#85022E"
             android:textSize="15sp"
             android:textStyle="bold" />
-    </LinearLayout>
+    </RelativeLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="6dp"
-        android:background="#85022E">
-
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_app_bar"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
         <ImageButton
-            android:id="@+id/temp"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:id="@+id/btn_open_drawer"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:padding="6dp"
             android:scaleType="fitCenter"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_home"
-            android:contentDescription="@string/home"
-            app:tint="#FFFFFF" />
-
+            android:src="@drawable/menu"
+            app:tint="#85022E"
+            android:contentDescription="@string/desc_open_menu"/>
         <TextView
             android:id="@+id/txt_trip_list_category_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
             android:layout_weight="1"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
             android:text="@string/txt_all_trips"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:textSize="22sp"/>
+            android:textColor="#85022E"
+            android:textSize="25sp"
+            android:textStyle="bold" />
     </LinearLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_marginTop="4dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="8dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="12dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?attr/selectableItemBackground">
+        android:background="#E9E9E9">
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="12dp"
+            android:src="@drawable/search"
+            app:tint="#85022E" />
 
-        <LinearLayout
-            android:id="@+id/Temp"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="12dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="All Trips"
-                android:layout_marginEnd="8dp"
-                android:textColor="#85022E"
-                android:textStyle="bold"
-                android:textSize="14sp"/>
-        </LinearLayout>
-
-        <View
+        <EditText
+            android:id="@+id/edit_search_trips"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/transparent"
+            android:hint="Search trips..."
+            android:textColor="#000000"
+            android:textColorHint="#888888"
+            android:textSize="14sp"
+            android:inputType="text"
+            android:maxLines="1" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="24dp"
+            android:layout_marginHorizontal="8dp"
+            android:background="#CCCCCC" />
 
         <LinearLayout
             android:id="@+id/btn_sort_dropdown"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="match_parent"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingHorizontal="12dp"
@@ -109,16 +110,17 @@
                 android:textColor="#85022E"
                 android:textStyle="bold"
                 android:textSize="14sp"/>
+
             <TextView
                 android:id="@+id/txt_current_sort"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Departure Date ▲"
+                android:text="Departure ▲"
                 android:textColor="#85022E"
-                android:textSize="14sp"/>
+                android:textSize="13sp"/>
         </LinearLayout>
-
     </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -130,7 +132,6 @@
             android:clipToPadding="false"
             android:paddingVertical="4dp"
             android:visibility="visible" />
-
         <TextView
             android:id="@+id/txt_empty_trips_message"
             android:layout_width="wrap_content"
@@ -142,8 +143,8 @@
             android:textSize="16sp"
             android:textStyle="italic"
             android:visibility="gone" />
-
     </FrameLayout>
+
     <LinearLayout
         android:id="@+id/button_container"
         android:layout_width="match_parent"
@@ -151,7 +152,6 @@
         android:orientation="vertical"
         android:background="#E9E9E9"
         android:gravity="center">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -207,7 +207,6 @@
                     android:src="@drawable/create_trip"
                     app:tint="#85022E"
                     android:contentDescription="@string/dash_btn_create_trip"/>
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -263,14 +262,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackgroundBorderless">
-
                 <ImageView
                     android:layout_width="30dp"
                     android:layout_height="30dp"
                     android:src="@drawable/bank"
                     app:tint="#85022E"
                     android:contentDescription="@string/complete_ledger"/>
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -289,7 +286,6 @@
             android:fontFamily="monospace"
             android:textColor="#85022E"
             android:textSize="12sp" />
-
-
     </LinearLayout>
+
 </LinearLayout>

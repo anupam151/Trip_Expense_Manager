@@ -34,6 +34,9 @@ import java.util.Calendar;
 //import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
 
 //import android.view.Gravity;
 //import androidx.appcompat.widget.PopupMenu;
@@ -54,6 +57,11 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     private TripDatabaseHelper dbHelper;
     private LedgerExportManager exportManager;
     private String selectedTripIdForExport = null;
+    // Keep your existing variables...
+
+    // --- NEW: Search Variables ---
+    private final ArrayList<TripModel> masterTripList = new ArrayList<>();
+    private String currentSearchQuery = "";
 
     private final ActivityResultLauncher<String> createMasterPdfLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/pdf"),
@@ -81,7 +89,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
 
         if (btnSortDropdown != null && txtCurrentSort != null) {
             // 1. Force the default text to match the default sorting math!
-            txtCurrentSort.setText("Departure Date ▲");
+            txtCurrentSort.setText("Departure ▲");
 
             btnSortDropdown.setOnClickListener(v -> showSortPopupMenu(v, txtCurrentSort));
         }
@@ -98,6 +106,26 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
 
         txtCategoryTitle.setText(currentCategoryLabel);
         txtEmptyMessage.setText(getString(R.string.msg_no_trip_added));
+
+        // --- NEW: Bind Search Bar and Listen for Typing ---
+        EditText editSearchTrips = findViewById(R.id.edit_search_trips);
+        if (editSearchTrips != null) {
+            editSearchTrips.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    // Grab the typed text, convert to lowercase for easy matching!
+                    currentSearchQuery = s.toString().toLowerCase().trim();
+                    applyFilterAndSort(); // Run our new combined engine
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new TripAdapter(tripList, this);
@@ -137,8 +165,8 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     private void showSortPopupMenu(View anchor, TextView txtCurrentSort) {
         androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, anchor, android.view.Gravity.END);
 
-        popup.getMenu().add(0, 10, 0, "Departure Date");
-        popup.getMenu().add(0, 20, 0, "Arrival Date");
+        popup.getMenu().add(0, 10, 0, "Departure");
+        popup.getMenu().add(0, 20, 0, "Arrival");
         popup.getMenu().add(0, 30, 0, "Destination");
         popup.getMenu().add(0, 40, 0, "Total Expense");
 
@@ -182,7 +210,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
 
     private void applySorting(int sortOption) {
         currentSortOption = sortOption;
-
+        applyFilterAndSort();
         tripList.sort((t1, t2) -> {
             // RULE 1: Pinned trips ALWAYS stay at the very top!
             if (t1.getIsPinnedState() != t2.getIsPinnedState()) {
@@ -291,7 +319,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
 
         db.collection("Trips").whereEqualTo("ownerEmail", account.getEmail()).get()
                 .addOnSuccessListener(querySnapshot -> {
-                    tripList.clear();
+                    masterTripList.clear();
                     Calendar cal = Calendar.getInstance();
                     cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
                     Date today = cal.getTime();
@@ -337,13 +365,13 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                             );
 
                             trip.setIsPinnedState(Boolean.TRUE.equals(doc.getBoolean("isPinned")) ? 1 : 0);
-                            tripList.add(trip);
+                            masterTripList.add(trip);
 
                             // Execute the background math
                             calculateTripFinance(trip);
                         }
                     }
-
+                    applyFilterAndSort();
                     txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
 
                     // --- NEW: Trigger Sort instead of standard refresh ---
@@ -386,18 +414,62 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         }
         return members;
     }
+    private void applyFilterAndSort() {
+        tripList.clear();
 
+        // 1. FILTERING (The Search Logic)
+        if (currentSearchQuery.isEmpty()) {
+            tripList.addAll(masterTripList); // If search is empty, show everything!
+        } else {
+            for (TripModel trip : masterTripList) {
+                // Safely grab text and make it lowercase to match the search query
+                String name = trip.getTripName() != null ? trip.getTripName().toLowerCase() : "";
+                String dest = trip.getDestination() != null ? trip.getDestination().toLowerCase() : "";
+                String members = trip.getMembersListString() != null ? trip.getMembersListString().toLowerCase() : "";
+
+                // If the search query exists ANYWHERE in the Name, Destination, or Members...
+                if (name.contains(currentSearchQuery) || dest.contains(currentSearchQuery) || members.contains(currentSearchQuery)) {
+                    tripList.add(trip);
+                }
+            }
+        }
+
+        // 2. SORTING (Your existing logic)
+        tripList.sort((t1, t2) -> {
+            if (t1.getIsPinnedState() != t2.getIsPinnedState()) {
+                return Integer.compare(t2.getIsPinnedState(), t1.getIsPinnedState());
+            }
+            try {
+                switch (currentSortOption) {
+                    case 1: return compareDates(t1.getStartDate(), t2.getStartDate(), true);
+                    case 2: return compareDates(t1.getStartDate(), t2.getStartDate(), false);
+                    case 3: return compareDates(t1.getEndDate(), t2.getEndDate(), true);
+                    case 4: return compareDates(t1.getEndDate(), t2.getEndDate(), false);
+                    case 5: return compareStrings(t1.getDestination(), t2.getDestination(), true);
+                    case 6: return compareStrings(t1.getDestination(), t2.getDestination(), false);
+                    case 7: return Double.compare(t1.getTotalExpenses(), t2.getTotalExpenses());
+                    case 8: return Double.compare(t2.getTotalExpenses(), t1.getTotalExpenses());
+                    default: return 0;
+                }
+            } catch (Exception e) {
+                return 0;
+            }
+        });
+
+        // 3. Update the UI
+        adapter.notifyDataSetChanged();
+        txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
+    }
     @Override
     public void onPinToggleClick(TripModel trip, int position) {
         boolean currentlyPinned = trip.getIsPinnedState() == 1;
 
         // If we are trying to PIN a new trip, we must unpin all others first
         if (!currentlyPinned) {
-            for (int i = 0; i < tripList.size(); i++) {
-                TripModel t = tripList.get(i);
+            for (int i = 0; i < masterTripList.size(); i++) {
+                TripModel t = masterTripList.get(i);
                 if (t.getIsPinnedState() == 1) {
                     t.setIsPinnedState(0);
-                    // Update Cloud
                     db.collection("Trips").document(t.getTripId()).update("isPinned", false);
                 }
             }
@@ -407,10 +479,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         db.collection("Trips").document(trip.getTripId()).update("isPinned", !currentlyPinned)
                 .addOnSuccessListener(a -> {
                     trip.setIsPinnedState(currentlyPinned ? 0 : 1);
-
-                    // --- NEW: Force a re-sort so the pinned item jumps to top ---
-                    applySorting(currentSortOption);
-
+                    applySorting(currentSortOption); // This will re-filter and sort!
                     Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show();
                 });
     }
