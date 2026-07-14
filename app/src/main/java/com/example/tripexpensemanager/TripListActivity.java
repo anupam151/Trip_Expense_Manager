@@ -37,6 +37,9 @@ import java.util.Locale;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
+import android.content.Context;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 
 //import android.view.Gravity;
 //import androidx.appcompat.widget.PopupMenu;
@@ -125,7 +128,23 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                 public void afterTextChanged(Editable s) {}
             });
         }
+// --- NEW: Hide Keyboard when "Done" is pressed ---
+        if (editSearchTrips != null) {
+            editSearchTrips.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    // 1. Clear the focus so the blinking cursor stops
+                    editSearchTrips.clearFocus();
 
+                    // 2. Force the keyboard to hide
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                    }
+                    return true; // Tells Android we successfully handled the click
+                }
+                return false;
+            });
+        }
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new TripAdapter(tripList, this);
@@ -365,6 +384,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                             );
 
                             trip.setIsPinnedState(Boolean.TRUE.equals(doc.getBoolean("isPinned")) ? 1 : 0);
+                            trip.setInactiveMembers(doc.getString("inactiveMembers"));
                             masterTripList.add(trip);
 
                             // Execute the background math
@@ -419,7 +439,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
 
         // 1. FILTERING (The Search Logic)
         if (currentSearchQuery.isEmpty()) {
-            tripList.addAll(masterTripList); // If search is empty, show everything!
+            tripList.addAll(masterTripList);
         } else {
             for (TripModel trip : masterTripList) {
                 // Safely grab text and make it lowercase to match the search query
@@ -427,8 +447,15 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                 String dest = trip.getDestination() != null ? trip.getDestination().toLowerCase() : "";
                 String members = trip.getMembersListString() != null ? trip.getMembersListString().toLowerCase() : "";
 
-                // If the search query exists ANYWHERE in the Name, Destination, or Members...
-                if (name.contains(currentSearchQuery) || dest.contains(currentSearchQuery) || members.contains(currentSearchQuery)) {
+                // --- NEW: Grab the inactive members safely ---
+                String inactive = trip.getInactiveMembers() != null ? trip.getInactiveMembers().toLowerCase() : "";
+
+                // --- CHANGED: Check if the query matches ANY of the 4 strings! ---
+                if (name.contains(currentSearchQuery) ||
+                        dest.contains(currentSearchQuery) ||
+                        members.contains(currentSearchQuery) ||
+                        inactive.contains(currentSearchQuery)) {
+
                     tripList.add(trip);
                 }
             }

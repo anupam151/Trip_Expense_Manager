@@ -59,4 +59,15 @@ public class TripModel {
 
     public double getFundBalance() { return fundBalance; }
     public void setFundBalance(double fundBalance) { this.fundBalance = fundBalance; }
+    // Add this variable at the top with the others
+    private String inactiveMembers;
+
+    // Add these methods
+    public String getInactiveMembers() {
+        return inactiveMembers;
+    }
+
+    public void setInactiveMembers(String inactiveMembers) {
+        this.inactiveMembers = inactiveMembers;
+    }
 }

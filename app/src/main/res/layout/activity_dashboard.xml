@@ -335,7 +335,7 @@
             android:background="#F5F5F5"
             android:gravity="center"
             android:paddingBottom="16dp"
-            android:text="Version 1.0\nDesigned &amp; Developed by Anupam"
+            android:text="Version 3.0\nDesigned &amp; Developed by Anupam"
             android:textColor="#85022E"
             android:textSize="12sp"
             android:textStyle="bold" />
