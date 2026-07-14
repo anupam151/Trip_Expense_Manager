@@ -128,7 +128,7 @@ public class DashboardActivity extends AppCompatActivity {
             if (GoogleSignIn.getLastSignedInAccount(this) != null) {
                 signOut();
             } else {
-                signInWithGoogle(); // Assuming this is your actual sign-in method name!
+                signInWithGoogle();
             }
         } else if (id == R.id.nav_create_trip) {
             launchCreateTripActivity();
@@ -375,10 +375,10 @@ public class DashboardActivity extends AppCompatActivity {
         if (headerView != null) {
             TextView txtTitle = headerView.findViewById(R.id.txt_login_title);
             TextView txtDesc = headerView.findViewById(R.id.txt_login_desc);
+            android.widget.ImageView imgProfile = headerView.findViewById(R.id.img_profile_picture);
 
             if (account != null) {
                 if (txtTitle != null) {
-                    // Extract the Name from Google!
                     String fullName = account.getDisplayName();
                     txtTitle.setText(fullName != null ? fullName : "User");
                 }
@@ -386,11 +386,38 @@ public class DashboardActivity extends AppCompatActivity {
                     txtDesc.setText(account.getEmail());
                     txtDesc.setAlpha(0.9f);
                 }
+
+                // --- LOAD THE GOOGLE PHOTO (FIXED THREADING) ---
+                if (imgProfile != null) {
+                    android.net.Uri photoUri = account.getPhotoUrl();
+                    if (photoUri != null) {
+                        imgProfile.setColorFilter(null);
+
+                        // Use a simple Thread to avoid the ExecutorService warning entirely!
+                        new Thread(() -> {
+                            try {
+                                java.io.InputStream in = new java.net.URL(photoUri.toString()).openStream();
+                                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(in);
+                                runOnUiThread(() -> imgProfile.setImageBitmap(bitmap));
+                            } catch (Exception e) {
+                                android.util.Log.e("DashboardActivity", "Failed to load Google profile photo", e);
+                            }
+                        }).start();
+
+                    } else {
+                        imgProfile.setImageResource(R.drawable.person);
+                        imgProfile.setColorFilter(android.graphics.Color.WHITE);
+                    }
+                }
             } else {
                 if (txtTitle != null) txtTitle.setText("Guest User");
                 if (txtDesc != null) {
                     txtDesc.setText("Log in to backup trips");
                     txtDesc.setAlpha(0.8f);
+                }
+                if (imgProfile != null) {
+                    imgProfile.setImageResource(R.drawable.person);
+                    imgProfile.setColorFilter(android.graphics.Color.WHITE);
                 }
             }
         }
@@ -401,10 +428,10 @@ public class DashboardActivity extends AppCompatActivity {
         if (loginToggleItem != null) {
             if (account != null) {
                 loginToggleItem.setTitle("Log Out");
-                loginToggleItem.setIcon(android.R.drawable.ic_lock_power_off); // Power icon for logout
+                loginToggleItem.setIcon(android.R.drawable.ic_lock_power_off);
             } else {
                 loginToggleItem.setTitle("Log In with Google");
-                loginToggleItem.setIcon(android.R.drawable.ic_menu_myplaces); // Or any icon you prefer for login
+                loginToggleItem.setIcon(android.R.drawable.ic_menu_myplaces);
             }
         }
     }
