@@ -34,9 +34,9 @@
         android:background="#85022E">
 
         <ImageButton
-            android:id="@+id/btnHome"
-            android:layout_width="43dp"
-            android:layout_height="43dp"
+            android:id="@+id/temp"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:padding="6dp"
             android:scaleType="fitCenter"
             android:background="?attr/selectableItemBackgroundBorderless"
@@ -54,28 +54,81 @@
             android:textColor="#FFFFFF"
             android:textStyle="bold"
             android:textSize="22sp"/>
-        <ImageButton
-            android:id="@+id/btn_header_add_new_trip"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/create_trip"
-            android:contentDescription="@string/desc_share_ledger"
-            app:tint="#FFFFFF" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <LinearLayout
+            android:id="@+id/Temp"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All Trips"
+                android:layout_marginEnd="8dp"
+                android:textColor="#85022E"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:id="@+id/btn_sort_dropdown"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sort By:"
+                android:layout_marginEnd="8dp"
+                android:textColor="#85022E"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
+            <TextView
+                android:id="@+id/txt_current_sort"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Departure Date ▲"
+                android:textColor="#85022E"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
     </LinearLayout>
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_trips"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingVertical="8dp"
+            android:paddingVertical="4dp"
             android:visibility="visible" />
 
         <TextView
@@ -102,44 +155,131 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginHorizontal="8dp"
-            android:orientation="horizontal"
-            android:weightSum="2"
-            android:background="#E9E9E9"
-            android:gravity="center">
-            <com.google.android.material.button.MaterialButton
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginHorizontal="12dp"
+            android:orientation="horizontal">
+            <LinearLayout
+                android:id="@+id/btnHome"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/ic_home"
+                    app:tint="#85022E"
+                    android:contentDescription="@string/home"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:gravity="center"
+                    android:text="@string/home"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/black"/>
+            </LinearLayout>
+            <View
+                android:layout_width="1dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center_vertical"
+                android:background="#CCCCCC" />
+            <LinearLayout
+                android:id="@+id/btn_header_add_new_trip"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/create_trip"
+                    app:tint="#85022E"
+                    android:contentDescription="@string/dash_btn_create_trip"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/dash_btn_create_trip"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/black"/>
+            </LinearLayout>
+            <View
+                android:layout_width="1dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center_vertical"
+                android:background="#CCCCCC" />
+            <LinearLayout
                 android:id="@+id/unv_btn_all_individual_to_one_pdf"
                 android:layout_width="0dp"
-                app:icon="@drawable/pdf"
-                android:text="@string/all_in_one_pdf"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:backgroundTint="#85022E"
-                android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="10dp"
-                android:textAllCaps="false"
-                android:textSize="13sp"
-                app:cornerRadius="8dp"
-                app:iconGravity="textStart"
-                android:textColor="#FFFFFF"/>
-            <com.google.android.material.button.MaterialButton
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/pdf"
+                    app:tint="#85022E"
+                    android:contentDescription="@string/all_in_one_pdf"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:gravity="center"
+                    android:text="@string/all_in_one_pdf"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/black"/>
+            </LinearLayout>
+            <View
+                android:layout_width="1dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center_vertical"
+                android:background="#CCCCCC" />
+            <LinearLayout
                 android:id="@+id/unv_btn_complete_ledger"
                 android:layout_width="0dp"
-                app:icon="@drawable/bank"
-                android:text="@string/complete_ledger"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:backgroundTint="#85022E"
-                android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="10dp"
-                android:textAllCaps="false"
-                android:textSize="13sp"
-                app:cornerRadius="8dp"
-                app:iconGravity="textStart"
-                android:textColor="#FFFFFF"/>
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/bank"
+                    app:tint="#85022E"
+                    android:contentDescription="@string/complete_ledger"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:gravity="center"
+                    android:text="@string/complete_ledger"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/black"/>
+            </LinearLayout>
         </LinearLayout>
         <TextView
             android:layout_width="wrap_content"

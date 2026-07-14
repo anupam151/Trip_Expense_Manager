@@ -10,7 +10,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,7 +23,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.material.button.MaterialButton;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -33,8 +31,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+//import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
+
+//import android.view.Gravity;
+//import androidx.appcompat.widget.PopupMenu;
 
 @SuppressWarnings("deprecation")
 public class TripListActivity extends AppCompatActivity implements TripAdapter.OnTripActionListener {
@@ -44,6 +46,9 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     private final ArrayList<TripModel> tripList = new ArrayList<>();
     private String currentCategoryLabel;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+
+    // --- NEW: Keep track of current sort option ---
+    private int currentSortOption = 1; // Default to Departure Ascending
 
     private FirebaseFirestore db;
     private TripDatabaseHelper dbHelper;
@@ -68,8 +73,18 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         txtEmptyMessage = findViewById(R.id.txt_empty_trips_message);
         TextView txtCategoryTitle = findViewById(R.id.txt_trip_list_category_title);
 
-        // Warning fix: Kept as local variable since it's only used here
-        ImageButton btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
+        LinearLayout btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
+
+        // --- Bind the Sort Dropdown ---
+        LinearLayout btnSortDropdown = findViewById(R.id.btn_sort_dropdown);
+        TextView txtCurrentSort = findViewById(R.id.txt_current_sort);
+
+        if (btnSortDropdown != null && txtCurrentSort != null) {
+            // 1. Force the default text to match the default sorting math!
+            txtCurrentSort.setText("Departure Date ▲");
+
+            btnSortDropdown.setOnClickListener(v -> showSortPopupMenu(v, txtCurrentSort));
+        }
 
         db = FirebaseFirestore.getInstance();
         dbHelper = new TripDatabaseHelper(this); // Preserved for Legacy Export compatibility
@@ -92,7 +107,7 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             btnHeaderAddNewTrip.setOnClickListener(v -> startActivity(new Intent(TripListActivity.this, CreateTripActivity.class)));
         }
 
-        ImageButton btnHome = findViewById(R.id.btnHome);
+        LinearLayout btnHome = findViewById(R.id.btnHome);
         if (btnHome != null) {
             btnHome.setOnClickListener(v -> {
                 Intent intent = new Intent(TripListActivity.this, DashboardActivity.class);
@@ -102,18 +117,118 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
             });
         }
 
-        MaterialButton btnExportAll = findViewById(R.id.unv_btn_all_individual_to_one_pdf);
+        LinearLayout btnExportAll = findViewById(R.id.unv_btn_all_individual_to_one_pdf);
         if (btnExportAll != null) {
             btnExportAll.setOnClickListener(v -> fetchTripsAndShowSelectionDialog(true));
         }
 
-        MaterialButton btnCompleteLedger = findViewById(R.id.unv_btn_complete_ledger);
+        LinearLayout btnCompleteLedger = findViewById(R.id.unv_btn_complete_ledger);
         if (btnCompleteLedger != null) {
             btnCompleteLedger.setOnClickListener(v -> fetchTripsAndShowSelectionDialog(false));
         }
 
         loadAndFilterTrips();
     }
+
+    // ==========================================
+    // --- NEW: THE COMPLETE SORTING ENGINE ---
+    // ==========================================
+
+    private void showSortPopupMenu(View anchor, TextView txtCurrentSort) {
+        androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, anchor, android.view.Gravity.END);
+
+        popup.getMenu().add(0, 10, 0, "Departure Date");
+        popup.getMenu().add(0, 20, 0, "Arrival Date");
+        popup.getMenu().add(0, 30, 0, "Destination");
+        popup.getMenu().add(0, 40, 0, "Total Expense");
+
+        popup.setOnMenuItemClickListener(item -> {
+            String safeTitle = item.getTitle() != null ? item.getTitle().toString() : "";
+
+            // This calls the second method (Fixes the "never used" error!)
+            showOrderPopupMenu(anchor, txtCurrentSort, safeTitle, item.getItemId());
+            return true;
+        });
+        popup.show();
+    }
+
+    private void showOrderPopupMenu(View anchor, TextView txtCurrentSort, String categoryName, int categoryId) {
+        androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, anchor, android.view.Gravity.END);
+
+        int ascId = 0, descId = 0;
+        if (categoryId == 10) { ascId = 1; descId = 2; }       // Departure
+        else if (categoryId == 20) { ascId = 3; descId = 4; }  // Arrival
+        else if (categoryId == 30) { ascId = 5; descId = 6; }  // Destination
+        else if (categoryId == 40) { ascId = 7; descId = 8; }  // Total Expense
+
+        popup.getMenu().add(0, ascId, 0, "Ascending");
+        popup.getMenu().add(0, descId, 0, "Descending");
+
+        popup.setOnMenuItemClickListener(item -> {
+            String safeTitle = item.getTitle() != null ? item.getTitle().toString() : "";
+
+            // Figure out which arrow to use
+            String arrow = safeTitle.equals("Ascending") ? "▲" : "▼";
+
+            // Combine the category name and the arrow (Fixes the "Cannot resolve" error!)
+            txtCurrentSort.setText(categoryName + " " + arrow);
+
+            // Actually sort the list!
+            applySorting(item.getItemId());
+            return true;
+        });
+        popup.show();
+    }
+
+    private void applySorting(int sortOption) {
+        currentSortOption = sortOption;
+
+        tripList.sort((t1, t2) -> {
+            // RULE 1: Pinned trips ALWAYS stay at the very top!
+            if (t1.getIsPinnedState() != t2.getIsPinnedState()) {
+                return Integer.compare(t2.getIsPinnedState(), t1.getIsPinnedState());
+            }
+
+            // RULE 2: Apply user sort choice
+            try {
+                switch (sortOption) {
+                    case 1: return compareDates(t1.getStartDate(), t2.getStartDate(), true);
+                    case 2: return compareDates(t1.getStartDate(), t2.getStartDate(), false);
+                    case 3: return compareDates(t1.getEndDate(), t2.getEndDate(), true);
+                    case 4: return compareDates(t1.getEndDate(), t2.getEndDate(), false);
+                    case 5: return compareStrings(t1.getDestination(), t2.getDestination(), true);
+                    case 6: return compareStrings(t1.getDestination(), t2.getDestination(), false);
+                    // FIXED: 7 and 8 now correctly sort by Total Expenses!
+                    case 7: return Double.compare(t1.getTotalExpenses(), t2.getTotalExpenses());
+                    case 8: return Double.compare(t2.getTotalExpenses(), t1.getTotalExpenses());
+                    default: return 0;
+                }
+            } catch (Exception e) {
+                return 0; // Fallback in case of missing data
+            }
+        });
+        adapter.notifyDataSetChanged();
+    }
+
+    private int compareDates(String d1, String d2, boolean ascending) {
+        try {
+            Date date1 = (d1 != null && !d1.isEmpty()) ? dateFormatter.parse(d1) : new Date(0);
+            Date date2 = (d2 != null && !d2.isEmpty()) ? dateFormatter.parse(d2) : new Date(0);
+            if (date1 == null) date1 = new Date(0);
+            if (date2 == null) date2 = new Date(0);
+            return ascending ? date1.compareTo(date2) : date2.compareTo(date1);
+        } catch (ParseException e) {
+            return 0;
+        }
+    }
+
+    private int compareStrings(String s1, String s2, boolean ascending) {
+        String str1 = s1 != null ? s1.toLowerCase() : "";
+        String str2 = s2 != null ? s2.toLowerCase() : "";
+        return ascending ? str1.compareTo(str2) : str2.compareTo(str1);
+    }
+    // ==========================================
+
 
     private void fetchTripsAndShowSelectionDialog(boolean isForExport) {
         buildAndShowDialog(tripList, isForExport);
@@ -230,7 +345,9 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                     }
 
                     txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
-                    adapter.notifyDataSetChanged();
+
+                    // --- NEW: Trigger Sort instead of standard refresh ---
+                    applySorting(currentSortOption);
                 });
     }
 
@@ -248,8 +365,12 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                 trip.setTotalPayments(totalRec);
                 trip.setFundBalance(fundBal);
 
-                // Notify the adapter only once the calculation is done
-                adapter.notifyDataSetChanged();
+                // --- CHANGED: Dynamically resort if sorting by Expense (IDs 7 or 8) ---
+                if (currentSortOption == 7 || currentSortOption == 8) {
+                    applySorting(currentSortOption);
+                } else {
+                    adapter.notifyDataSetChanged();
+                }
             }
         });
     }
@@ -278,8 +399,6 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
                     t.setIsPinnedState(0);
                     // Update Cloud
                     db.collection("Trips").document(t.getTripId()).update("isPinned", false);
-                    // Update UI for the old pinned trip
-                    adapter.notifyItemChanged(i);
                 }
             }
         }
@@ -288,7 +407,10 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
         db.collection("Trips").document(trip.getTripId()).update("isPinned", !currentlyPinned)
                 .addOnSuccessListener(a -> {
                     trip.setIsPinnedState(currentlyPinned ? 0 : 1);
-                    adapter.notifyItemChanged(position);
+
+                    // --- NEW: Force a re-sort so the pinned item jumps to top ---
+                    applySorting(currentSortOption);
+
                     Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show();
                 });
     }
