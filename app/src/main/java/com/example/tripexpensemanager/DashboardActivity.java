@@ -1,14 +1,14 @@
 package com.example.tripexpensemanager;
 
 import android.content.Intent;
-import android.graphics.Color;
+//import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Html;
-import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.RelativeSizeSpan;
+//import android.text.SpannableString;
+//import android.text.style.ForegroundColorSpan;
+//import android.text.style.RelativeSizeSpan;
 import android.view.LayoutInflater;
-import android.view.Menu;
+//import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
@@ -69,7 +69,7 @@ public class DashboardActivity extends AppCompatActivity {
 
         drawerLayout = findViewById(R.id.drawer_layout);
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
-        navView = findViewById(R.id.nav_view);
+        navView = findViewById(R.id.navigation_view);
         lblRecentHeading = findViewById(R.id.lbl_recent_trip_heading);
         containerPinnedTripsStack = findViewById(R.id.container_pinned_trips_stack);
         layoutNoPinnedTrips = findViewById(R.id.layout_no_pinned_trips);
@@ -98,17 +98,16 @@ public class DashboardActivity extends AppCompatActivity {
         findViewById(R.id.btn_create_new_trips).setOnClickListener(v -> launchCreateTripActivity());
 
         navView.setNavigationItemSelectedListener(this::handleNavigationItemSelected);
+        // ----------------------------------------------------
 
         updateSignInUI();
     }
-
     @Override
     protected void onResume() {
         super.onResume();
         updateSignInUI();
         fetchTripsFromCloud();
     }
-
     // --- Extracted logic to fix block lambda warnings ---
     private void handleSignInResult(androidx.activity.result.ActivityResult result) {
         Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
@@ -121,12 +120,16 @@ public class DashboardActivity extends AppCompatActivity {
             Toast.makeText(this, "Sign-in failed", Toast.LENGTH_SHORT).show();
         }
     }
-
     private boolean handleNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.nav_login) {
-            if (GoogleSignIn.getLastSignedInAccount(this) != null) signOut();
-            else signInWithGoogle();
+
+        // CHANGE IS HERE: Updated to nav_login_toggle
+        if (id == R.id.nav_login_toggle) {
+            if (GoogleSignIn.getLastSignedInAccount(this) != null) {
+                signOut();
+            } else {
+                signInWithGoogle(); // Assuming this is your actual sign-in method name!
+            }
         } else if (id == R.id.nav_create_trip) {
             launchCreateTripActivity();
         } else if (id == R.id.nav_view_trips) {
@@ -136,7 +139,8 @@ public class DashboardActivity extends AppCompatActivity {
         } else if (id == R.id.nav_backup || id == R.id.nav_restore) {
             Toast.makeText(this, "Auto-Sync is active! Your data is safe in the Cloud.", Toast.LENGTH_LONG).show();
         }
-        drawerLayout.closeDrawer(GravityCompat.START);
+
+        drawerLayout.closeDrawer(androidx.core.view.GravityCompat.START);
         return true;
     }
 
@@ -313,8 +317,8 @@ public class DashboardActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .create();
         alertDialog.show();
-        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF000000);
-        alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF000000);
+        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF85022E);
+        alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF85022E);
     }
 
     private void executeCloudDelete(String tripId) {
@@ -363,36 +367,71 @@ public class DashboardActivity extends AppCompatActivity {
 
     // --- Authentication & UI Methods ---
     private void updateSignInUI() {
-        Menu menu = navView.getMenu();
-        MenuItem loginItem = menu.findItem(R.id.nav_login);
-        MenuItem emailItem = menu.findItem(R.id.nav_user_email);
-
+        if (navView == null) return;
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account != null) {
-            loginItem.setTitle("Log Out\n");
-            if (emailItem != null) {
-                SpannableString styledEmail = new SpannableString(account.getEmail());
-                styledEmail.setSpan(new ForegroundColorSpan(Color.parseColor("#808080")), 0, styledEmail.length(), 0);
-                styledEmail.setSpan(new RelativeSizeSpan(0.8f), 0, styledEmail.length(), 0);
-                emailItem.setTitle(styledEmail);
-                emailItem.setVisible(true);
+
+        // 1. Update the Header (Profile Info)
+        android.view.View headerView = navView.getHeaderView(0);
+        if (headerView != null) {
+            TextView txtTitle = headerView.findViewById(R.id.txt_login_title);
+            TextView txtDesc = headerView.findViewById(R.id.txt_login_desc);
+
+            if (account != null) {
+                if (txtTitle != null) {
+                    // Extract the Name from Google!
+                    String fullName = account.getDisplayName();
+                    txtTitle.setText(fullName != null ? fullName : "User");
+                }
+                if (txtDesc != null) {
+                    txtDesc.setText(account.getEmail());
+                    txtDesc.setAlpha(0.9f);
+                }
+            } else {
+                if (txtTitle != null) txtTitle.setText("Guest User");
+                if (txtDesc != null) {
+                    txtDesc.setText("Log in to backup trips");
+                    txtDesc.setAlpha(0.8f);
+                }
             }
-        } else {
-            loginItem.setTitle("Google Sign-In");
-            if (emailItem != null) {
-                emailItem.setVisible(false);
+        }
+
+        // 2. Update the Bottom Menu Button (Action)
+        android.view.Menu menu = navView.getMenu();
+        android.view.MenuItem loginToggleItem = menu.findItem(R.id.nav_login_toggle);
+        if (loginToggleItem != null) {
+            if (account != null) {
+                loginToggleItem.setTitle("Log Out");
+                loginToggleItem.setIcon(android.R.drawable.ic_lock_power_off); // Power icon for logout
+            } else {
+                loginToggleItem.setTitle("Log In with Google");
+                loginToggleItem.setIcon(android.R.drawable.ic_menu_myplaces); // Or any icon you prefer for login
             }
         }
     }
 
     private void signOut() {
-        new AlertDialog.Builder(this)
+        android.app.AlertDialog alertDialog = new android.app.AlertDialog.Builder(this)
                 .setTitle("Log Out")
-                .setMessage("Are you sure you want to log out? Your data is safely stored in the Cloud.")
+                .setMessage("Are you sure you want to log out?")
                 .setIcon(android.R.drawable.ic_dialog_alert)
-                .setPositiveButton("Yes, Log Out", (dialog, which) -> performActualSignOut()) // Expression lambda!
+                .setPositiveButton("Yes, Log Out", (dialog, which) -> performActualSignOut())
                 .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
-                .show();
+                .create();
+
+        // 1. You MUST show the dialog before modifying buttons
+        alertDialog.show();
+
+        // 2. Grab the buttons
+        android.widget.Button btnPositive = alertDialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE);
+        android.widget.Button btnNegative = alertDialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE);
+
+        // 3. Apply your custom Maroon brand color
+        btnPositive.setTextColor(android.graphics.Color.parseColor("#85022E"));
+        btnNegative.setTextColor(android.graphics.Color.parseColor("#85022E"));
+
+        // 4. Turn off Android's default ALL CAPS styling!
+        btnPositive.setAllCaps(false);
+        btnNegative.setAllCaps(false);
     }
 
     private void signInWithGoogle() {

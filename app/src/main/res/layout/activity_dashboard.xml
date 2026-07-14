@@ -174,32 +174,125 @@
             android:orientation="vertical">
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="15dp"
-                android:layout_marginHorizontal="16dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="10dp"
+                android:layout_marginHorizontal="12dp"
                 android:orientation="horizontal">
-                <com.google.android.material.button.MaterialButton
+                <LinearLayout
                     android:id="@+id/btn_dash_create_trip"
                     android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless">
+
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/create_trip"
+                        app:tint="#85022E"
+                        android:contentDescription="@string/dash_btn_create_trip"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="0dp"
+                        android:text="@string/dash_btn_create_trip"
+                        android:textSize="10sp"
+                        android:textColor="@android:color/black"/>
+                </LinearLayout>
+                <View
+                    android:layout_width="1dp"
                     android:layout_height="match_parent"
-                    android:text="@string/dash_btn_create_trip"
-                    android:textSize="20sp"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginEnd="8dp"
-                    android:backgroundTint="#85022E"
-                    app:cornerRadius="10dp"
-                    android:layout_weight="1"/>
-                <com.google.android.material.button.MaterialButton
+                    android:background="#CCCCCC" />
+                <LinearLayout
                     android:id="@+id/btn_dash_view_trips"
                     android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless">
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/trip"
+                        app:tint="#85022E"
+                        android:contentDescription="@string/dash_btn_view_trip"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="0dp"
+                        android:text="@string/dash_btn_view_trip"
+                        android:textSize="10sp"
+                        android:textColor="@android:color/black"/>
+                </LinearLayout>
+                <View
+                    android:layout_width="1dp"
                     android:layout_height="match_parent"
-                    android:text="@string/dash_btn_view_trip"
-                    android:textSize="20sp"
-                    android:textColor="#FFFFFF"
-                    android:backgroundTint="#CC843D"
-                    app:cornerRadius="10dp"
-                    android:layout_weight="1"/>
+                    android:background="#CCCCCC" />
+                <LinearLayout
+                    android:id="@+id/btn_dash_extra"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless">
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/ic_add_expense"
+                        app:tint="#85022E"
+                        android:contentDescription="@string/dash_btn_extra"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="0dp"
+                        android:text="@string/dash_btn_extra"
+                        android:textSize="10sp"
+                        android:textColor="@android:color/black"/>
+                </LinearLayout>
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:background="#CCCCCC" />
+                <LinearLayout
+                    android:id="@+id/btn_dash_settings"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless">
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/settings"
+                        app:tint="#85022E"
+                        android:contentDescription="@string/dash_btn_settings"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="0dp"
+                        android:text="@string/dash_btn_settings"
+                        android:textSize="10sp"
+                        android:textColor="@android:color/black"/>
+                </LinearLayout>
             </LinearLayout>
             <TextView
                 android:id="@+id/txt_dash_developer_branding"
@@ -214,14 +307,36 @@
         </LinearLayout>
     </RelativeLayout>
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav_view"
-        android:layout_width="240dp"
+    <!-- The Drawer Container -->
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="#FFFFFF"
-        app:itemIconTint="#85022E"
-        app:itemTextColor="#0D1A39"
-        app:menu="@menu/drawer_menu" />
+        android:orientation="vertical">
+
+        <!-- 1. Your existing Navigation View (Takes up all available space) -->
+        <com.google.android.material.navigation.NavigationView
+            android:id="@+id/navigation_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            app:headerLayout="@layout/nav_header"
+            app:menu="@menu/drawer_menu" />
+
+        <!-- 2. The Sticky Bottom TextView -->
+        <TextView
+            android:id="@+id/txt_sticky_footer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#F5F5F5"
+            android:gravity="center"
+            android:paddingBottom="16dp"
+            android:text="Version 1.0\nDesigned &amp; Developed by Anupam"
+            android:textColor="#85022E"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>
