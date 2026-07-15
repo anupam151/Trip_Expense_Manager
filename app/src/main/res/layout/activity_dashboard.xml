@@ -310,36 +310,6 @@
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- The Drawer Container -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="#FFFFFF"
-        android:orientation="vertical">
-
-        <!-- 1. Your existing Navigation View (Takes up all available space) -->
-        <com.google.android.material.navigation.NavigationView
-            android:id="@+id/navigation_view"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            app:headerLayout="@layout/nav_header"
-            app:menu="@menu/drawer_menu" />
-
-        <!-- 2. The Sticky Bottom TextView -->
-        <TextView
-            android:id="@+id/txt_sticky_footer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#F5F5F5"
-            android:gravity="center"
-            android:paddingBottom="16dp"
-            android:text="Version 3.0\nDesigned &amp; Developed by Anupam"
-            android:textColor="#85022E"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-    </LinearLayout>
+    <include layout="@layout/layout_universal_drawer" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

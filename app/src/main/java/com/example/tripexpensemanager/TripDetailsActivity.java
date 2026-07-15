@@ -12,7 +12,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+//import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Source;
@@ -24,7 +24,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
-public class TripDetailsActivity extends AppCompatActivity {
+import android.widget.ImageButton;
+import androidx.activity.OnBackPressedCallback;
+import androidx.core.view.GravityCompat;
+
+public class TripDetailsActivity extends BaseDrawerActivity {
 
     private String tripId;
     private String startDateFromDatabase;
@@ -52,6 +56,30 @@ public class TripDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_details);
 
+        setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
+
+        // --- 2. Handle the Back button to close the drawer gracefully ---
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                } else {
+                    finish();
+                }
+            }
+        });
+
+        // --- 3. Wire up the hamburger menu icon ---
+        ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
+        if (btnOpenDrawer != null) {
+            btnOpenDrawer.setOnClickListener(v -> {
+                if (drawerLayout != null) {
+                    drawerLayout.openDrawer(GravityCompat.START);
+                }
+            });
+        }
+
         db = FirebaseFirestore.getInstance();
         TripDatabaseHelper dbHelper = new TripDatabaseHelper(this);
         exportManager = new LedgerExportManager(this, dbHelper);
@@ -64,13 +92,7 @@ public class TripDetailsActivity extends AppCompatActivity {
         endDateFromDatabase = getIntent().getStringExtra("END_DATE");
         membersRaw = getIntent().getStringExtra("MEMBERS");
 
-        // UI Setup
-        findViewById(R.id.btnHome).setOnClickListener(v -> {
-            Intent intent = new Intent(this, DashboardActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(intent);
-            finish();
-        });
+
 
         findViewById(R.id.btnAddExpense).setOnClickListener(v -> {
             Intent intent = new Intent(this, AddExpenseActivity.class);

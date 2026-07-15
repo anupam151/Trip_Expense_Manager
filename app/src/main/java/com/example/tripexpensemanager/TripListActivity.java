@@ -17,7 +17,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+//import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -40,12 +40,15 @@ import android.widget.EditText;
 import android.content.Context;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ImageButton;
+import androidx.activity.OnBackPressedCallback;
+import androidx.core.view.GravityCompat;
 
 //import android.view.Gravity;
 //import androidx.appcompat.widget.PopupMenu;
 
 @SuppressWarnings("deprecation")
-public class TripListActivity extends AppCompatActivity implements TripAdapter.OnTripActionListener {
+public class TripListActivity extends BaseDrawerActivity implements TripAdapter.OnTripActionListener {
 
     private TextView txtEmptyMessage;
     private TripAdapter adapter;
@@ -78,6 +81,30 @@ public class TripListActivity extends AppCompatActivity implements TripAdapter.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_list);
+        // --- NEW: Wire up the Universal Drawer ---
+        setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
+
+        // --- NEW: Handle the Back button to close the drawer gracefully ---
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                } else {
+                    finish();
+                }
+            }
+        });
+
+        // --- NEW: Wire up the hamburger menu icon ---
+        ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
+        if (btnOpenDrawer != null) {
+            btnOpenDrawer.setOnClickListener(v -> {
+                if (drawerLayout != null) {
+                    drawerLayout.openDrawer(GravityCompat.START);
+                }
+            });
+        }
 
         // Warning fix: Moved recyclerView to a local variable
         RecyclerView recyclerView = findViewById(R.id.recycler_view_trips);
