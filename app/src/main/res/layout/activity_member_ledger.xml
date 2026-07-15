@@ -31,12 +31,12 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/top_app_bar"
         android:layout_marginTop="6dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
         <ImageButton
-            android:id="@+id/btn_back"
-            android:contentDescription="@string/desc_go_back"
-            android:src="@drawable/arrow_back"
-            android:layout_marginStart="6dp"
+            android:id="@+id/btn_open_drawer"
+            android:contentDescription="@string/desc_open_menu"
+            android:src="@drawable/menu"
             android:layout_width="45dp"
             android:layout_height="45dp"
             android:padding="6dp"
@@ -49,21 +49,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
+            android:gravity="start|center_vertical"
             android:textColor="#85022E"
             android:textSize="25sp"
             android:textStyle="bold"  />
-        <ImageButton
-            android:id="@+id/btn_share"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/share"
-            android:contentDescription="@string/desc_share_ledger"
-            app:tint="#85022E"  />
     </LinearLayout>
 
     <LinearLayout
@@ -152,7 +141,7 @@
                         android:layout_height="32dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:background="#FCE4EC"
+                        android:background="@drawable/bg_icon_pink"
                         android:importantForAccessibility="no"
                         android:padding="6dp"
                         android:src="@drawable/account_balance"
@@ -286,11 +275,11 @@
                             android:layout_height="32dp"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true"
-                            android:background="#FCE4EC"
+                            android:background="@drawable/bg_icon_pink"
                             android:importantForAccessibility="no"
                             android:padding="6dp"
                             android:src="@drawable/receipt_long"
-                            app:tint="#85022E" />
+                            app:tint="#85022E"/>
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -365,7 +354,7 @@
             app:cardElevation="0dp"
             app:strokeWidth="1dp"
             app:strokeColor="#D0D0D0"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="0dp">
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -470,21 +459,23 @@
             android:background="#F5F6F8"
             android:gravity="center"
             android:orientation="horizontal">
+            <!--
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_export_to_excel"
+                android:text="@string/btn_export_excel"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_marginHorizontal="7dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
                 android:backgroundTint="#85022E"
-                android:text="@string/btn_export_excel"
                 android:textAllCaps="false"
                 android:textSize="13sp"
                 app:cornerRadius="8dp"
                 app:icon="@drawable/excel_logo"
                 app:iconGravity="textStart"
                 app:iconTint="#FFFFFF" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_export_to_pdf"
                 android:layout_width="wrap_content"
@@ -500,6 +491,7 @@
                 app:icon="@drawable/pdf"
                 app:iconGravity="textStart"
                 app:iconTint="#FFFFFF" />
+                -->
         </LinearLayout>
 
         <LinearLayout
@@ -523,15 +515,6 @@
                 android:textColor="#555555"
                 android:textSize="13sp"/>
         </LinearLayout>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="10dp"
-            android:text="@string/footer_text"
-            android:fontFamily="monospace"
-            android:textColor="#85022E"
-            android:textSize="12sp" />
 
     </LinearLayout>
 
@@ -581,67 +564,6 @@
                 android:layout_gravity="center_vertical"
                 android:background="#CCCCCC" />
             <LinearLayout
-                android:id="@+id/btn_header_add_new_trip"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="8dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless">
-                <ImageView
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:src="@drawable/create_trip"
-                    app:tint="#85022E"
-                    android:contentDescription="@string/dash_btn_create_trip"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="0dp"
-                    android:text="@string/dash_btn_create_trip"
-                    android:textSize="10sp"
-                    android:textColor="@android:color/black"/>
-            </LinearLayout>
-            <View
-                android:layout_width="1dp"
-                android:layout_height="35dp"
-                android:layout_gravity="center_vertical"
-                android:background="#CCCCCC" />
-            <LinearLayout
-                android:id="@+id/unv_btn_all_individual_to_one_pdf"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="8dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless">
-                <ImageView
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:src="@drawable/pdf"
-                    app:tint="#85022E"
-                    android:contentDescription="@string/all_in_one_pdf"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="0dp"
-                    android:gravity="center"
-                    android:text="@string/all_in_one_pdf"
-                    android:textSize="10sp"
-                    android:textColor="@android:color/black"/>
-            </LinearLayout>
-            <View
-                android:layout_width="1dp"
-                android:layout_height="35dp"
-                android:layout_gravity="center_vertical"
-                android:background="#CCCCCC" />
-            <LinearLayout
                 android:id="@+id/unv_btn_complete_ledger"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -667,6 +589,68 @@
                     android:textSize="10sp"
                     android:textColor="@android:color/black"/>
             </LinearLayout>
+            <View
+                android:layout_width="1dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center_vertical"
+                android:background="#CCCCCC" />
+            <LinearLayout
+                android:id="@+id/btn_export_to_pdf"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/pdf"
+                    app:tint="#85022E"
+                    android:contentDescription="@string/all_in_one_pdf"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:gravity="center"
+                    android:text="@string/btn_export_pdf"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/black"/>
+            </LinearLayout>
+            <View
+                android:layout_width="1dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center_vertical"
+                android:background="#CCCCCC" />
+            <LinearLayout
+                android:id="@+id/btn_share"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless">
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    app:tint="#85022E"
+                    android:src="@drawable/share"
+                    android:contentDescription="@string/desc_share_ledger"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/share_pdf"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/black"/>
+            </LinearLayout>
+
         </LinearLayout>
         <TextView
             android:layout_width="wrap_content"

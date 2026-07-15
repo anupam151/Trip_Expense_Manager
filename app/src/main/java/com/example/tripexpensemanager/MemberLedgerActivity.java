@@ -2,7 +2,7 @@ package com.example.tripexpensemanager;
 
 import android.graphics.Color;
 import android.os.Bundle;
-import android.widget.ImageButton;
+//import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,15 +23,6 @@ public class MemberLedgerActivity extends AppCompatActivity {
 
     // Export Manager
     private LedgerExportManager exportManager;
-
-    // SAF Launcher for Individual Excel Export
-    private final ActivityResultLauncher<String> createExcelLauncher = registerForActivityResult(
-            new ActivityResultContracts.CreateDocument("text/csv"),
-            uri -> {
-                if (uri != null && exportManager != null) {
-                    exportManager.exportIndividualMemberToCsv(uri, tripId, memberName);
-                }
-            });
 
     // SAF Launcher for Individual PDF Export
     private final ActivityResultLauncher<String> createPdfLauncher = registerForActivityResult(
@@ -54,9 +45,6 @@ public class MemberLedgerActivity extends AppCompatActivity {
         // Initialize Export Engine (Passing a dummy helper to satisfy constructor)
         exportManager = new LedgerExportManager(this, new TripDatabaseHelper(this));
 
-        // Bind UI
-        ImageButton btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
 
         TextView txtName = findViewById(R.id.txt_ledger_member_name);
         txtName.setText(memberName);
@@ -66,14 +54,6 @@ public class MemberLedgerActivity extends AppCompatActivity {
 
         // Load data using Firestore Engine
         loadLedgerData();
-
-        // Hook up the Export to Excel Button
-        if (findViewById(R.id.btn_export_to_excel) != null) {
-            findViewById(R.id.btn_export_to_excel).setOnClickListener(v -> {
-                String fileName = memberName.replaceAll("[^a-zA-Z0-9]", "_") + "_Ledger.csv";
-                createExcelLauncher.launch(fileName);
-            });
-        }
 
         // Hook up the Export to PDF Button
         if (findViewById(R.id.btn_export_to_pdf) != null) {

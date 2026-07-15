@@ -31,13 +31,14 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/top_app_bar"
         android:layout_marginTop="6dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
         <ImageButton
             android:id="@+id/btn_open_drawer"
             android:contentDescription="@string/desc_open_menu"
             android:src="@drawable/menu"
-            android:layout_width="52dp"
-            android:layout_height="52dp"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
             android:padding="6dp"
             android:scaleType="fitCenter"
             android:background="?attr/selectableItemBackgroundBorderless"
@@ -47,9 +48,8 @@
             android:text="@string/txt_all_trips"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginHorizontal="10dp"
-            android:layout_marginTop="8dp"
+            android:layout_weight="1"
             android:gravity="center_vertical"
             android:textColor="#85022E"
             android:textSize="25sp"

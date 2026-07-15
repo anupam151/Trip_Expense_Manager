@@ -316,4 +316,5 @@
     <string name="login_subtext">Sign in to manage your trip expenses securely.</string>
     <string name="btn_login_text">Sign in with Google</string>
     <string name="login_footer">© 2026 Trip Expense Manager</string>
+    <string name="share_pdf">Share as PDF</string>
 </resources>

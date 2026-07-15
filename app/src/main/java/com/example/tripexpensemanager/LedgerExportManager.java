@@ -517,7 +517,7 @@ public class LedgerExportManager {
     }
 
     public void exportIndividualMemberToPdf(Uri fileUri, String tripId, String memberName) {
-        Toast.makeText(context, "Preparing Premium PDF...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Preparing PDF...", Toast.LENGTH_SHORT).show();
 
         fetchExportData(tripId, new DataFetchCallback() {
             @Override
@@ -784,7 +784,7 @@ public class LedgerExportManager {
     // 7. SHARE PDF - INDIVIDUAL MEMBER (WHATSAPP/GMAIL)
     // ==========================================
     public void shareIndividualMemberPdf(String tripId, String memberName) {
-        Toast.makeText(context, "Preparing PDF for sharing...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Preparing PDF...", Toast.LENGTH_SHORT).show();
 
         fetchExportData(tripId, new DataFetchCallback() {
             @Override
@@ -938,7 +938,7 @@ public class LedgerExportManager {
     // 8. SHARE PDF - MASTER (ALL MEMBERS)
     // ==========================================
     public void shareMasterPdf(String tripId) {
-        Toast.makeText(context, "Preparing Master PDF for sharing...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Preparing Master PDF...", Toast.LENGTH_SHORT).show();
 
         fetchExportData(tripId, new DataFetchCallback() {
             @Override
@@ -1079,7 +1079,7 @@ public class LedgerExportManager {
 
                             int finalYPos = page.getCanvas().getHeight() - margin - 60;
                             Paint endPaint = new Paint(); endPaint.setTextSize(11f); endPaint.setFakeBoldText(true); endPaint.setColor(Color.parseColor("#85022E")); endPaint.setTextAlign(Paint.Align.CENTER);
-                            canvas.drawText("End of the master pdf. Total pages: " + pageNumber, pageWidth / 2f, finalYPos, endPaint);
+                            canvas.drawText("End of the Master PDF. Total pages: " + pageNumber, pageWidth / 2f, finalYPos, endPaint);
 
                             drawFooter(canvas, pageWidth, pageHeight, margin, pageNumber, paintTextNormal, paintTextRight);
                             document.finishPage(page); document.writeTo(outputStream); document.close();
