@@ -34,23 +34,23 @@
         android:orientation="horizontal">
         <ImageButton
             android:id="@+id/btn_open_drawer"
+            android:contentDescription="@string/desc_open_menu"
+            android:src="@drawable/menu"
             android:layout_width="52dp"
             android:layout_height="52dp"
             android:padding="6dp"
             android:scaleType="fitCenter"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/menu"
-            app:tint="#85022E"
-            android:contentDescription="@string/desc_open_menu"/>
+            app:tint="#85022E"/>
         <TextView
             android:id="@+id/txt_trip_list_category_title"
+            android:text="@string/txt_all_trips"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="8dp"
             android:gravity="center_vertical"
-            android:text="@string/txt_all_trips"
             android:textColor="#85022E"
             android:textSize="25sp"
             android:textStyle="bold" />
@@ -73,7 +73,6 @@
             android:layout_marginStart="12dp"
             android:src="@drawable/search"
             app:tint="#85022E" />
-
         <EditText
             android:id="@+id/edit_search_trips"
             android:layout_width="0dp"
@@ -88,13 +87,11 @@
             android:inputType="text"
             android:maxLines="1"
             android:imeOptions="actionDone" />
-
         <View
             android:layout_width="1dp"
             android:layout_height="24dp"
             android:layout_marginHorizontal="8dp"
             android:background="#CCCCCC" />
-
         <LinearLayout
             android:id="@+id/btn_sort_dropdown"
             android:layout_width="wrap_content"
