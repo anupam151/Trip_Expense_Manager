@@ -33,7 +33,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 //import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
@@ -354,6 +357,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         dialog.show();
     }
 
+    @SuppressWarnings("unchecked")
     private void loadAndFilterTrips() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null || account.getEmail() == null) {
@@ -363,7 +367,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
             return;
         }
 
-        db.collection("Trips").whereEqualTo("ownerEmail", account.getEmail()).get()
+        db.collection("Trips").whereArrayContains("sharedEmails", account.getEmail()).get()
                 .addOnSuccessListener(querySnapshot -> {
                     masterTripList.clear();
                     Calendar cal = Calendar.getInstance();
@@ -410,8 +414,19 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                                     endStr
                             );
 
-                            trip.setIsPinnedState(Boolean.TRUE.equals(doc.getBoolean("isPinned")) ? 1 : 0);
                             trip.setInactiveMembers(doc.getString("inactiveMembers"));
+
+                            // --- NEW: Parse Role Data for Click Blockers ---
+                            trip.setOwnerEmail(doc.getString("ownerEmail"));
+                            List<Map<String, Object>> rawMemberDetails = (List<Map<String, Object>>) doc.get("memberDetails");
+                            if (rawMemberDetails != null) {
+                                ArrayList<TripMember> parsedMembers = new ArrayList<>();
+                                for (Map<String, Object> map : rawMemberDetails) {
+                                    parsedMembers.add(new TripMember((String) map.get("memberName"), (String) map.get("emailId"), (String) map.get("role")));
+                                }
+                                trip.setMemberDetails(parsedMembers);
+                            }
+
                             masterTripList.add(trip);
 
                             // Execute the background math
@@ -514,11 +529,16 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         adapter.notifyDataSetChanged();
         txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
     }
+
     @Override
     public void onPinToggleClick(TripModel trip, int position) {
-        boolean currentlyPinned = trip.getIsPinnedState() == 1;
+        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
+            Toast.makeText(this, "Only the Admin can pin trips.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // If we are trying to PIN a new trip, we must unpin all others first
+        boolean currentlyPinned = trip.getIsPinnedState() == 1;
         if (!currentlyPinned) {
             for (int i = 0; i < masterTripList.size(); i++) {
                 TripModel t = masterTripList.get(i);
@@ -528,18 +548,21 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                 }
             }
         }
-
-        // Now, update the Cloud for the trip we actually clicked
         db.collection("Trips").document(trip.getTripId()).update("isPinned", !currentlyPinned)
                 .addOnSuccessListener(a -> {
                     trip.setIsPinnedState(currentlyPinned ? 0 : 1);
-                    applySorting(currentSortOption); // This will re-filter and sort!
+                    applySorting(currentSortOption);
                     Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show();
                 });
     }
 
     @Override
     public void onDeleteClick(TripModel trip) {
+        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
+            Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setTitle("Delete Trip")
                 .setMessage("Are you sure you want to delete '" + trip.getTripName() + "'?")
@@ -563,6 +586,11 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
     @Override
     public void onEditClick(TripModel trip) {
+        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
+            Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Intent intent = new Intent(this, UpdateTripActivity.class);
         intent.putExtra("TRIP_ID", trip.getTripId());
         intent.putExtra("TRIP_NAME", trip.getTripName());
@@ -575,6 +603,11 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
     @Override
     public void onAddExpenseClick(TripModel trip) {
+        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        if ("Viewer".equals(trip.getCurrentUserRole(myEmail))) {
+            Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Intent intent = new Intent(this, AddExpenseActivity.class);
         intent.putExtra("TRIP_ID", trip.getTripId());
         intent.putExtra("TRIP_MEMBERS", trip.getMembersListString());
@@ -583,6 +616,11 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
     @Override
     public void onAddPaymentClick(TripModel trip) {
+        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        if ("Viewer".equals(trip.getCurrentUserRole(myEmail))) {
+            Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Intent intent = new Intent(this, AddPaymentActivity.class);
         intent.putExtra("TRIP_ID", trip.getTripId());
         intent.putExtra("TRIP_MEMBERS", trip.getMembersListString());
@@ -593,5 +631,13 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     protected void onResume() {
         super.onResume();
         loadAndFilterTrips();
+    }
+    // --- Helper to safely get the current user's email ---
+    private String getCurrentUserEmail() {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null && account.getEmail() != null) {
+            return account.getEmail();
+        }
+        return "";
     }
 }

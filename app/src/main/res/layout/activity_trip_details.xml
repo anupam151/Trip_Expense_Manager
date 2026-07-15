@@ -73,6 +73,18 @@
                 app:autoSizeMinTextSize="6sp"
                 app:autoSizeMaxTextSize="22sp"
                 app:autoSizeStepGranularity="1sp" />
+            <ImageButton
+                android:id="@+id/btn_manage_access"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/amend"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Manage Access"
+                android:layout_gravity="end|top"
+                app:tint="#85022E"/>
+
         </LinearLayout>
 
         <LinearLayout
@@ -341,7 +353,22 @@
                 </LinearLayout>
             </ScrollView>
         </LinearLayout>
-
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnManageAccess"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="#1976D2"
+            android:text="Manage Team Access"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:cornerRadius="8dp"
+            app:icon="@drawable/person"
+            app:iconGravity="textStart"
+            app:iconTint="#FFFFFF"
+            android:visibility="gone" />
         <LinearLayout
             android:id="@+id/layoutQuickActions"
             android:layout_width="match_parent"

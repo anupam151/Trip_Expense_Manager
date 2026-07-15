@@ -12,9 +12,11 @@ import java.util.Locale;
 public class LedgerAdapter extends RecyclerView.Adapter<LedgerAdapter.ViewHolder> {
 
     private final List<Transaction> transactionList;
+    private final String userRole;
 
-    public LedgerAdapter(List<Transaction> transactionList) {
+    public LedgerAdapter(List<Transaction> transactionList, String userRole) {
         this.transactionList = transactionList;
+        this.userRole = userRole;
     }
 
     @NonNull
@@ -32,6 +34,15 @@ public class LedgerAdapter extends RecyclerView.Adapter<LedgerAdapter.ViewHolder
         holder.purpose.setText(t.purpose);
         holder.debit.setText(t.debit > 0 ? String.format(Locale.US, "%.2f", t.debit) : "-");
         holder.credit.setText(t.credit > 0 ? String.format(Locale.US, "%.2f", t.credit) : "-");
+
+        // --- Role-Based Visibility ---
+        if ("Viewer".equals(userRole)) {
+            holder.btnEdit.setVisibility(View.GONE);
+            holder.btnDelete.setVisibility(View.GONE);
+        } else {
+            holder.btnEdit.setVisibility(View.VISIBLE);
+            holder.btnDelete.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -39,12 +50,18 @@ public class LedgerAdapter extends RecyclerView.Adapter<LedgerAdapter.ViewHolder
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView date, purpose, debit, credit;
+        View btnEdit, btnDelete;
+
         public ViewHolder(View itemView) {
             super(itemView);
             date = itemView.findViewById(R.id.txt_row_date);
             purpose = itemView.findViewById(R.id.txt_row_purpose);
             debit = itemView.findViewById(R.id.txt_row_debit);
             credit = itemView.findViewById(R.id.txt_row_credit);
+
+            // These IDs must exist in item_ledger_transaction.xml
+            btnEdit = itemView.findViewById(R.id.btn_edit_transaction);
+            btnDelete = itemView.findViewById(R.id.btn_delete_transaction);
         }
     }
 }

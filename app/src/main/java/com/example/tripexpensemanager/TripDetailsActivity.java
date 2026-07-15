@@ -3,17 +3,26 @@ package com.example.tripexpensemanager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
-//import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
 
+// --- Firebase & Auth ---
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Source;
 
@@ -22,31 +31,34 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-import android.widget.ImageButton;
-import androidx.activity.OnBackPressedCallback;
-import androidx.core.view.GravityCompat;
-
+@SuppressWarnings("deprecation")
 public class TripDetailsActivity extends BaseDrawerActivity {
 
     private String tripId;
     private String startDateFromDatabase;
     private String endDateFromDatabase;
-    private String membersRaw;
     private String tripName;
+    private String tripOwnerEmail = ""; // NEW: Tracks who created the trip
+
+    // --- CHANGED: Now holds complex TripMember objects! ---
+    private final ArrayList<TripMember> currentMembersList = new ArrayList<>();
+    private String rawLegacyMembers = "";
 
     private LedgerExportManager exportManager;
     private FirebaseFirestore db;
+    private String currentUserRole = "Viewer";
 
     private final ActivityResultLauncher<String> createMasterPdfLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/pdf"),
             uri -> {
                 if (uri != null && exportManager != null) {
                     ArrayList<String> membersList = new ArrayList<>();
-                    if (membersRaw != null && !membersRaw.isEmpty()) {
-                        membersList.addAll(Arrays.asList(membersRaw.split(",")));
-                    }
+                    for (TripMember m : currentMembersList) membersList.add(m.getMemberName());
                     exportManager.exportAllMembersToPdf(uri, tripId, membersList);
                 }
             });
@@ -58,7 +70,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
         setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
 
-        // --- 2. Handle the Back button to close the drawer gracefully ---
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -70,13 +81,12 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             }
         });
 
-        // --- 3. Wire up the hamburger menu icon ---
+
+
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
         if (btnOpenDrawer != null) {
             btnOpenDrawer.setOnClickListener(v -> {
-                if (drawerLayout != null) {
-                    drawerLayout.openDrawer(GravityCompat.START);
-                }
+                if (drawerLayout != null) drawerLayout.openDrawer(GravityCompat.START);
             });
         }
 
@@ -90,36 +100,59 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         String date = getIntent().getStringExtra("START_DATE");
         startDateFromDatabase = getIntent().getStringExtra("START_DATE");
         endDateFromDatabase = getIntent().getStringExtra("END_DATE");
-        membersRaw = getIntent().getStringExtra("MEMBERS");
 
+        // 1. Find the button
+        ImageButton btnManageAccess = findViewById(R.id.btn_manage_access);
 
+        // 2. Set the click listener to open the dialog
+        btnManageAccess.setOnClickListener(v -> {
+            showManageAccessDialog(); // This calls the method we built together!
+        });
 
         findViewById(R.id.btnAddExpense).setOnClickListener(v -> {
+            if ("Viewer".equals(currentUserRole)) {
+                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+                return;
+            }
             Intent intent = new Intent(this, AddExpenseActivity.class);
             intent.putExtra("TRIP_ID", tripId);
-            intent.putExtra("TRIP_MEMBERS", this.membersRaw);
+            intent.putExtra("TRIP_MEMBERS", this.rawLegacyMembers);
             startActivity(intent);
         });
 
         findViewById(R.id.btnAddPayment).setOnClickListener(v -> {
+            if ("Viewer".equals(currentUserRole)) {
+                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+                return;
+            }
             Intent intent = new Intent(this, AddPaymentActivity.class);
             intent.putExtra("TRIP_ID", tripId);
-            intent.putExtra("TRIP_MEMBERS", this.membersRaw);
+            intent.putExtra("TRIP_MEMBERS", this.rawLegacyMembers);
             startActivity(intent);
         });
 
         findViewById(R.id.btnEditTrip).setOnClickListener(v -> {
+            if (!"Admin".equals(currentUserRole)) {
+                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+                return;
+            }
             Intent intent = new Intent(this, UpdateTripActivity.class);
             intent.putExtra("TRIP_ID", tripId);
             intent.putExtra("TRIP_NAME", tripName);
             intent.putExtra("TRIP_DESTINATION", ((TextView) findViewById(R.id.txt_details_destination)).getText().toString());
             intent.putExtra("TRIP_START_DATE", this.startDateFromDatabase);
             intent.putExtra("TRIP_END_DATE", this.endDateFromDatabase);
-            intent.putExtra("TRIP_MEMBERS", this.membersRaw);
+            intent.putExtra("TRIP_MEMBERS", this.rawLegacyMembers);
             startActivity(intent);
         });
 
-        findViewById(R.id.btnDeleteTrip).setOnClickListener(v -> showDeleteDialog());
+        findViewById(R.id.btnDeleteTrip).setOnClickListener(v -> {
+            if (!"Admin".equals(currentUserRole)) {
+                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showDeleteDialog();
+        });
         findViewById(R.id.btn_share_all).setOnClickListener(v -> exportManager.shareMasterPdf(tripId));
 
         findViewById(R.id.btn_all_individual_to_one_pdf).setOnClickListener(v -> {
@@ -144,41 +177,192 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         refreshTripDetails();
     }
 
+    @SuppressWarnings("unchecked")
     private void refreshTripDetails() {
         db.collection("Trips").document(tripId).get(Source.DEFAULT).addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 tripName = doc.getString("tripName");
+                tripOwnerEmail = doc.getString("ownerEmail"); // Grab the Admin's email
+
                 ((TextView) findViewById(R.id.txt_details_trip_name)).setText(getString(R.string.format_trip_name_header, tripName));
                 ((TextView) findViewById(R.id.txt_details_destination)).setText(doc.getString("destination"));
                 ((TextView) findViewById(R.id.txt_details_dates)).setText(formatDate(doc.getString("startDate")));
 
                 startDateFromDatabase = doc.getString("startDate");
                 endDateFromDatabase = doc.getString("endDate");
-                membersRaw = doc.getString("members");
-                String inactiveRaw = doc.getString("inactiveMembers");
 
-                updateMemberGrids(membersRaw, inactiveRaw);
+                String inactiveRaw = doc.getString("inactiveMembers");
+                rawLegacyMembers = doc.getString("members");
+
+                // --- NEW: Extract Rich Member Details ---
+                currentMembersList.clear();
+                List<Map<String, Object>> rawMemberDetails = (List<Map<String, Object>>) doc.get("memberDetails");
+
+                if (rawMemberDetails != null && !rawMemberDetails.isEmpty()) {
+                    for (Map<String, Object> map : rawMemberDetails) {
+                        String mName = (String) map.get("memberName");
+                        String mEmail = (String) map.get("emailId");
+                        String mRole = (String) map.get("role");
+                        currentMembersList.add(new TripMember(mName, mEmail, mRole));
+                    }
+                } else if (rawLegacyMembers != null && !rawLegacyMembers.isEmpty()) {
+                    // Legacy Fallback
+                    for (String name : rawLegacyMembers.split(",")) {
+                        currentMembersList.add(new TripMember(name.trim(), null, null));
+                    }
+                }
+
+                // --- Verify Admin to show/hide the Manage Access button ---
+                GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+                if (account != null && account.getEmail() != null) {
+                    String myEmail = account.getEmail();
+                    if (myEmail.equalsIgnoreCase(tripOwnerEmail)) {
+                        currentUserRole = "Admin";
+                    } else {
+                        currentUserRole = "Viewer"; // Default
+                        for (TripMember m : currentMembersList) {
+                            if (m.getEmailId() != null && m.getEmailId().equalsIgnoreCase(myEmail)) {
+                                currentUserRole = m.getRole() != null ? m.getRole() : "Viewer";
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                updateMemberGrids(inactiveRaw);
                 refreshSummaryCards();
             }
         });
     }
 
-    private void updateMemberGrids(String activeRaw, String inactiveRaw) {
-        // 1. Process Active Members
-        ArrayList<String> activeMembers = new ArrayList<>();
-        if (activeRaw != null && !activeRaw.isEmpty()) {
-            activeMembers.addAll(Arrays.asList(activeRaw.split(",")));
+    // --- NEW: The Share Trip Dashboard Logic ---
+    // --- NEW: The Share Trip Dashboard Logic ---
+    private void showManageAccessDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_manage_access, null);
+        builder.setView(view);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
-        ((TextView) findViewById(R.id.txt_details_member_count)).setText(String.valueOf(activeMembers.size()));
+        LinearLayout layoutRows = view.findViewById(R.id.layout_access_rows);
+
+        ArrayList<Spinner> roleSpinners = new ArrayList<>();
+        ArrayList<TripMember> linkedMembers = new ArrayList<>();
+
+        for (TripMember member : currentMembersList) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(0, 16, 0, 16);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
+            LinearLayout textContainer = new LinearLayout(this);
+            textContainer.setOrientation(LinearLayout.VERTICAL);
+            textContainer.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            TextView txtName = new TextView(this);
+            txtName.setText(member.getMemberName());
+            txtName.setTextSize(16f);
+            txtName.setTextColor(android.graphics.Color.BLACK);
+            // --- FIX 1: Corrected method to set text to BOLD ---
+            txtName.setTypeface(null, android.graphics.Typeface.BOLD);
+            textContainer.addView(txtName);
+
+            if (member.getEmailId() != null && !member.getEmailId().isEmpty()) {
+                TextView txtEmail = new TextView(this);
+                txtEmail.setText(member.getEmailId());
+                txtEmail.setTextSize(12f);
+                txtEmail.setTextColor(android.graphics.Color.DKGRAY);
+                textContainer.addView(txtEmail);
+                row.addView(textContainer);
+
+                // --- FIX 2: Extracted Spinner Logic to a Helper Method ---
+                Spinner spinner = createRoleSpinner(member.getRole());
+
+                roleSpinners.add(spinner);
+                linkedMembers.add(member);
+                row.addView(spinner);
+
+            } else {
+                TextView txtNoEmail = new TextView(this);
+                txtNoEmail.setText("No Email. Update Trip to assign role.");
+                txtNoEmail.setTextSize(11f);
+                txtNoEmail.setTextColor(android.graphics.Color.parseColor("#D32F2F"));
+                textContainer.addView(txtNoEmail);
+                row.addView(textContainer);
+            }
+
+            layoutRows.addView(row);
+
+            View divider = new View(this);
+            divider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1));
+            divider.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"));
+            layoutRows.addView(divider);
+        }
+
+        view.findViewById(R.id.btn_dialog_close).setOnClickListener(v -> dialog.dismiss());
+        view.findViewById(R.id.btn_dialog_save_access).setOnClickListener(v -> {
+            // 1. Update the local list first
+            for (int i = 0; i < roleSpinners.size(); i++) {
+                String selected = roleSpinners.get(i).getSelectedItem().toString();
+                String newRole = selected.equals("No Access") ? null : selected;
+                linkedMembers.get(i).setRole(newRole);
+            }
+
+            // 2. Convert to Map for Firestore
+            ArrayList<Map<String, Object>> memberDetailsList = new ArrayList<>();
+            for (TripMember m : currentMembersList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("memberName", m.getMemberName());
+                map.put("emailId", m.getEmailId());
+                map.put("role", m.getRole());
+                memberDetailsList.add(map);
+            }
+
+            // 3. Update Firestore and REFRESH immediately
+            view.findViewById(R.id.btn_dialog_save_access).setEnabled(false);// Disable to prevent double-clicks
+            db.collection("Trips").document(tripId)
+                    .update("memberDetails", memberDetailsList)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Roles updated!", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                        // CRITICAL: Refresh the UI immediately so the buttons enable/disable
+                        refreshTripDetails();
+                    })
+                    .addOnFailureListener(e -> {
+                        view.findViewById(R.id.btn_dialog_save_access).setEnabled(true);
+                        Toast.makeText(this, "Failed to save roles", Toast.LENGTH_SHORT).show();
+                    });
+        });
+
+        dialog.show();
+    }
+
+    // --- NEW: Helper Method to keep code clean and satisfy Android Studio ---
+    private Spinner createRoleSpinner(String currentRole) {
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"No Access", "Viewer", "Editor"});
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+
+        if ("Editor".equalsIgnoreCase(currentRole)) spinner.setSelection(2);
+        else if ("Viewer".equalsIgnoreCase(currentRole)) spinner.setSelection(1);
+        else spinner.setSelection(0);
+
+        return spinner;
+    }
+
+    private void updateMemberGrids(String inactiveRaw) {
+        ((TextView) findViewById(R.id.txt_details_member_count)).setText(String.valueOf(currentMembersList.size()));
 
         GridLayout gridActive = findViewById(R.id.grid_members);
         gridActive.removeAllViews();
-        for (String activeName : activeMembers) {
-            addMemberButton(activeName.trim(), gridActive);
+        for (TripMember m : currentMembersList) {
+            addMemberButton(m.getMemberName(), gridActive);
         }
 
-        // 2. Process Inactive Members directly from Firestore!
         GridLayout gridInactive = findViewById(R.id.grid_inactive_members);
         TextView txtInactiveHeader = findViewById(R.id.txt_inactive_members_header);
 
@@ -192,7 +376,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             gridInactive.setVisibility(View.VISIBLE);
             gridInactive.removeAllViews();
             for (String inactiveName : inactiveMembers) {
-                // Now using addMemberButton for Inactive as well
                 addMemberButton(inactiveName.trim(), gridInactive);
             }
         } else {
@@ -201,20 +384,16 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         }
     }
 
-    // 1. Update your refreshSummaryCards to use the helper method
     private void refreshSummaryCards() {
-        // We use "new" to implement the interface properly
         TripFinanceCalculator.calculateFinances(tripId, new TripFinanceCalculator.FinanceResultListener() {
             @Override
             public void onStart() {
-                // Logic for onStart (e.g., show loading)
                 TextView txtExpenses = findViewById(R.id.txt_details_total_expenses);
-                if (txtExpenses != null) txtExpenses.setText("Loading...");
+                if (txtExpenses != null) txtExpenses.setText("...");
             }
 
             @Override
             public void onResult(double totalExp, double totalRec, double fundBal) {
-                // Logic for onResult (update UI)
                 TextView txtExpenses = findViewById(R.id.txt_details_total_expenses);
                 TextView txtReceipts = findViewById(R.id.txt_details_total_receipts);
                 TextView txtFundBalance = findViewById(R.id.txt_details_fund_balance);
@@ -227,8 +406,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
     }
 
     private String formatCurrency(double amount) {
-        // Cleaned up the 'format:' artifact that was causing the syntax error
-        return String.format(java.util.Locale.US, "₹%.2f", amount);
+        return String.format(Locale.US, "₹%.2f", amount);
     }
 
     private void addMemberButton(String mName, GridLayout grid) {
@@ -257,7 +435,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             Date date = inputFormat.parse(dateStr);
             if (date != null) return outputFormat.format(date);
         } catch (ParseException e) {
-            Log.e("TripDetailsActivity", "Error parsing date: " + dateStr, e);
+            Log.e("TripDetails", "Error parsing date", e);
         }
         return dateStr;
     }

@@ -24,7 +24,7 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
 
     private String memberName, tripId;
     private final List<Transaction> transactionList = new ArrayList<>();
-
+    private String currentUserRole = "Viewer";
     // Export Manager
     private LedgerExportManager exportManager;
 
@@ -178,7 +178,7 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
         txtBalance.setTextColor(balance < 0 ? Color.parseColor("#85022E") : Color.parseColor("#2E7D32"));
 
         RecyclerView recyclerView = findViewById(R.id.recycler_transactions);
-        recyclerView.setAdapter(new LedgerAdapter(transactionList));
+        recyclerView.setAdapter(new LedgerAdapter(transactionList, currentUserRole));
     }
 
     private boolean isParticipant(String memberName, String[] sharedArray) {

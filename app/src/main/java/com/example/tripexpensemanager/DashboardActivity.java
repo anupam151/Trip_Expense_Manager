@@ -91,25 +91,30 @@ public class DashboardActivity extends BaseDrawerActivity {
     }
 
     // --- Firebase Data Fetching ---
+    // --- Firebase Data Fetching ---
     private void fetchTripsFromCloud() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
+        if (account == null || account.getEmail() == null) {
             clearWorkspace();
             return;
         }
 
-        // Try Server
+        // --- CHANGED: Now looks for trips shared with this user! ---
+        // 1. Try Server (Source.DEFAULT)
         db.collection("Trips")
-                .whereEqualTo("ownerEmail", account.getEmail())
+                .whereArrayContains("sharedEmails", account.getEmail())
                 .get(com.google.firebase.firestore.Source.DEFAULT)
                 .addOnSuccessListener(this::processTripData)
                 .addOnFailureListener(e -> {
-                    // Fallback to Cache
+                    // 2. If Server Fails (Offline), Fallback to Cache
                     db.collection("Trips")
-                            .whereEqualTo("ownerEmail", account.getEmail())
+                            .whereArrayContains("sharedEmails", account.getEmail())
                             .get(com.google.firebase.firestore.Source.CACHE)
                             .addOnSuccessListener(this::processTripData)
-                            .addOnFailureListener(err -> clearWorkspace());
+                            .addOnFailureListener(err -> {
+                                // Truly no data found
+                                clearWorkspace();
+                            });
                 });
     }
 

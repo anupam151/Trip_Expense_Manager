@@ -404,20 +404,22 @@ public class AddExpenseActivity extends AppCompatActivity {
     private void saveToCloud(Map<String, Object> expenseData) {
         Log.d("AddExpenseActivity", "saveToCloud started...");
 
-        // 1. Force the UI update immediately.
-        // Since the database operation is offline-first, it will sync automatically later.
-        Toast.makeText(this, "Processing save...", Toast.LENGTH_SHORT).show();
-
         if (isEditMode && editExpenseId != null) {
             db.collection("Trips").document(currentTripId).collection("Expenses").document(editExpenseId)
-                    .set(expenseData); // We don't even need the listener to be the only path to finish()
+                    .set(expenseData)
+                    .addOnSuccessListener(a -> {
+                        Toast.makeText(this, "Expense Updated!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show());
         } else {
             db.collection("Trips").document(currentTripId).collection("Expenses")
-                    .add(expenseData);
+                    .add(expenseData)
+                    .addOnSuccessListener(a -> {
+                        Toast.makeText(this, "Expense Added!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show());
         }
-
-        // 2. Close the activity immediately.
-        // We don't need to wait for the database "handshake" to close the screen.
-        finish();
     }
 }

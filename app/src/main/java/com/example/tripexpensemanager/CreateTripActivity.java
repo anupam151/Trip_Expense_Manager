@@ -3,6 +3,7 @@ package com.example.tripexpensemanager;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Patterns;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,7 +27,6 @@ import java.util.Locale;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Window;
-// Rounded corner dialog End
 
 // --- Firebase & Auth Imports ---
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -34,13 +34,18 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class CreateTripActivity extends AppCompatActivity {
 
     private static final String TAG = "CreateTripActivity";
     private EditText edtTripName, edtDestination, edtStartDate, edtEndDate;
     private LinearLayout layoutMemberList;
-    private ArrayList<String> memberList;
+
+    // --- CHANGED: Now holds the complex TripMember object instead of just Strings ---
+    private ArrayList<TripMember> memberList;
+
     private int memberCounter = 1;
     private Button btnCreateTripSubmit;
 
@@ -86,8 +91,9 @@ public class CreateTripActivity extends AppCompatActivity {
         }, 200);
     }
 
-    private void addMemberToLayout(String name) {
-        memberList.add(name);
+    // --- CHANGED: Now accepts a TripMember object ---
+    private void addMemberToLayout(TripMember member) {
+        memberList.add(member);
 
         final LinearLayout rowLayout = new LinearLayout(this);
         rowLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -95,7 +101,8 @@ public class CreateTripActivity extends AppCompatActivity {
         rowLayout.setPadding(0, 8, 0, 8);
 
         TextView txtMember = new TextView(this);
-        String displayedText = String.format(Locale.US, "%d. %s", memberCounter, name);
+        // Display name on UI
+        String displayedText = String.format(Locale.US, "%d. %s", memberCounter, member.getMemberName());
         txtMember.setText(displayedText);
         txtMember.setTextSize(16);
 
@@ -106,7 +113,7 @@ public class CreateTripActivity extends AppCompatActivity {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         txtMember.setLayoutParams(params);
 
-        TextView btnRemove = createRemoveButtonNode(rowLayout, name);
+        TextView btnRemove = createRemoveButtonNode(rowLayout, member);
 
         rowLayout.addView(txtMember);
         rowLayout.addView(btnRemove);
@@ -118,7 +125,8 @@ public class CreateTripActivity extends AppCompatActivity {
         findViewById(R.id.txt_members_subtext).setVisibility(View.GONE);
     }
 
-    private TextView createRemoveButtonNode(final LinearLayout rowLayout, final String name) {
+    // --- CHANGED: Now removes the TripMember object ---
+    private TextView createRemoveButtonNode(final LinearLayout rowLayout, final TripMember member) {
         TextView btnRemove = new TextView(this);
         btnRemove.setText("✕");
         btnRemove.setTextSize(18);
@@ -129,7 +137,7 @@ public class CreateTripActivity extends AppCompatActivity {
 
         btnRemove.setOnClickListener(v -> {
             layoutMemberList.removeView(rowLayout);
-            memberList.remove(name);
+            memberList.remove(member);
             reorderMemberCounter();
 
             if (memberList.isEmpty()) {
@@ -208,6 +216,9 @@ public class CreateTripActivity extends AppCompatActivity {
 
         TextView txtDialogTitle = view.findViewById(R.id.txt_dialog_title);
         final EditText edtDialogMemberName = view.findViewById(R.id.edt_dialog_member_name);
+        // --- NEW: Email Field Reference ---
+        final EditText edtDialogMemberEmail = view.findViewById(R.id.edt_dialog_member_email);
+
         Button btnDialogAdd = view.findViewById(R.id.btn_dialog_add);
         Button btnDialogBack = view.findViewById(R.id.btn_dialog_back);
 
@@ -232,24 +243,34 @@ public class CreateTripActivity extends AppCompatActivity {
 
         btnDialogAdd.setOnClickListener(v -> {
             String memberName = edtDialogMemberName.getText().toString().trim();
+            String memberEmail = edtDialogMemberEmail.getText().toString().trim();
 
             if (memberName.isEmpty()) {
                 Toast.makeText(this, getString(R.string.err_empty_name), Toast.LENGTH_SHORT).show();
+            } else if (!memberEmail.isEmpty() && !Patterns.EMAIL_ADDRESS.matcher(memberEmail).matches()) {
+                // --- NEW: Email Validation ---
+                Toast.makeText(this, "Please enter a valid Email ID", Toast.LENGTH_SHORT).show();
             } else {
                 // --- UNIQUENESS VALIDATION ---
-                boolean exists = false;
-                for (String name : memberList) {
-                    if (name.equalsIgnoreCase(memberName)) {
-                        exists = true;
-                        break;
-                    }
+                boolean nameExists = false;
+                boolean emailExists = false;
+
+                for (TripMember m : memberList) {
+                    if (m.getMemberName().equalsIgnoreCase(memberName)) nameExists = true;
+                    if (!memberEmail.isEmpty() && m.getEmailId() != null && m.getEmailId().equalsIgnoreCase(memberEmail)) emailExists = true;
                 }
 
-                if (exists) {
+                if (nameExists) {
                     Toast.makeText(this, "Member '" + memberName + "' is already in the list!", Toast.LENGTH_SHORT).show();
+                } else if (emailExists) {
+                    Toast.makeText(this, "Email '" + memberEmail + "' is already used by another member!", Toast.LENGTH_SHORT).show();
                 } else {
                     hideKeyboard(edtDialogMemberName);
-                    addMemberToLayout(memberName);
+
+                    // --- CHANGED: Pass the new TripMember Object ---
+                    TripMember newMember = new TripMember(memberName, memberEmail.isEmpty() ? null : memberEmail.toLowerCase(), null);
+                    addMemberToLayout(newMember);
+
                     alertDialog.dismiss();
                 }
             }
@@ -268,88 +289,96 @@ public class CreateTripActivity extends AppCompatActivity {
         }
     }
 
-    @SuppressWarnings("deprecation")
+
     private void validateAndCreateTrip() {
         String tripName = edtTripName.getText().toString().trim();
         String destination = edtDestination.getText().toString().trim();
         String startDate = edtStartDate.getText().toString().trim();
         String endDate = edtEndDate.getText().toString().trim();
 
+        // 1. Basic Validation
         if (tripName.isEmpty() || destination.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
-            Toast.makeText(this, getString(R.string.err_mandatory_fields), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!tripName.matches(".*[a-zA-Z].*")) {
-            Toast.makeText(this, getString(R.string.err_trip_name_alphabet_required), Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        if (!destination.matches(".*[a-zA-Z].*")) {
-            Toast.makeText(this, getString(R.string.err_destination_alphabet_required), Toast.LENGTH_LONG).show();
-            return;
-        }
-
+        // 2. Format Validation
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
         try {
             Date dateStart = sdf.parse(startDate);
             Date dateEnd = sdf.parse(endDate);
-
             if (dateStart != null && dateEnd != null && dateStart.after(dateEnd)) {
-                Toast.makeText(this, getString(R.string.err_date_chronology_mismatch), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Start date cannot be after end date", Toast.LENGTH_LONG).show();
                 return;
             }
         } catch (ParseException e) {
-            Log.e(TAG, "Timestamp format mapping failure conversion check", e);
-            Toast.makeText(this, getString(R.string.err_invalid_date_format), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid date format", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (memberList.isEmpty()) {
-            Toast.makeText(this, getString(R.string.err_min_one_member_required), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Add at least one member", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // 3. Prepare Cloud Data
         StringBuilder membersStringBuilder = new StringBuilder();
+        ArrayList<Map<String, Object>> memberDetailsList = new ArrayList<>();
+        ArrayList<String> sharedEmailsList = new ArrayList<>();
+
         for (int i = 0; i < memberList.size(); i++) {
-            membersStringBuilder.append(memberList.get(i));
-            if (i < memberList.size() - 1) {
-                membersStringBuilder.append(",");
+            TripMember mem = memberList.get(i);
+            membersStringBuilder.append(mem.getMemberName()).append(i < memberList.size() - 1 ? "," : "");
+
+            Map<String, Object> memberMap = new HashMap<>();
+            memberMap.put("memberName", mem.getMemberName());
+            memberMap.put("emailId", mem.getEmailId());
+            memberMap.put("role", mem.getRole());
+            memberDetailsList.add(memberMap);
+
+            if (mem.getEmailId() != null && !mem.getEmailId().isEmpty()) {
+                sharedEmailsList.add(mem.getEmailId());
             }
         }
-        String allMembersStr = membersStringBuilder.toString();
-        int totalMembersCount = memberList.size();
 
         Map<String, Object> tripData = new HashMap<>();
         tripData.put("tripName", tripName);
         tripData.put("destination", destination);
         tripData.put("startDate", startDate);
         tripData.put("endDate", endDate);
-        tripData.put("members", allMembersStr);
-        tripData.put("inactiveMembers", ""); // Initialize with empty string
-        tripData.put("memberCount", totalMembersCount);
+        tripData.put("members", membersStringBuilder.toString());
+        tripData.put("inactiveMembers", "");
+        tripData.put("memberCount", memberList.size());
         tripData.put("isPinned", false);
+        tripData.put("memberDetails", memberDetailsList);
+        tripData.put("sharedEmails", sharedEmailsList);
 
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account != null) {
-            tripData.put("ownerEmail", account.getEmail());
+        // 4. GET AUTHENTICATED USER (The Permission Fix)
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            tripData.put("ownerEmail", currentUser.getEmail());
+            if (!sharedEmailsList.contains(currentUser.getEmail())) {
+                sharedEmailsList.add(currentUser.getEmail());
+            }
+        } else {
+            Toast.makeText(this, "You are not logged in!", Toast.LENGTH_LONG).show();
+            return;
         }
 
-        // 1. Disable button to prevent double-clicks
+        // 5. SAVE TO FIRESTORE
         btnCreateTripSubmit.setEnabled(false);
         btnCreateTripSubmit.setText("Creating...");
 
-        // 2. Perform the save
         db.collection("Trips").add(tripData)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(this, "Trip created successfully!", Toast.LENGTH_SHORT).show();
+                    finish(); // Close activity only on success
+                })
                 .addOnFailureListener(e -> {
-                    // Re-enable only if it truly fails
                     btnCreateTripSubmit.setEnabled(true);
                     btnCreateTripSubmit.setText("Create Trip");
-                    Toast.makeText(this, "Failed to create: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Error adding document", e);
+                    Toast.makeText(this, "Permission Denied or Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
-
-        // 3. Close immediately (this runs even if offline!)
-        Toast.makeText(this, "Trip created successfully!", Toast.LENGTH_SHORT).show();
-        finish();
     }
 }

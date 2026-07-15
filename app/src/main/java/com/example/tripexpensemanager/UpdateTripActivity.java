@@ -2,8 +2,9 @@ package com.example.tripexpensemanager;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
-import android.text.TextUtils;
+//import android.text.TextUtils;
 import android.util.Log;
+import android.util.Patterns;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 // Rounded corner dialog
@@ -32,16 +34,20 @@ import android.view.Window;
 // Rounded corner dialog End
 
 // --- Firebase ---
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+@SuppressWarnings("deprecation")
 public class UpdateTripActivity extends AppCompatActivity {
 
     private static final String TAG = "UpdateTripActivity";
     private EditText edtTripName, edtDestination, edtStartDate, edtEndDate;
     private LinearLayout layoutMemberList;
 
-    private ArrayList<String> memberList;
-    private ArrayList<String> inactiveMembers;
+    // --- CHANGED: Using Complex TripMember Objects ---
+    private ArrayList<TripMember> memberList;
+    private ArrayList<TripMember> inactiveMembers;
 
     private int memberCounter = 1;
     private String tripId;
@@ -55,10 +61,9 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         android.widget.ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
-            android.view.View currentFocus = getCurrentFocus();
+            View currentFocus = getCurrentFocus();
             if (currentFocus != null) {
-                android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+                InputMethodManager imm = (InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
                 if (imm != null) {
                     imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
                 }
@@ -85,11 +90,14 @@ public class UpdateTripActivity extends AppCompatActivity {
         edtStartDate.setOnClickListener(v -> showDatePicker(edtStartDate));
         edtEndDate.setOnClickListener(v -> showDatePicker(edtEndDate));
 
-        btnAddMemberTrigger.setOnClickListener(v -> showAddMemberDialog());
+        // --- CHANGED: Pass null because we are adding a NEW member ---
+        btnAddMemberTrigger.setOnClickListener(v -> showAddOrEditMemberDialog(null));
         btnUpdateTripSubmit.setOnClickListener(v -> validateAndUpdateTrip());
 
         extractAndPrefillData();
     }
+
+    @SuppressWarnings("unchecked")
     private void extractAndPrefillData() {
         if (getIntent() != null) {
             tripId = getIntent().getStringExtra("TRIP_ID");
@@ -106,21 +114,35 @@ public class UpdateTripActivity extends AppCompatActivity {
             if (tripId != null) {
                 db.collection("Trips").document(tripId).get().addOnSuccessListener(doc -> {
                     if (doc.exists()) {
-                        String rawActive = doc.getString("members");
-                        String rawInactive = doc.getString("inactiveMembers");
-
                         memberList.clear();
                         inactiveMembers.clear();
 
-                        if (rawActive != null && !rawActive.trim().isEmpty()) {
+                        // 1. Try to load the Rich 'memberDetails' Array
+                        List<Map<String, Object>> rawMemberDetails = (List<Map<String, Object>>) doc.get("memberDetails");
+
+                        // 2. Fetch the Legacy Strings
+                        String rawActive = doc.getString("members");
+                        String rawInactive = doc.getString("inactiveMembers");
+
+                        if (rawMemberDetails != null && !rawMemberDetails.isEmpty()) {
+                            // Extract rich data for active members
+                            for (Map<String, Object> map : rawMemberDetails) {
+                                String mName = (String) map.get("memberName");
+                                String mEmail = (String) map.get("emailId");
+                                String mRole = (String) map.get("role");
+                                memberList.add(new TripMember(mName, mEmail, mRole));
+                            }
+                        } else if (rawActive != null && !rawActive.trim().isEmpty()) {
+                            // Legacy fallback if memberDetails doesn't exist yet
                             for (String name : rawActive.split(",")) {
-                                if (!name.trim().isEmpty()) memberList.add(name.trim());
+                                if (!name.trim().isEmpty()) memberList.add(new TripMember(name.trim(), null, null));
                             }
                         }
 
+                        // Load Inactive members
                         if (rawInactive != null && !rawInactive.trim().isEmpty()) {
                             for (String name : rawInactive.split(",")) {
-                                if (!name.trim().isEmpty()) inactiveMembers.add(name.trim());
+                                if (!name.trim().isEmpty()) inactiveMembers.add(new TripMember(name.trim(), null, null));
                             }
                         }
 
@@ -130,12 +152,13 @@ public class UpdateTripActivity extends AppCompatActivity {
             }
         }
     }
+
     private void refreshMembersUI() {
         layoutMemberList.removeAllViews();
         memberCounter = 1;
 
-        for (String name : memberList) {
-            addMemberRow(name, true);
+        for (TripMember member : memberList) {
+            addMemberRow(member, true);
         }
 
         if (!inactiveMembers.isEmpty()) {
@@ -146,27 +169,32 @@ public class UpdateTripActivity extends AppCompatActivity {
             header.setPadding(0, 32, 0, 16);
             layoutMemberList.addView(header);
 
-            for (String name : inactiveMembers) {
-                addMemberRow(name, false);
+            for (TripMember member : inactiveMembers) {
+                addMemberRow(member, false);
             }
         }
 
         if (memberList.isEmpty()) {
-            findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.VISIBLE);
-            findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.VISIBLE);
+            findViewById(R.id.txt_update_no_members).setVisibility(View.VISIBLE);
+            findViewById(R.id.txt_update_members_subtext).setVisibility(View.VISIBLE);
         } else {
-            findViewById(R.id.txt_update_no_members).setVisibility(android.view.View.GONE);
-            findViewById(R.id.txt_update_members_subtext).setVisibility(android.view.View.GONE);
+            findViewById(R.id.txt_update_no_members).setVisibility(View.GONE);
+            findViewById(R.id.txt_update_members_subtext).setVisibility(View.GONE);
         }
     }
-    private void addMemberRow(final String name, boolean isActive) {
+
+    private void addMemberRow(final TripMember member, boolean isActive) {
         final LinearLayout rowLayout = new LinearLayout(this);
         rowLayout.setOrientation(LinearLayout.HORIZONTAL);
         rowLayout.setGravity(Gravity.CENTER_VERTICAL);
         rowLayout.setPadding(0, 8, 0, 8);
 
         TextView txtMember = new TextView(this);
-        String displayedText = isActive ? String.format(Locale.US, "%d. %s", memberCounter, name) : "• " + name;
+
+        // --- NEW: Added the ✎ pencil icon so the Admin knows they can edit the email! ---
+        String nameText = member.getMemberName();
+        String displayedText = isActive ? String.format(Locale.US, "%d. %s  ✎", memberCounter, nameText) : "• " + nameText;
+
         txtMember.setText(displayedText);
         txtMember.setTextSize(16);
 
@@ -177,8 +205,12 @@ public class UpdateTripActivity extends AppCompatActivity {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         txtMember.setLayoutParams(params);
 
-        // --- WARNING FIX: Extracted the button logic to a separate method! ---
-        TextView btnAction = createActionButton(name, isActive);
+        // --- NEW: Make the text clickable to edit the member ---
+        if (isActive) {
+            txtMember.setOnClickListener(v -> showAddOrEditMemberDialog(member));
+        }
+
+        TextView btnAction = createActionButton(member, isActive);
 
         rowLayout.addView(txtMember);
         rowLayout.addView(btnAction);
@@ -186,8 +218,8 @@ public class UpdateTripActivity extends AppCompatActivity {
         layoutMemberList.addView(rowLayout);
         if (isActive) memberCounter++;
     }
-    // --- NEW: Helper method to keep addMemberRow clean ---
-    private TextView createActionButton(final String name, boolean isActive) {
+
+    private TextView createActionButton(final TripMember member, boolean isActive) {
         TextView btnAction = new TextView(this);
         btnAction.setText(isActive ? "✕" : "↺");
         btnAction.setTextSize(18);
@@ -198,17 +230,18 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         btnAction.setOnClickListener(v -> {
             if (isActive) {
-                memberList.remove(name);
-                if (!inactiveMembers.contains(name)) inactiveMembers.add(name);
+                memberList.remove(member);
+                if (!inactiveMembers.contains(member)) inactiveMembers.add(member);
             } else {
-                inactiveMembers.remove(name);
-                if (!memberList.contains(name)) memberList.add(name);
+                inactiveMembers.remove(member);
+                if (!memberList.contains(member)) memberList.add(member);
             }
             refreshMembersUI();
         });
 
         return btnAction;
     }
+
     private void showDatePicker(EditText dateEditText) {
         View currentFocusView = getCurrentFocus();
         if (currentFocusView != null) currentFocusView.clearFocus();
@@ -230,9 +263,10 @@ public class UpdateTripActivity extends AppCompatActivity {
         Button positiveButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
             View buttonPanel = (View) positiveButton.getParent();
-            buttonPanel.setBackgroundColor(android.graphics.Color.parseColor("#85022E"));
+            buttonPanel.setBackgroundColor(Color.parseColor("#85022E"));
         }
     }
+
     @NonNull
     private DatePickerDialog createDatePickerDialogInstance(EditText dateEditText) {
         final Calendar calendar = Calendar.getInstance();
@@ -240,45 +274,71 @@ public class UpdateTripActivity extends AppCompatActivity {
         int month = calendar.get(Calendar.MONTH);
         int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-        return new DatePickerDialog(this,
+        return new DatePickerDialog(this, R.style.CustomCalendarTheme,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
                     String formattedDate = String.format(Locale.US, "%02d/%02d/%04d", selectedDay, (selectedMonth + 1), selectedYear);
                     dateEditText.setText(formattedDate);
                 }, year, month, day);
     }
-    private void showAddMemberDialog() {
+
+    // --- NEW: Handles both Adding a New Member AND Editing an Existing Member ---
+    private void showAddOrEditMemberDialog(TripMember memberToEdit) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_member, null);
         builder.setView(view);
 
         TextView txtDialogTitle = view.findViewById(R.id.txt_dialog_title);
         final EditText edtDialogMemberName = view.findViewById(R.id.edt_dialog_member_name);
-        Button btnDialogAdd = view.findViewById(R.id.btn_dialog_add); // Ensure this ID matches your XML
+        final EditText edtDialogMemberEmail = view.findViewById(R.id.edt_dialog_member_email);
+
+        Button btnDialogAdd = view.findViewById(R.id.btn_dialog_add);
         Button btnDialogBack = view.findViewById(R.id.btn_dialog_back);
 
-        txtDialogTitle.setText(getString(R.string.fmt_dialog_member_count_label, memberCounter));
-        AlertDialog alertDialog = builder.create();
+        // Prefill Data if we are editing!
+        if (memberToEdit == null) {
+            txtDialogTitle.setText(getString(R.string.fmt_dialog_member_count_label, memberCounter));
+            btnDialogAdd.setText(getString(R.string.add));
+        } else {
+            txtDialogTitle.setText("Edit Member");
+            btnDialogAdd.setText("Save");
+            edtDialogMemberName.setText(memberToEdit.getMemberName());
+            if (memberToEdit.getEmailId() != null) {
+                edtDialogMemberEmail.setText(memberToEdit.getEmailId());
+            }
+        }
 
+        AlertDialog alertDialog = builder.create();
         if (alertDialog.getWindow() != null) {
             alertDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
         btnDialogAdd.setOnClickListener(v -> {
             String newName = edtDialogMemberName.getText().toString().trim();
+            String newEmail = edtDialogMemberEmail.getText().toString().trim();
 
             if (newName.isEmpty()) {
                 Toast.makeText(this, "Please enter a name", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // --- GLOBAL UNIQUENESS CHECK ---
+            if (!newEmail.isEmpty() && !Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
+                Toast.makeText(this, "Please enter a valid Email ID", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // --- GLOBAL UNIQUENESS CHECK (Skipping the current member being edited) ---
             boolean isDuplicate = false;
-            for (String name : memberList) {
-                if (name.equalsIgnoreCase(newName)) { isDuplicate = true; break; }
+
+            for (TripMember m : memberList) {
+                if (m != memberToEdit && m.getMemberName().equalsIgnoreCase(newName)) { isDuplicate = true; break; }
+                if (m != memberToEdit && !newEmail.isEmpty() && m.getEmailId() != null && m.getEmailId().equalsIgnoreCase(newEmail)) {
+                    Toast.makeText(this, "Email is already used by another member!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
             if (!isDuplicate) {
-                for (String name : inactiveMembers) {
-                    if (name.equalsIgnoreCase(newName)) { isDuplicate = true; break; }
+                for (TripMember m : inactiveMembers) {
+                    if (m != memberToEdit && m.getMemberName().equalsIgnoreCase(newName)) { isDuplicate = true; break; }
                 }
             }
 
@@ -287,8 +347,18 @@ public class UpdateTripActivity extends AppCompatActivity {
             } else {
                 hideKeyboard(edtDialogMemberName);
 
-                // Add to active list
-                memberList.add(newName);
+                // --- FIX: Calculate the final email ONCE to satisfy Android Studio ---
+                String finalEmail = newEmail.isEmpty() ? null : newEmail.toLowerCase();
+
+                if (memberToEdit == null) {
+                    // Create New
+                    memberList.add(new TripMember(newName, finalEmail, null));
+                } else {
+                    // Update Existing
+                    memberToEdit.setMemberName(newName);
+                    memberToEdit.setEmailId(finalEmail);
+                }
+
                 refreshMembersUI();
                 alertDialog.dismiss();
             }
@@ -301,20 +371,20 @@ public class UpdateTripActivity extends AppCompatActivity {
 
         alertDialog.show();
     }
-    private void hideKeyboard(android.view.View view) {
-        android.view.inputmethod.InputMethodManager imm =
-                (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+    private void hideKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
+
     private void validateAndUpdateTrip() {
         String tripName = edtTripName.getText().toString().trim();
         String destination = edtDestination.getText().toString().trim();
         String startDate = edtStartDate.getText().toString().trim();
         String endDate = edtEndDate.getText().toString().trim();
 
-        // --- Validation Checks ---
         if (tripName.isEmpty() || destination.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
             Toast.makeText(this, getString(R.string.err_mandatory_fields), Toast.LENGTH_SHORT).show();
             return;
@@ -349,35 +419,68 @@ public class UpdateTripActivity extends AppCompatActivity {
             return;
         }
 
-        // --- Prepare Updates ---
-        String allMembersStr = TextUtils.join(",", memberList);
-        String allInactiveMembersStr = TextUtils.join(",", inactiveMembers);
-        int totalMembersCount = memberList.size();
+        // --- NEW: Generate our structured Cloud Data ---
+        StringBuilder membersBuilder = new StringBuilder();
+        ArrayList<Map<String, Object>> memberDetailsList = new ArrayList<>();
+        ArrayList<String> sharedEmailsList = new ArrayList<>();
+
+        for (int i = 0; i < memberList.size(); i++) {
+            TripMember mem = memberList.get(i);
+
+            // 1. Build legacy string
+            membersBuilder.append(mem.getMemberName());
+            if (i < memberList.size() - 1) membersBuilder.append(",");
+
+            // 2. Build Complex Member Details
+            Map<String, Object> memberMap = new HashMap<>();
+            memberMap.put("memberName", mem.getMemberName());
+            memberMap.put("emailId", mem.getEmailId());
+            memberMap.put("role", mem.getRole()); // Preserve existing role!
+            memberDetailsList.add(memberMap);
+
+            // 3. Build Search Index Array
+            if (mem.getEmailId() != null && !mem.getEmailId().isEmpty()) {
+                sharedEmailsList.add(mem.getEmailId());
+            }
+        }
+
+        // Handle Legacy Inactive String
+        StringBuilder inactiveBuilder = new StringBuilder();
+        for (int i = 0; i < inactiveMembers.size(); i++) {
+            inactiveBuilder.append(inactiveMembers.get(i).getMemberName());
+            if (i < inactiveMembers.size() - 1) inactiveBuilder.append(",");
+        }
+
+        // Ensure the Creator is always in the Search Index
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null && account.getEmail() != null && !sharedEmailsList.contains(account.getEmail())) {
+            sharedEmailsList.add(account.getEmail());
+        }
 
         Map<String, Object> updates = new HashMap<>();
         updates.put("tripName", tripName);
         updates.put("destination", destination);
         updates.put("startDate", startDate);
         updates.put("endDate", endDate);
-        updates.put("members", allMembersStr);
-        updates.put("inactiveMembers", allInactiveMembersStr);
-        updates.put("memberCount", totalMembersCount);
+        updates.put("members", membersBuilder.toString());
+        updates.put("inactiveMembers", inactiveBuilder.toString());
+        updates.put("memberCount", memberList.size());
 
-        // --- Perform Update (Offline-First) ---
+        // Push the Rich Data
+        updates.put("memberDetails", memberDetailsList);
+        updates.put("sharedEmails", sharedEmailsList);
+
         btnUpdateTripSubmit.setEnabled(false);
         btnUpdateTripSubmit.setText("Updating...");
 
         db.collection("Trips").document(tripId)
                 .update(updates)
                 .addOnFailureListener(e -> {
-                    // If it fails (e.g., permissions), re-enable the button
                     btnUpdateTripSubmit.setEnabled(true);
                     btnUpdateTripSubmit.setText("Update Trip");
                     Toast.makeText(this, getString(R.string.err_trip_update_failed) + ": " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
 
-        // --- Close Immediately ---
-        // This executes whether online or offline
         Toast.makeText(this, "Trip Updated!", Toast.LENGTH_SHORT).show();
         setResult(RESULT_OK);
         finish();
