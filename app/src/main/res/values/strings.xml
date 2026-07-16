@@ -56,7 +56,7 @@
     <string name="label_expense_for">Expense For</string>
     <string name="subtitle_expense_split">(Uncheck members who didn’t participate to split equally among remaining)</string>
     <string name="preview_dynamic_members">[ Trip Members Will Load Here Automatically ]</string>
-    <string name="label_paid_by">Paid By (Select From Dropdown Menu)</string>
+    <string name="label_paid_by">Paid By</string>
     <string name="label_expense_date">Expense Date</string>
     <string name="btn_save_expense_split">Save Expense &amp; Split</string>
 

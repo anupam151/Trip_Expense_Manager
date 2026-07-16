@@ -33,7 +33,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
     private double[] totalDebits;
     private double totalFundCredit = 0.0;
     private double totalFundDebit = 0.0;
-
+    private String currentUserRole = "Viewer"; // Defaults to the safest restriction
     private LedgerExportManager exportManager;
 
     private final androidx.activity.result.ActivityResultLauncher<String> createExcelLauncher = registerForActivityResult(
@@ -85,6 +85,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             findViewById(R.id.btn_back).setOnClickListener(v -> finish());
         }
 
+        fetchUserRole();
         loadTripDataAndLedger();
     }
 
@@ -300,6 +301,15 @@ public class CompleteLedgerActivity extends AppCompatActivity {
     }
 
     private void showTransactionOptions(String transId, String type, String tripId) {
+        // =================================================================
+        // --- NEW: ADMIN-ONLY GUARD ---
+        // =================================================================
+        if (!"Admin".equalsIgnoreCase(currentUserRole)) {
+            Toast.makeText(this, "Only the Admin can edit or delete transactions.", Toast.LENGTH_SHORT).show();
+            return; // Stops the method right here, preventing the dialog from opening
+        }
+        // =================================================================
+
         String[] options = {"Edit", "Delete"};
         new AlertDialog.Builder(this)
                 .setTitle("Transaction Options")
@@ -329,5 +339,36 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                             .addOnSuccessListener(aVoid -> recreate());
                 })
                 .setNegativeButton("Cancel", null).show();
+    }
+    @SuppressWarnings("unchecked")
+    private void fetchUserRole() {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = (user != null && user.getEmail() != null) ? user.getEmail() : "";
+
+        if (!currentUserEmail.isEmpty() && currentTripId != null) {
+            com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("Trips").document(currentTripId)
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            String ownerEmail = doc.getString("ownerEmail");
+                            if (currentUserEmail.equalsIgnoreCase(ownerEmail)) {
+                                currentUserRole = "Admin";
+                            } else {
+                                java.util.List<java.util.Map<String, Object>> rawMemberDetails =
+                                        (java.util.List<java.util.Map<String, Object>>) doc.get("memberDetails");
+                                if (rawMemberDetails != null) {
+                                    for (java.util.Map<String, Object> memberMap : rawMemberDetails) {
+                                        String memberEmail = (String) memberMap.get("emailId");
+                                        if (currentUserEmail.equalsIgnoreCase(memberEmail)) {
+                                            String role = (String) memberMap.get("role");
+                                            currentUserRole = (role != null) ? role : "Viewer";
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+        }
     }
 }
