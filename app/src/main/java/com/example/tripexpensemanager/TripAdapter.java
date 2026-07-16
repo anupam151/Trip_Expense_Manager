@@ -9,6 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -49,12 +51,38 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
         holder.txtMemberCount.setText(context.getString(R.string.fmt_item_member_count, trip.getMemberCount()));
         holder.txtStartDate.setText(context.getString(R.string.fmt_item_start_date, trip.getStartDate()));
 
-        // --- UPDATED: Data now comes from the TripModel object directly ---
-        // Ensure your TripModel class has fields for these and getters
         holder.txtTotalExpense.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses()));
         holder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments()));
         holder.txtFundBalance.setText(String.format(Locale.US, "₹%.2f", trip.getFundBalance()));
 
+        // --- ROLE CALCULATION & BADGE UI ---
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = (user != null && user.getEmail() != null) ? user.getEmail() : "";
+        String currentUserRole = "Viewer";
+
+        if (!currentUserEmail.isEmpty()) {
+            if (currentUserEmail.equalsIgnoreCase(trip.getOwnerEmail())) {
+                currentUserRole = "Admin";
+            } else if (trip.getMemberDetails() != null) {
+                for (TripMember member : trip.getMemberDetails()) {
+                    if (currentUserEmail.equalsIgnoreCase(member.getEmailId())) {
+                        currentUserRole = member.getRole() != null ? member.getRole() : "Viewer";
+                        break;
+                    }
+                }
+            }
+        }
+
+        holder.txtRoleBadge.setText(currentUserRole);
+        if ("Admin".equalsIgnoreCase(currentUserRole)) {
+            holder.txtRoleBadge.setBackgroundColor(0xFF1E88E5); // Blue
+        } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
+            holder.txtRoleBadge.setBackgroundColor(0xFF4CAF50); // Green
+        } else {
+            holder.txtRoleBadge.setBackgroundColor(0xFF9E9E9E); // Grey
+        }
+
+        // --- PIN STATE ---
         if (trip.getIsPinnedState() == 1) {
             holder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getTripName()));
             holder.btnPin.setText(context.getString(R.string.action_state_unpin));
@@ -65,7 +93,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             holder.btnPin.setTextColor(0xFFC85A00);
         }
 
-        // Click Listeners
+        // --- LISTENERS ---
         holder.itemView.setOnClickListener(v -> actionListener.onTripItemClick(trip));
         holder.btnPin.setOnClickListener(v -> actionListener.onPinToggleClick(trip, holder.getBindingAdapterPosition()));
         holder.btnEdit.setOnClickListener(v -> actionListener.onEditClick(trip));
@@ -80,7 +108,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
     public static class TripViewHolder extends RecyclerView.ViewHolder {
         TextView txtTripName, txtDestination, txtMemberCount, txtFundBalance, txtStartDate;
         TextView txtTotalExpense, txtTotalReceived;
-        TextView btnPin, btnEdit, btnDelete;
+        TextView btnPin, btnEdit, btnDelete, txtRoleBadge;
         MaterialButton btnAddExpense, btnAddPayment;
 
         public TripViewHolder(@NonNull View itemView) {
@@ -97,6 +125,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             btnDelete = itemView.findViewById(R.id.btn_item_delete);
             btnAddExpense = itemView.findViewById(R.id.btn_item_add_expense);
             btnAddPayment = itemView.findViewById(R.id.btn_item_add_payment);
+            txtRoleBadge = itemView.findViewById(R.id.txt_item_role_badge);
         }
     }
 }

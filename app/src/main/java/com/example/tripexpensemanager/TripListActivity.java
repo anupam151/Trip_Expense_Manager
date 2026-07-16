@@ -414,6 +414,10 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                                     endStr
                             );
 
+                            // --- NEW FIX: Parse Pinned State from Firestore ---
+                            Boolean isPinnedCloud = doc.getBoolean("isPinned");
+                            trip.setIsPinnedState((isPinnedCloud != null && isPinnedCloud) ? 1 : 0);
+
                             trip.setInactiveMembers(doc.getString("inactiveMembers"));
 
                             // --- NEW: Parse Role Data for Click Blockers ---
@@ -532,28 +536,39 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
     @Override
     public void onPinToggleClick(TripModel trip, int position) {
-        String myEmail = getCurrentUserEmail(); // <--- FIXED
-        if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
-            Toast.makeText(this, "Only the Admin can pin trips.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         boolean currentlyPinned = trip.getIsPinnedState() == 1;
+
         if (!currentlyPinned) {
-            for (int i = 0; i < masterTripList.size(); i++) {
-                TripModel t = masterTripList.get(i);
+            // 1. PINNING A NEW TRIP
+
+            // Loop through our (now always accurate) local list to unpin the old one
+            for (TripModel t : masterTripList) {
                 if (t.getIsPinnedState() == 1) {
-                    t.setIsPinnedState(0);
+                    t.setIsPinnedState(0); // Update local state
+                    // Update Firestore (Safe from permission errors because we already have access to this trip)
                     db.collection("Trips").document(t.getTripId()).update("isPinned", false);
                 }
             }
+
+            // Now, pin the newly selected trip
+            db.collection("Trips").document(trip.getTripId()).update("isPinned", true)
+                    .addOnSuccessListener(a -> {
+                        trip.setIsPinnedState(1);
+                        applySorting(currentSortOption); // Refresh the UI immediately
+                        Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to pin: " + e.getMessage(), Toast.LENGTH_LONG).show());
+
+        } else {
+            // 2. UNPINNING THE CURRENT TRIP
+            db.collection("Trips").document(trip.getTripId()).update("isPinned", false)
+                    .addOnSuccessListener(a -> {
+                        trip.setIsPinnedState(0);
+                        applySorting(currentSortOption); // Refresh the UI immediately
+                        Toast.makeText(this, "Trip unpinned!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to unpin: " + e.getMessage(), Toast.LENGTH_LONG).show());
         }
-        db.collection("Trips").document(trip.getTripId()).update("isPinned", !currentlyPinned)
-                .addOnSuccessListener(a -> {
-                    trip.setIsPinnedState(currentlyPinned ? 0 : 1);
-                    applySorting(currentSortOption);
-                    Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show();
-                });
     }
 
     @Override

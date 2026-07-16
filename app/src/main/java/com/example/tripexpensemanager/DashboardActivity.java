@@ -145,6 +145,7 @@ public class DashboardActivity extends BaseDrawerActivity {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void populateWorkspace(DocumentSnapshot doc) {
         containerPinnedTripsStack.removeAllViews();
         layoutNoPinnedTrips.setVisibility(View.GONE);
@@ -175,11 +176,12 @@ public class DashboardActivity extends BaseDrawerActivity {
         TextView btnDelete = cardView.findViewById(R.id.btn_item_delete);
         MaterialButton btnAddExpense = cardView.findViewById(R.id.btn_item_add_expense);
         MaterialButton btnAddPayment = cardView.findViewById(R.id.btn_item_add_payment);
+        TextView txtRoleBadge = cardView.findViewById(R.id.txt_item_role_badge);
 
         txtTripName.setText(getString(R.string.fmt_dash_pinned_title, 1, name));
-        txtDestination.setText(getString(R.string.fmt_dash_destination, destination));
-        txtMemberCount.setText(getString(R.string.fmt_dash_member_count, count));
-        txtStartDate.setText(getString(R.string.fmt_dash_start_date, startDate));
+        txtDestination.setText(getString(R.string.fmt_item_destination, destination));
+        txtMemberCount.setText(getString(R.string.fmt_item_member_count, count));
+        txtStartDate.setText(getString(R.string.fmt_item_start_date, startDate));
 
         TripFinanceCalculator.calculateFinances(tripId, new TripFinanceCalculator.FinanceResultListener() {
             @Override
@@ -196,13 +198,92 @@ public class DashboardActivity extends BaseDrawerActivity {
             }
         });
 
+        // =================================================================
+        // --- ROLE CALCULATION ---
+        // =================================================================
+
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        String currentUserEmail = (account != null && account.getEmail() != null) ? account.getEmail() : "";
+        String currentUserRole = "Viewer"; // Safest default
+
+        String ownerEmail = doc.getString("ownerEmail");
+        if (!currentUserEmail.isEmpty()) {
+            if (currentUserEmail.equalsIgnoreCase(ownerEmail)) {
+                currentUserRole = "Admin";
+            } else {
+                java.util.List<java.util.Map<String, Object>> rawMemberDetails =
+                        (java.util.List<java.util.Map<String, Object>>) doc.get("memberDetails");
+
+                if (rawMemberDetails != null) {
+                    for (java.util.Map<String, Object> memberMap : rawMemberDetails) {
+                        String memberEmail = (String) memberMap.get("emailId");
+                        if (currentUserEmail.equalsIgnoreCase(memberEmail)) {
+                            String role = (String) memberMap.get("role");
+                            currentUserRole = (role != null) ? role : "Viewer";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        final boolean isAdmin = "Admin".equalsIgnoreCase(currentUserRole);
+        final boolean isEditor = "Editor".equalsIgnoreCase(currentUserRole);
+        final boolean canAddTransactions = isAdmin || isEditor;
+        txtRoleBadge.setText(currentUserRole);
+
+        // Optional: Make the badge change color based on the role!
+        if ("Admin".equalsIgnoreCase(currentUserRole)) {
+            txtRoleBadge.setBackgroundColor(0xFF1E88E5); // Blue
+        } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
+            txtRoleBadge.setBackgroundColor(0xFF4CAF50); // Green
+        } else {
+            txtRoleBadge.setBackgroundColor(0xFF9E9E9E); // Gray for Viewer
+        }
+        // =================================================================
+        // --- CLICK LISTENERS WITH TOAST INTERCEPTS ---
+        // =================================================================
+
         btnPin.setText(getString(R.string.action_unpin));
         btnPin.setTextColor(0xFF2E7D32);
         btnPin.setOnClickListener(v -> handlePinToggle(tripId, name));
-        btnEdit.setOnClickListener(v -> navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate));
-        btnDelete.setOnClickListener(v -> showDeleteDialog(tripId, name));
-        btnAddExpense.setOnClickListener(v -> navigateToAddExpense(tripId, members));
-        btnAddPayment.setOnClickListener(v -> navigateToAddPayment(tripId, members));
+
+        // Edit Button Logic
+        btnEdit.setOnClickListener(v -> {
+            if (isAdmin) {
+                navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate);
+            } else {
+                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Delete Button Logic
+        btnDelete.setOnClickListener(v -> {
+            if (isAdmin) {
+                showDeleteDialog(tripId, name);
+            } else {
+                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Add Expense Button Logic
+        btnAddExpense.setOnClickListener(v -> {
+            if (canAddTransactions) {
+                navigateToAddExpense(tripId, members);
+            } else {
+                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Add Payment Button Logic
+        btnAddPayment.setOnClickListener(v -> {
+            if (canAddTransactions) {
+                navigateToAddPayment(tripId, members);
+            } else {
+                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         cardView.setOnClickListener(v -> navigateToTripDetails(tripId, name, destination, members, startDate, endDate));
 
         containerPinnedTripsStack.addView(cardView);
