@@ -111,7 +111,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
         findViewById(R.id.btnAddExpense).setOnClickListener(v -> {
             if ("Viewer".equals(currentUserRole)) {
-                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only Admin and Editors can add expenses.", Toast.LENGTH_SHORT).show();
                 return;
             }
             Intent intent = new Intent(this, AddExpenseActivity.class);
@@ -122,7 +122,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
         findViewById(R.id.btnAddPayment).setOnClickListener(v -> {
             if ("Viewer".equals(currentUserRole)) {
-                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only Admin and Editors can add payments.", Toast.LENGTH_SHORT).show();
                 return;
             }
             Intent intent = new Intent(this, AddPaymentActivity.class);
@@ -133,7 +133,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
         findViewById(R.id.btnEditTrip).setOnClickListener(v -> {
             if (!"Admin".equals(currentUserRole)) {
-                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only the Admin can edit trips.", Toast.LENGTH_SHORT).show();
                 return;
             }
             Intent intent = new Intent(this, UpdateTripActivity.class);
@@ -148,7 +148,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
         findViewById(R.id.btnDeleteTrip).setOnClickListener(v -> {
             if (!"Admin".equals(currentUserRole)) {
-                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only the Admin can delete trips.", Toast.LENGTH_SHORT).show();
                 return;
             }
             showDeleteDialog();
@@ -315,7 +315,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
             } else {
                 TextView txtNoEmail = new TextView(this);
-                txtNoEmail.setText("No Email. Update Trip to assign role.");
+                txtNoEmail.setText("No Email. Add email by editing Trip to assign role.");
                 txtNoEmail.setTextSize(11f);
                 txtNoEmail.setTextColor(android.graphics.Color.parseColor("#D32F2F"));
                 textContainer.addView(txtNoEmail);
@@ -471,7 +471,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
     private void showDeleteDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Trip")
-                .setMessage("Are you sure you want to delete this trip from Cloud?")
+                .setMessage("Are you sure you want to delete this trip?")
                 .setPositiveButton("Yes, Delete", (dialog, which) ->
                         db.collection("Trips").document(tripId).delete()
                                 .addOnSuccessListener(a -> {

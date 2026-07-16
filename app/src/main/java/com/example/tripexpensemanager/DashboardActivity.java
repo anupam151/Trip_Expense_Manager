@@ -253,7 +253,7 @@ public class DashboardActivity extends BaseDrawerActivity {
             if (isAdmin) {
                 navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate);
             } else {
-                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only the Admin can edit trips.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -262,7 +262,7 @@ public class DashboardActivity extends BaseDrawerActivity {
             if (isAdmin) {
                 showDeleteDialog(tripId, name);
             } else {
-                Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only the Admin can delete trips.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -271,7 +271,7 @@ public class DashboardActivity extends BaseDrawerActivity {
             if (canAddTransactions) {
                 navigateToAddExpense(tripId, members);
             } else {
-                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only Admin and Editors can add expenses.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -280,7 +280,7 @@ public class DashboardActivity extends BaseDrawerActivity {
             if (canAddTransactions) {
                 navigateToAddPayment(tripId, members);
             } else {
-                Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Only Admin and Editors can add payments.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -317,7 +317,7 @@ public class DashboardActivity extends BaseDrawerActivity {
 
     private void executeCloudDelete(String tripId) {
         db.collection("Trips").document(tripId).delete().addOnSuccessListener(aVoid -> {
-            Toast.makeText(this, "Trip deleted from Cloud", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Trip deleted!", Toast.LENGTH_SHORT).show();
             fetchTripsFromCloud();
         });
     }

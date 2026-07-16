@@ -575,7 +575,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     public void onDeleteClick(TripModel trip) {
         String myEmail = getCurrentUserEmail(); // <--- FIXED
         if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
-            Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Only the Admin can delete trips.", Toast.LENGTH_SHORT).show();
             return;
         }
         new AlertDialog.Builder(this)
@@ -603,7 +603,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     public void onEditClick(TripModel trip) {
         String myEmail = getCurrentUserEmail(); // <--- FIXED
         if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
-            Toast.makeText(this, "Editors and Viewers do not have the right to do this.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Only the Admin can edit trips.", Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent(this, UpdateTripActivity.class);
@@ -620,7 +620,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     public void onAddExpenseClick(TripModel trip) {
         String myEmail = getCurrentUserEmail(); // <--- FIXED
         if ("Viewer".equals(trip.getCurrentUserRole(myEmail))) {
-            Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Only Admin and Editors can add expenses.", Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent(this, AddExpenseActivity.class);
@@ -633,7 +633,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     public void onAddPaymentClick(TripModel trip) {
         String myEmail = getCurrentUserEmail(); // <--- FIXED
         if ("Viewer".equals(trip.getCurrentUserRole(myEmail))) {
-            Toast.makeText(this, "Viewers only have viewing rights.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Only Admin and Editors can add payments.", Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent(this, AddPaymentActivity.class);
