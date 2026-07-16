@@ -165,6 +165,17 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             intent.putExtra("TRIP_ID", tripId);
             startActivity(intent);
         });
+        // --- Navigation: Go to Dashboard (Home) ---
+        LinearLayout btnHome = findViewById(R.id.btnHome);
+        if (btnHome != null) {
+            btnHome.setOnClickListener(v -> {
+                Intent intent = new Intent(this, DashboardActivity.class);
+                // Clears all other activities off the stack and brings the existing Dashboard to the front
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish(); // Closes the current TripDetailsActivity
+            });
+        }
 
         ((TextView) findViewById(R.id.txt_details_trip_name)).setText(getString(R.string.format_trip_name_header, tripName));
         ((TextView) findViewById(R.id.txt_details_destination)).setText(dest != null ? dest : "N/A");
@@ -194,7 +205,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 String inactiveRaw = doc.getString("inactiveMembers");
                 rawLegacyMembers = doc.getString("members");
 
-                // --- NEW: Extract Rich Member Details ---
+                // --- Extract Rich Member Details ---
                 currentMembersList.clear();
                 List<Map<String, Object>> rawMemberDetails = (List<Map<String, Object>>) doc.get("memberDetails");
 
@@ -212,7 +223,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                     }
                 }
 
-                // --- Verify Admin to show/hide the Manage Access button ---
+                // --- Verify Admin to determine Role ---
                 GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
                 if (account != null && account.getEmail() != null) {
                     String myEmail = account.getEmail();
@@ -228,6 +239,23 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                         }
                     }
                 }
+
+                // =======================================================
+                // --- NEW CODE: UPDATE THE ROLE BADGE UI ---
+                // =======================================================
+                TextView txtRoleBadge = findViewById(R.id.txt_item_role_badge);
+                if (txtRoleBadge != null) {
+                    txtRoleBadge.setText(currentUserRole);
+
+                    if ("Admin".equalsIgnoreCase(currentUserRole)) {
+                        txtRoleBadge.setBackgroundColor(0xFF1E88E5); // Blue
+                    } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
+                        txtRoleBadge.setBackgroundColor(0xFF4CAF50); // Green
+                    } else {
+                        txtRoleBadge.setBackgroundColor(0xFF9E9E9E); // Grey
+                    }
+                }
+                // =======================================================
 
                 updateMemberGrids(inactiveRaw);
                 refreshSummaryCards();

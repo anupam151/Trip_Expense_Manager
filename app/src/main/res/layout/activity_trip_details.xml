@@ -73,18 +73,28 @@
                 app:autoSizeMinTextSize="6sp"
                 app:autoSizeMaxTextSize="22sp"
                 app:autoSizeStepGranularity="1sp" />
+                <TextView
+                    android:id="@+id/txt_item_role_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="#85022E"
+                    android:text="Role" />
             <ImageButton
-                android:id="@+id/btn_manage_access"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
-                android:padding="6dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/amend"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Manage Access"
-                android:layout_gravity="end|top"
-                app:tint="#85022E"/>
-
+                    android:id="@+id/btn_manage_access"
+                    android:layout_width="45dp"
+                    android:layout_height="45dp"
+                    android:padding="6dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/amend"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Manage Access"
+                    android:layout_gravity="end|top"
+                    app:tint="#85022E"/>
         </LinearLayout>
 
         <LinearLayout
