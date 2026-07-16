@@ -79,6 +79,7 @@
                     android:layout_height="wrap_content"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="2dp"
+                    android:layout_marginEnd="6dp"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
@@ -86,8 +87,9 @@
                     android:text="Role" />
             <ImageButton
                     android:id="@+id/btn_manage_access"
-                    android:layout_width="45dp"
-                    android:layout_height="45dp"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginEnd="8dp"
                     android:padding="3dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/assign"
@@ -103,7 +105,7 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:layout_below="@id/header_layout"
-            android:layout_above="@id/layoutQuickActions"
+            android:layout_above="@id/button_container"
             android:layout_marginBottom="2dp"
             android:layout_marginHorizontal="6dp"
             android:paddingHorizontal="6dp"
@@ -358,6 +360,7 @@
                 </LinearLayout>
             </ScrollView>
         </LinearLayout>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnManageAccess"
             android:layout_width="match_parent"
@@ -374,117 +377,208 @@
             app:iconGravity="textStart"
             app:iconTint="#FFFFFF"
             android:visibility="gone" />
+
+        <View
+            android:id="@+id/viewDim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#66000000"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"/>
+
         <LinearLayout
             android:id="@+id/layoutQuickActions"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:paddingHorizontal="5dp"
-            android:paddingVertical="3dp"
-            android:gravity="center"
-            android:orientation="horizontal"
             android:layout_above="@id/button_container"
-            android:weightSum="4"
-            android:baselineAligned="false">
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="12dp"
+            android:orientation="vertical"
+            android:gravity="end">
 
+            <!-- Add Expense -->
             <LinearLayout
-                android:id="@+id/btnAddExpense"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_margin="4dp"
-                android:background="@drawable/bg_action_button"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="5dp">
+                android:id="@+id/layoutExpense"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
 
-                <TextView
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnAddExpense"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/add_expense"
-                    android:textColor="#85022E"
-                    android:textSize="13sp"
-                    android:textStyle="bold"/>
+                    android:layout_height="40dp"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:paddingHorizontal="18dp"
+                        android:gravity="center"
+                        android:text="Add Expense"
+                        android:textStyle="bold"
+                        android:textColor="#85022E"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ImageButton
+                    android:id="@+id/iconExpense"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_circle_white_2"
+                    android:src="@drawable/ic_add_expense"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    app:tint="#85022E"
+                    android:elevation="8dp"
+                    android:contentDescription="Add Expense"/>
+            </LinearLayout>
+            <!-- Add Payment -->
+            <LinearLayout
+                android:id="@+id/layout_payment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnAddPayment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:paddingHorizontal="18dp"
+                        android:gravity="center"
+                        android:text="Add Payment"
+                        android:textStyle="bold"
+                        android:textColor="#85022E"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ImageButton
+                    android:id="@+id/iconPayment"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_circle_white_2"
+                    android:src="@drawable/ic_add_payment"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    app:tint="#85022E"
+                    android:elevation="8dp"
+                    android:contentDescription="Add Payment"/>
+            </LinearLayout>
+            <!-- Edit Trip -->
+            <LinearLayout
+                android:id="@+id/layoutEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnEditTrip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:paddingHorizontal="18dp"
+                        android:gravity="center"
+                        android:text="Edit Trip"
+                        android:textStyle="bold"
+                        android:textColor="#85022E"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ImageButton
+                    android:id="@+id/iconEdit"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_circle_white_2"
+                    android:src="@drawable/ic_edit_trip"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    app:tint="#85022E"
+                    android:elevation="8dp"
+                    android:contentDescription="Edit Trip"/>
+            </LinearLayout>
+            <!-- Delete Trip -->
+            <LinearLayout
+                android:id="@+id/layoutDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnDeleteTrip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:paddingHorizontal="18dp"
+                        android:gravity="center"
+                        android:text="Delete Trip"
+                        android:textStyle="bold"
+                        android:textColor="#85022E"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ImageButton
+                    android:id="@+id/iconDelete"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_circle_white_2"
+                    android:src="@drawable/ic_delete_trip"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    app:tint="#85022E"
+                    android:elevation="8dp"
+                    android:contentDescription="Delete Trip"/>
             </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/btnAddPayment"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_margin="4dp"
-                android:background="@drawable/bg_action_button"
+            <!-- Main FAB -->
+            <ImageButton
+                android:id="@+id/fabQuickActions"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="end"
+                android:src="@drawable/add"
+                android:scaleType="centerInside"
+                android:padding="12dp"
+                android:background="@drawable/bg_circle_white_2"
+                android:contentDescription="Quick Actions"
                 android:clickable="true"
                 android:focusable="true"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="5dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/add_payment"
-                    android:textColor="#85022E"
-                    android:textSize="13sp"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/btnEditTrip"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_margin="4dp"
-                android:background="@drawable/bg_action_button"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="5dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/edit_trip"
-                    android:textColor="#85022E"
-                    android:textSize="13sp"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/btnDeleteTrip"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_margin="4dp"
-                android:background="@drawable/bg_action_button"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="5dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/delete_trip"
-                    android:textColor="#85022E"
-                    android:textSize="13sp"
-                    android:textStyle="bold"/>
-            </LinearLayout>
+                app:tint="#85022E"
+                android:elevation="2dp"/>
         </LinearLayout>
-
-
 
         <LinearLayout
             android:id="@+id/button_container"
@@ -630,63 +724,6 @@
                 android:textColor="#85022E"
                 android:textSize="12sp" />
         </LinearLayout>
-
-
-
-        <!--
-        <LinearLayout
-            android:id="@+id/button_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="2dp"
-            android:layout_alignParentBottom="true"
-            android:background="#F5F6F8"
-            android:gravity="center">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
-                android:orientation="horizontal"
-                android:weightSum="2"
-                android:background="#F5F6F8"
-                android:gravity="center">
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_all_individual_to_one_pdf"
-                    android:layout_width="0dp"
-                    app:icon="@drawable/pdf"
-                    android:text="@string/all_in_one_pdf"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:backgroundTint="#85022E"
-                    android:layout_marginHorizontal="8dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="10dp"
-                    android:textAllCaps="false"
-                    android:textSize="13sp"
-                    app:cornerRadius="8dp"
-                    app:iconGravity="textStart"
-                    android:textColor="#FFFFFF"/>
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_complete_ledger"
-                    android:layout_width="0dp"
-                    app:icon="@drawable/bank"
-                    android:text="@string/complete_ledger"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:backgroundTint="#85022E"
-                    android:layout_marginHorizontal="8dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="10dp"
-                    android:textAllCaps="false"
-                    android:textSize="13sp"
-                    app:cornerRadius="8dp"
-                    app:iconGravity="textStart"
-                    android:textColor="#FFFFFF"/>
-            </LinearLayout>
-        </LinearLayout>
-        -->
     </RelativeLayout>
 
     <include layout="@layout/layout_universal_drawer" />

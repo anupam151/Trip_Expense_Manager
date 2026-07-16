@@ -23,6 +23,8 @@ import androidx.core.view.GravityCompat;
 // --- Firebase & Auth ---
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+//import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Source;
 
@@ -35,6 +37,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 
 @SuppressWarnings("deprecation")
 public class TripDetailsActivity extends BaseDrawerActivity {
@@ -52,6 +57,15 @@ public class TripDetailsActivity extends BaseDrawerActivity {
     private LedgerExportManager exportManager;
     private FirebaseFirestore db;
     private String currentUserRole = "Viewer";
+    private boolean fabExpanded = false;
+
+    private View viewDim;
+
+    private ImageButton fabQuickActions;
+    private LinearLayout layoutExpense;
+    private LinearLayout layoutPayment;
+    private LinearLayout layoutEdit;
+    private LinearLayout layoutDelete;
 
     private final ActivityResultLauncher<String> createMasterPdfLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/pdf"),
@@ -109,7 +123,39 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             showManageAccessDialog(); // This calls the method we built together!
         });
 
-        findViewById(R.id.btnAddExpense).setOnClickListener(v -> {
+        fabQuickActions = findViewById(R.id.fabQuickActions);
+
+        MaterialCardView btnAddExpense = findViewById(R.id.btnAddExpense);
+        MaterialCardView btnAddPayment = findViewById(R.id.btnAddPayment);
+        MaterialCardView btnEditTrip = findViewById(R.id.btnEditTrip);
+        MaterialCardView btnDeleteTrip = findViewById(R.id.btnDeleteTrip);
+
+        layoutExpense = findViewById(R.id.layoutExpense);
+        layoutPayment = findViewById(R.id.layout_payment);
+        layoutEdit = findViewById(R.id.layoutEdit);
+        layoutDelete = findViewById(R.id.layoutDelete);
+
+
+        viewDim = findViewById(R.id.viewDim);
+
+        hideButton(layoutExpense);
+        hideButton(layoutPayment);
+        hideButton(layoutEdit);
+        hideButton(layoutDelete);
+
+        fabQuickActions.setOnClickListener(v -> {
+
+            if (fabExpanded)
+                closeFabMenu();
+            else
+                openFabMenu();
+
+        });
+
+        viewDim.setOnClickListener(v -> closeFabMenu());
+
+
+        btnAddExpense.setOnClickListener(v -> {
             if ("Viewer".equals(currentUserRole)) {
                 Toast.makeText(this, "Only Admin and Editors can add expenses.", Toast.LENGTH_SHORT).show();
                 return;
@@ -120,7 +166,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             startActivity(intent);
         });
 
-        findViewById(R.id.btnAddPayment).setOnClickListener(v -> {
+        btnAddPayment.setOnClickListener(v -> {
             if ("Viewer".equals(currentUserRole)) {
                 Toast.makeText(this, "Only Admin and Editors can add payments.", Toast.LENGTH_SHORT).show();
                 return;
@@ -131,7 +177,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             startActivity(intent);
         });
 
-        findViewById(R.id.btnEditTrip).setOnClickListener(v -> {
+        btnEditTrip.setOnClickListener(v -> {
             if (!"Admin".equals(currentUserRole)) {
                 Toast.makeText(this, "Only the Admin can edit trips.", Toast.LENGTH_SHORT).show();
                 return;
@@ -146,7 +192,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             startActivity(intent);
         });
 
-        findViewById(R.id.btnDeleteTrip).setOnClickListener(v -> {
+        btnDeleteTrip.setOnClickListener(v -> {
             if (!"Admin".equals(currentUserRole)) {
                 Toast.makeText(this, "Only the Admin can delete trips.", Toast.LENGTH_SHORT).show();
                 return;
@@ -481,5 +527,101 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 )
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+    private void openFabMenu() {
+
+        fabExpanded = true;
+
+        viewDim.setVisibility(View.VISIBLE);
+
+        viewDim.setAlpha(0f);
+
+        viewDim.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start();
+
+        showButton(layoutExpense, 0);
+        showButton(layoutPayment, 40);
+        showButton(layoutEdit, 80);
+        showButton(layoutDelete, 120);
+
+        fabQuickActions.animate()
+                .rotation(45f)
+                .setDuration(250)
+                .start();
+
+    }
+
+    private void closeFabMenu() {
+
+        fabExpanded = false;
+
+        viewDim.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction(() -> viewDim.setVisibility(View.GONE))
+                .start();
+
+        hideAnimated(layoutDelete, 0);
+        hideAnimated(layoutEdit, 30);
+        hideAnimated(layoutPayment, 60);
+        hideAnimated(layoutExpense, 90);
+
+        fabQuickActions.animate()
+                .rotation(0f)
+                .setDuration(250)
+                .start();
+
+    }
+    private void showButton(View view,long delay){
+
+        view.setVisibility(View.VISIBLE);
+
+        view.setAlpha(0f);
+
+        view.setTranslationY(80f);
+
+        view.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setStartDelay(delay)
+                .setDuration(220)
+                .start();
+
+    }
+
+    private void hideAnimated(View view,long delay){
+
+        view.animate()
+                .alpha(0f)
+                .translationY(80f)
+                .setStartDelay(delay)
+                .setDuration(180)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+
+                        view.setVisibility(View.GONE);
+
+                        view.setAlpha(1f);
+
+                        view.setTranslationY(0);
+
+                        view.animate().setListener(null);
+
+                    }
+                }).start();
+
+    }
+
+    private void hideButton(View view){
+
+        view.setVisibility(View.GONE);
+
+        view.setAlpha(1f);
+
+        view.setTranslationY(0);
+
     }
 }
