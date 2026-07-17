@@ -6,13 +6,14 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".DashboardActivity">
+    tools:context=".ToolsActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#F5F6F8">
 
+        <!-- TOP APP BAR -->
         <RelativeLayout
             android:id="@+id/top_app_bar"
             android:layout_width="match_parent"
@@ -30,8 +31,10 @@
                 android:textSize="15sp"
                 android:textStyle="bold" />
         </RelativeLayout>
+
+        <!-- SCREEN HEADER -->
         <LinearLayout
-            android:id="@+id/dashboard_header"
+            android:id="@+id/tools_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/top_app_bar"
@@ -47,123 +50,206 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/menu"
                 app:tint="#85022E"
-                android:contentDescription="@string/desc_open_menu"/>
+                android:contentDescription="Open Menu"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="10dp"
-                android:gravity="center_vertical"
-                android:text="@string/dash_app_title"
+                android:text="Tools &amp; Utility"
                 android:textColor="#85022E"
                 android:textSize="25sp"
                 android:textStyle="bold" />
         </LinearLayout>
-        <LinearLayout
-            android:id="@+id/container_dashboard_stats"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_above="@id/card_workspace"
-            android:layout_below="@id/dashboard_header"
-            android:layout_marginBottom="20dp"
-            android:gravity="center"
-            android:orientation="vertical">
 
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:src="@drawable/app_logo"
-                android:contentDescription="@string/desc_app_logo" />
-
-        </LinearLayout>
-        <androidx.cardview.widget.CardView
-            android:id="@+id/card_workspace"
+        <!-- SCROLLABLE UTILITY CARDS -->
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_above="@id/button_container"
-            android:layout_alignParentBottom="false"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="10dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="0dp">
+            android:layout_below="@id/tools_header"
+            android:clipToPadding="false"
+            android:padding="8dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:padding="6dp">
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
                 <TextView
-                    android:id="@+id/lbl_recent_trip_heading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/title_pinned_activity_workspace"
-                    android:textColor="#0D1A39"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="6dp"
-                    android:visibility="gone"
-                    android:gravity="center"
-                    tools:visibility="visible" />
-                <LinearLayout
-                    android:id="@+id/container_pinned_trips_stack"
+                    android:text="Quick features and reports for your active trips."
+                    android:textColor="#3A4664"
+                    android:textSize="14sp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- TOOL 1: Quick Bill Splitter -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_tool_bill_splitter"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="4dp"
-                    android:visibility="gone"
-                    android:clipToPadding="false"
-                    android:clipChildren="false" />
-                <LinearLayout
-                    android:id="@+id/layout_no_pinned_trips"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/bg_dashed_box"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:padding="20dp">
-                    <ImageView
-                        android:layout_width="73dp"
-                        android:layout_height="73dp"
-                        android:layout_marginTop="10dp"
-                        android:src="@drawable/pin2"
-                        android:contentDescription="@string/no_pinned_trips_icon_desc" />
+                    android:layout_marginBottom="12dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/no_pinned_trips_title"
-                        android:textColor="#85022E"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="20dp" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/no_pinned_trips_description"
-                        android:gravity="center"
-                        android:layout_marginTop="10dp" />
-                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:orientation="horizontal">
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_create_new_trips"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/title_create_trip"
-                            android:textColor="#85022E"
-                            android:textSize="16sp"
-                            app:elevation="5dp"
-                            android:backgroundTint="#FFFFFF"
-                            app:strokeColor="#85022E"
-                            app:strokeWidth="1dp"
-                            app:cornerRadius="10dp" />
-                    </LinearLayout>
-                </LinearLayout>
+                        android:padding="16dp"
+                        android:text="🍕  Quick Bill Splitter"
+                        android:textColor="#0D1A39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- TOOL 2: All-Time Statistics -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_tool_statistics"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="📊  All-Time Statistics"
+                        android:textColor="#0D1A39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- TOOL 3: Reports Vault -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_tool_reports_vault"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="📁  Reports Vault (PDFs &amp; CSVs)"
+                        android:textColor="#0D1A39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- TOOL 4: Live Currency Converter -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_tool_currency"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="💱  Live Currency Converter"
+                        android:textColor="#0D1A39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- TOOL 5: Travel Checklist -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_tool_checklist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="🎒  Travel Checklist"
+                        android:textColor="#0D1A39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- TOOL 6: Fuel Calculator -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_tool_fuel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="⛽  Road Trip Fuel Calculator"
+                        android:textColor="#0D1A39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- TOOL 7: Archived Trips -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_tool_archived"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="30dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="📦  Archived Trips"
+                        android:textColor="#0D1A39"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                </androidx.cardview.widget.CardView>
+
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </ScrollView>
+
+        <!-- EXACT REPLICA OF YOUR BOTTOM NAVIGATION -->
         <LinearLayout
             android:id="@+id/button_container"
             android:layout_width="match_parent"
@@ -202,7 +288,8 @@
                         android:layout_marginTop="0dp"
                         android:text="@string/dash_btn_utility"
                         android:textSize="10sp"
-                        android:textColor="@android:color/black"/>
+                        android:textStyle="bold"
+                        android:textColor="#85022E"/> <!-- Made text bold and red to show it is ACTIVE -->
                 </LinearLayout>
                 <View
                     android:layout_width="1dp"
@@ -220,14 +307,12 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:background="?attr/selectableItemBackgroundBorderless">
-
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
                         android:src="@drawable/create_trip"
                         app:tint="#85022E"
                         android:contentDescription="@string/dash_btn_create_trip"/>
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -308,8 +393,10 @@
                 android:gravity="center"
                 tools:text="Designed and Developed by Anupam" />
         </LinearLayout>
+
     </RelativeLayout>
 
+    <!-- DRAWER INCLUSION -->
     <include layout="@layout/layout_universal_drawer" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

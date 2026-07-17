@@ -67,6 +67,12 @@ public class DashboardActivity extends BaseDrawerActivity {
         findViewById(R.id.btn_dash_create_trip).setOnClickListener(v -> launchCreateTripActivity());
         findViewById(R.id.btn_dash_view_trips).setOnClickListener(v -> launchTripListActivity());
         findViewById(R.id.btn_create_new_trips).setOnClickListener(v -> launchCreateTripActivity());
+
+        // Add these lines inside your onCreate method:
+
+        findViewById(R.id.btn_dash_utility).setOnClickListener(v ->startActivity(new Intent(this, UtilityActivity.class)));
+
+        findViewById(R.id.btn_dash_settings).setOnClickListener(v ->startActivity(new Intent(this, SettingsActivity.class)));
     }
 
     @Override
