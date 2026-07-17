@@ -1,155 +1,304 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools2="http://schemas.android.com/tools"
-    android:layout_width="320dp"
-    android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    xmlns:tools2="http://schemas.android.com/tools"
+    android:layout_width="360dp"
+    android:layout_height="wrap_content"
     android:background="@drawable/dialog_bg"
-    android:layout_gravity="center"
     android:clipToOutline="true"
-    tools2:targetApi="31"
-    tools2:ignore="ButtonStyle">
+    android:layout_gravity="center"
+    android:orientation="vertical"
+    tools2:ignore="ButtonStyle"
+    tools2:targetApi="31">
 
-    <LinearLayout
+    <!-- HEADER SECTION -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_dialog_header"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:background="#85022E"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp">
+        android:layout_height="wrap_content"
+        android:background="#760627"
+        android:paddingStart="24dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="12dp">
 
+        <!-- Header Icon (Circular) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/header_icon_card"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="28dp"
+            app:cardElevation="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/desc_trip_icon"
+                android:src="@drawable/person"
+                app:tint="#760627" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Header Title -->
         <TextView
             android:id="@+id/txt_dialog_title"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:text="@string/add_member_1"
             android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/txt_dialog_subtitle"
+            app:layout_constraintStart_toEndOf="@id/header_icon_card"
+            app:layout_constraintTop_toTopOf="@id/header_icon_card"
+            app:layout_constraintVertical_chainStyle="packed" />
 
+        <!-- Header Subtitle -->
+        <TextView
+            android:id="@+id/txt_dialog_subtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="2dp"
+            android:text="Add a new member to your trip"
+            android:textColor="#EABAC6"
+            android:textSize="13sp"
+            app:layout_constraintBottom_toBottomOf="@id/header_icon_card"
+            app:layout_constraintStart_toEndOf="@id/header_icon_card"
+            app:layout_constraintTop_toBottomOf="@id/txt_dialog_title" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- BODY SECTION -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/name"
-            android:textColor="#112771"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
+        <!-- NAME LABEL -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginBottom="14dp"
-            android:background="@drawable/bg_input_field"
+            android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:padding="6dp">
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:background="@drawable/bg_icon_box"
-                android:gravity="center">
+            <androidx.cardview.widget.CardView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                app:cardBackgroundColor="#FCEDF0"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp">
+
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
+                    android:layout_gravity="center"
                     android:src="@drawable/person"
-                    android:contentDescription="@string/desc_trip_icon"
-                    app:tint="#85022E" />
-            </LinearLayout>
+                    app:tint="#892440" />
+            </androidx.cardview.widget.CardView>
 
-            <EditText
-                android:id="@+id/edt_dialog_member_name"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:background="@null"
-                android:hint="@string/enter_member_name"
-                android:inputType="textPersonName|textCapWords"
-                android:autofillHints="none"
-                android:textColor="#000000"
-                android:textColorHint="#A0A0A0"
-                android:textSize="15sp" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/name"
+                    android:textColor="#222222"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Enter the member's name"
+                    android:textColor="#7A7A7A"
+                    android:textSize="13sp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Email ID (Optional)"
-            android:textColor="#112771"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+        <!-- NAME INPUT FIELD -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeColor="#F7DFE4"
+            app:strokeWidth="1.5dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/person"
+                    app:tint="#892440" />
+
+                <EditText
+                    android:id="@+id/edt_dialog_member_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="12dp"
+                    android:autofillHints="none"
+                    android:background="@null"
+                    android:hint="@string/enter_member_name"
+                    android:inputType="textPersonName|textCapWords"
+                    android:textColor="#222222"
+                    android:textColorHint="#B0B0B0"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- EMAIL LABEL -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                app:cardBackgroundColor="#FDF1EB"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/person"
+                    app:tint="#A8451D" /> <!-- Or use an email icon drawable here -->
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Email ID (Optional)"
+                    android:textColor="#222222"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Add gmail to assign role to members."
+                    android:textColor="#7A7A7A"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- EMAIL INPUT FIELD -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
             android:layout_marginBottom="24dp"
-            android:background="@drawable/bg_input_field"
-            android:gravity="center_vertical"
-            android:padding="6dp">
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeColor="#F9E6DA"
+            app:strokeWidth="1.5dp">
 
             <LinearLayout
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:background="@drawable/bg_icon_box"
-                android:gravity="center">
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/person"
-                    app:tint="#85022E" />
-            </LinearLayout>
-
-            <EditText
-                android:id="@+id/edt_dialog_member_email"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:background="@null"
-                android:hint="member@gmail.com"
-                android:inputType="textEmailAddress"
-                android:autofillHints="none"
-                android:textColor="#000000"
-                android:textColorHint="#A0A0A0"
-                android:textSize="15sp" />
-        </LinearLayout>
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
 
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/person"
+                    app:tint="#A8451D" />
+
+                <EditText
+                    android:id="@+id/edt_dialog_member_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="12dp"
+                    android:autofillHints="none"
+                    android:background="@null"
+                    android:hint="member@gmail.com"
+                    android:inputType="textEmailAddress"
+                    android:textColor="#222222"
+                    android:textColorHint="#B0B0B0"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+
+        <!-- ACTION BUTTONS -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="8dp">
+            android:weightSum="2">
 
-            <Button
+            <!-- BACK BUTTON -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_dialog_back"
-                android:layout_width="110dp"
-                android:layout_height="50dp"
-                android:layout_marginEnd="26dp"
-                android:background="@drawable/button_back"
-                app:backgroundTint="@null"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="0.8"
                 android:text="@string/back"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
+                android:textAllCaps="false"
+                android:textColor="#D48956"
+                app:icon="@drawable/arrow_back"
+                app:iconTint="#D48956"
+                android:textSize="16sp"
+                app:cornerRadius="12dp"
+                android:layout_marginEnd="8dp"
+                app:strokeColor="#D48956"
+                app:strokeWidth="1dp" />
 
-            <Button
+            <!-- ADD MEMBER BUTTON -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_dialog_add"
-                android:layout_width="110dp"
-                android:layout_height="50dp"
-                android:background="@drawable/button_add"
-                app:backgroundTint="@null"
-                android:text="@string/add"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1.2"
+                android:backgroundTint="#760627"
+                android:text="Add Member"
+                android:textAllCaps="false"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp" />
+                android:textSize="15sp"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/person"
+                app:iconGravity="textStart"
+                app:iconTint="#FFFFFF" />
         </LinearLayout>
+
     </LinearLayout>
 </LinearLayout>
