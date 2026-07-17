@@ -43,6 +43,7 @@
                 android:layout_width="45dp"
                 android:layout_height="45dp"
                 android:padding="6dp"
+                android:layout_marginStart="5dp"
                 android:scaleType="fitCenter"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/menu"

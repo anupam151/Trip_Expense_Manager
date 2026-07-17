@@ -47,6 +47,7 @@
                 android:layout_height="45dp"
                 android:padding="6dp"
                 android:scaleType="fitCenter"
+                android:layout_marginStart="5dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/menu"
                 android:tint="#85022E"
