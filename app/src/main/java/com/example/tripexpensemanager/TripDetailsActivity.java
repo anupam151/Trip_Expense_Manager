@@ -1,6 +1,9 @@
 package com.example.tripexpensemanager;
 
 import android.content.Intent;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -553,17 +556,26 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .show();
     }
     private void openFabMenu() {
-
         fabExpanded = true;
 
         viewDim.setVisibility(View.VISIBLE);
-
         viewDim.setAlpha(0f);
-
         viewDim.animate()
                 .alpha(1f)
                 .setDuration(200)
                 .start();
+
+        // Apply Blur Effect for Android 12+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Replace 'main_content_container' with the ID of the view holding your background UI.
+            // Do NOT use the root drawer layout, or the FABs will blur too!
+            View contentToBlur = findViewById(R.id.main_content_container);
+            if (contentToBlur != null) {
+                contentToBlur.setRenderEffect(
+                        RenderEffect.createBlurEffect(15f, 15f, Shader.TileMode.CLAMP)
+                );
+            }
+        }
 
         showButton(layoutExpense, 0);
         showButton(layoutPayment, 40);
@@ -574,11 +586,9 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .rotation(45f)
                 .setDuration(250)
                 .start();
-
     }
 
     private void closeFabMenu() {
-
         fabExpanded = false;
 
         viewDim.animate()
@@ -586,6 +596,14 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .setDuration(200)
                 .withEndAction(() -> viewDim.setVisibility(View.GONE))
                 .start();
+
+        // Remove Blur Effect for Android 12+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            View contentToBlur = findViewById(R.id.main_content_container);
+            if (contentToBlur != null) {
+                contentToBlur.setRenderEffect(null);
+            }
+        }
 
         hideAnimated(layoutDelete, 0);
         hideAnimated(layoutEdit, 30);
@@ -596,7 +614,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .rotation(0f)
                 .setDuration(250)
                 .start();
-
     }
     private void showButton(View view,long delay){
 

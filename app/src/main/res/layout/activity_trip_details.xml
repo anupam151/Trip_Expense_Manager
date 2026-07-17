@@ -13,66 +13,75 @@
         android:layout_height="match_parent"
         android:background="#F6F6F6">
 
+        <!-- ========================================== -->
+        <!-- 🟢 NEW WRAPPER FOR BLUR EFFECT 🟢 -->
+        <!-- Everything inside this container will be blurred -->
+        <!-- ========================================== -->
         <RelativeLayout
-            android:id="@+id/top_app_bar"
+            android:id="@+id/main_content_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:background="#FFFFFF"
-            android:paddingBottom="6dp"
-            android:paddingTop="6dp">
-            <TextView
-                android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+
+            <RelativeLayout
+                android:id="@+id/top_app_bar"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:text="@string/app_name"
-                android:fontFamily="monospace"
-                android:textColor="#85022E"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
+                android:layout_alignParentTop="true"
+                android:background="#FFFFFF"
+                android:paddingBottom="6dp"
+                android:paddingTop="6dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="@string/app_name"
+                    android:fontFamily="monospace"
+                    android:textColor="#85022E"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
-        <LinearLayout
-            android:id="@+id/header_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/top_app_bar"
-            android:layout_marginTop="6dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <ImageButton
-                android:id="@+id/btn_open_drawer"
-                android:contentDescription="@string/desc_open_menu"
-                android:src="@drawable/menu"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
-                android:padding="6dp"
-                android:scaleType="fitCenter"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                app:tint="#85022E"/>
-
-            <TextView
-                android:id="@+id/txt_details_trip_name"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/header_layout"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="10dp"
-                android:gravity="start|center_vertical"
-                android:textColor="#85022E"
-                android:textSize="25sp"
-                android:textStyle="bold"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="14dp"
-                android:layout_marginVertical="6dp"
-                android:fontFamily="sans-serif-light"
-                android:textAlignment="viewStart"
-                android:lines="1"
-                android:ellipsize="none"
-                app:autoSizeTextType="uniform"
-                app:autoSizeMinTextSize="6sp"
-                app:autoSizeMaxTextSize="22sp"
-                app:autoSizeStepGranularity="1sp" />
+                android:layout_below="@id/top_app_bar"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btn_open_drawer"
+                    android:contentDescription="@string/desc_open_menu"
+                    android:src="@drawable/menu"
+                    android:layout_width="45dp"
+                    android:layout_height="45dp"
+                    android:padding="6dp"
+                    android:scaleType="fitCenter"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="#85022E"/>
+
+                <TextView
+                    android:id="@+id/txt_details_trip_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="10dp"
+                    android:gravity="start|center_vertical"
+                    android:textColor="#85022E"
+                    android:textSize="25sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="14dp"
+                    android:layout_marginVertical="6dp"
+                    android:fontFamily="sans-serif-light"
+                    android:textAlignment="viewStart"
+                    android:lines="1"
+                    android:ellipsize="none"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="6sp"
+                    app:autoSizeMaxTextSize="22sp"
+                    app:autoSizeStepGranularity="1sp" />
                 <TextView
                     android:id="@+id/txt_item_role_badge"
                     android:layout_width="wrap_content"
@@ -85,7 +94,7 @@
                     android:textColor="#FFFFFF"
                     android:background="#85022E"
                     android:text="Role" />
-            <ImageButton
+                <ImageButton
                     android:id="@+id/btn_manage_access"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
@@ -97,287 +106,441 @@
                     android:contentDescription="Manage Access"
                     android:layout_gravity="end|top"
                     app:tint="#85022E"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/members"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:layout_below="@id/header_layout"
-            android:layout_above="@id/button_container"
-            android:layout_marginBottom="2dp"
-            android:layout_marginHorizontal="6dp"
-            android:paddingHorizontal="6dp"
-            android:paddingTop="4dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_box_scrollview"
-                android:baselineAligned="false"
-                android:layout_marginBottom="6dp"
-                app:cardElevation="3dp"
-                android:layout_marginHorizontal="4dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:padding="4dp"
-                    android:layout_weight="1"
-                    android:orientation="horizontal">
-                    <TextView
-                        android:id="@+id/txt_details_destination"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:layout_marginVertical="4dp"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:textColor="#85022E"/>
-                </LinearLayout>
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center_vertical"
-                    android:background="#CCCCCC" />
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:padding="4dp"
-                    android:orientation="horizontal"
-                    android:gravity="end">
-                    <TextView
-                        android:id="@+id/txt_details_dates"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:layout_marginVertical="4dp"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:textColor="#85022E"/>
-                </LinearLayout>
             </LinearLayout>
 
-            <GridLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:columnCount="2"
-                app:cardBackgroundColor="#FFFFFF"
-                android:padding="0dp"
-                android:layout_marginBottom="8dp">
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="4dp"
-                    app:cardCornerRadius="6dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="#FFFFFF">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingVertical="6dp"
-                        android:paddingHorizontal="10dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/label_members"
-                            android:textSize="12sp"
-                            android:textColor="#000000"
-                            android:layout_marginBottom="3dp"/>
-
-                        <TextView
-                            android:id="@+id/txt_details_member_count"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="#85022E"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="4dp"
-                    app:cardCornerRadius="6dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="#FFFFFF">
-                    <LinearLayout
-                        android:orientation="vertical"
-                        android:paddingVertical="6dp"
-                        android:paddingHorizontal="10dp"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/label_fund_balance"
-                            android:textSize="12sp"
-                            android:textColor="#000000"
-                            android:layout_marginBottom="3dp"/>
-                        <TextView
-                            android:id="@+id/txt_details_fund_balance"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="#2E7D32"/>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="4dp"
-                    app:cardCornerRadius="6dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="#FFFFFF">
-                    <LinearLayout
-                        android:orientation="vertical"
-                        android:paddingVertical="6dp"
-                        android:paddingHorizontal="10dp"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/label_total_receipts"
-                            android:textSize="12sp"
-                            android:textColor="#000000"
-                            android:layout_marginBottom="3dp"/>
-                        <TextView
-                            android:id="@+id/txt_details_total_receipts"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="#2E7D32"/>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-                <androidx.cardview.widget.CardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_margin="4dp"
-                    app:cardCornerRadius="6dp"
-                    app:cardElevation="3dp"
-                    app:cardBackgroundColor="#FFFFFF">
-                    <LinearLayout
-                        android:orientation="vertical"
-                        android:paddingVertical="6dp"
-                        android:paddingHorizontal="10dp"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/label_total_expenses"
-                            android:textSize="12sp"
-                            android:textColor="#000000"
-                            android:layout_marginBottom="3dp"/>
-                        <TextView
-                            android:id="@+id/txt_details_total_expenses"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="#85022E"/>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-            </GridLayout>
-
             <LinearLayout
+                android:id="@+id/members"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/txt_instruction_to_view_member_ledger"
-                    android:textSize="12sp"
-                    android:fontFamily="monospace"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="2dp"
-                    android:textColor="#85022E"/>
-            </LinearLayout>
-
-            <ScrollView
-                android:id="@+id/scroll_view"
-                android:layout_width="match_parent"
-                android:padding="3dp"
                 android:layout_height="match_parent"
-                android:fillViewport="true">
+                android:orientation="vertical"
+                android:layout_below="@id/header_layout"
+                android:layout_above="@id/button_container"
+                android:layout_marginBottom="2dp"
+                android:layout_marginHorizontal="6dp"
+                android:paddingHorizontal="6dp"
+                android:paddingTop="4dp">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:elevation="2dp"
-                    android:padding="3dp"
-                    android:background="@drawable/bg_box"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/label_active_members"
-                        android:gravity="center"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="2dp"
-                        android:layout_marginTop="4dp"
-                        android:textColor="#85022E"/>
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_box_scrollview"
+                    android:baselineAligned="false"
+                    android:layout_marginBottom="6dp"
+                    app:cardElevation="3dp"
+                    android:layout_marginHorizontal="4dp">
 
-                    <GridLayout
-                        android:id="@+id/grid_members"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:columnCount="2" />
-
-                    <TextView
-                        android:id="@+id/txt_inactive_members_header"
-                        android:layout_width="match_parent"
+                        android:padding="4dp"
+                        android:layout_weight="1"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/txt_details_destination"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginVertical="4dp"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="#85022E"/>
+                    </LinearLayout>
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center_vertical"
+                        android:background="#CCCCCC" />
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="@string/label_removed_members"
-                        android:gravity="center"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginBottom="2dp"
-                        android:textColor="#85022E"
-                        android:visibility="gone"/>
-
-                    <GridLayout
-                        android:id="@+id/grid_inactive_members"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:columnCount="2"
-                        android:visibility="gone"/>
+                        android:layout_weight="1"
+                        android:padding="4dp"
+                        android:orientation="horizontal"
+                        android:gravity="end">
+                        <TextView
+                            android:id="@+id/txt_details_dates"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:layout_marginVertical="4dp"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="#85022E"/>
+                    </LinearLayout>
                 </LinearLayout>
-            </ScrollView>
-        </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnManageAccess"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="#1976D2"
-            android:text="Manage Team Access"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:cornerRadius="8dp"
-            app:icon="@drawable/person"
-            app:iconGravity="textStart"
-            app:iconTint="#FFFFFF"
-            android:visibility="gone" />
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="2"
+                    app:cardBackgroundColor="#FFFFFF"
+                    android:padding="0dp"
+                    android:layout_marginBottom="8dp">
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="4dp"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#FFFFFF">
 
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingVertical="6dp"
+                            android:paddingHorizontal="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_members"
+                                android:textSize="12sp"
+                                android:textColor="#000000"
+                                android:layout_marginBottom="3dp"/>
+
+                            <TextView
+                                android:id="@+id/txt_details_member_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#85022E"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="4dp"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#FFFFFF">
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:paddingVertical="6dp"
+                            android:paddingHorizontal="10dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_fund_balance"
+                                android:textSize="12sp"
+                                android:textColor="#000000"
+                                android:layout_marginBottom="3dp"/>
+                            <TextView
+                                android:id="@+id/txt_details_fund_balance"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="#2E7D32"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="4dp"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#FFFFFF">
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:paddingVertical="6dp"
+                            android:paddingHorizontal="10dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_total_receipts"
+                                android:textSize="12sp"
+                                android:textColor="#000000"
+                                android:layout_marginBottom="3dp"/>
+                            <TextView
+                                android:id="@+id/txt_details_total_receipts"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="#2E7D32"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="4dp"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#FFFFFF">
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:paddingVertical="6dp"
+                            android:paddingHorizontal="10dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/label_total_expenses"
+                                android:textSize="12sp"
+                                android:textColor="#000000"
+                                android:layout_marginBottom="3dp"/>
+                            <TextView
+                                android:id="@+id/txt_details_total_expenses"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="#85022E"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                </GridLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/txt_instruction_to_view_member_ledger"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="2dp"
+                        android:textColor="#85022E"/>
+                </LinearLayout>
+
+                <ScrollView
+                    android:id="@+id/scroll_view"
+                    android:layout_width="match_parent"
+                    android:padding="3dp"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:elevation="2dp"
+                        android:padding="3dp"
+                        android:background="@drawable/bg_box"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_active_members"
+                            android:gravity="center"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="2dp"
+                            android:layout_marginTop="4dp"
+                            android:textColor="#85022E"/>
+
+                        <GridLayout
+                            android:id="@+id/grid_members"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:columnCount="2" />
+
+                        <TextView
+                            android:id="@+id/txt_inactive_members_header"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/label_removed_members"
+                            android:gravity="center"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="2dp"
+                            android:textColor="#85022E"
+                            android:visibility="gone"/>
+
+                        <GridLayout
+                            android:id="@+id/grid_inactive_members"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:columnCount="2"
+                            android:visibility="gone"/>
+                    </LinearLayout>
+                </ScrollView>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnManageAccess"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="#1976D2"
+                android:text="Manage Team Access"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/person"
+                app:iconGravity="textStart"
+                app:iconTint="#FFFFFF"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/button_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:orientation="vertical"
+                android:background="#E9E9E9"
+                android:gravity="center">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginHorizontal="12dp"
+                    android:orientation="horizontal">
+                    <LinearLayout
+                        android:id="@+id/btnHome"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless">
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/ic_home"
+                            app:tint="#85022E"
+                            android:contentDescription="@string/home"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="0dp"
+                            android:gravity="center"
+                            android:text="@string/home"
+                            android:textSize="10sp"
+                            android:textColor="@android:color/black"/>
+                    </LinearLayout>
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="35dp"
+                        android:layout_gravity="center_vertical"
+                        android:background="#CCCCCC" />
+                    <LinearLayout
+                        android:id="@+id/btn_complete_ledger"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless">
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/bank"
+                            app:tint="#85022E"
+                            android:contentDescription="@string/complete_ledger"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="0dp"
+                            android:gravity="center"
+                            android:text="@string/complete_ledger"
+                            android:textSize="10sp"
+                            android:textColor="@android:color/black"/>
+                    </LinearLayout>
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="35dp"
+                        android:layout_gravity="center_vertical"
+                        android:background="#CCCCCC" />
+                    <LinearLayout
+                        android:id="@+id/btn_all_individual_to_one_pdf"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless">
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/pdf"
+                            app:tint="#85022E"
+                            android:contentDescription="@string/all_in_one_pdf"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="0dp"
+                            android:gravity="center"
+                            android:text="@string/btn_export_all_pdf"
+                            android:textSize="10sp"
+                            android:textColor="@android:color/black"/>
+                    </LinearLayout>
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="35dp"
+                        android:layout_gravity="center_vertical"
+                        android:background="#CCCCCC" />
+                    <LinearLayout
+                        android:id="@+id/btn_share_all"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless">
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            app:tint="#85022E"
+                            android:src="@drawable/share"
+                            android:contentDescription="@string/desc_share_ledger"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="0dp"
+                            android:text="@string/share_pdf"
+                            android:textSize="10sp"
+                            android:textColor="@android:color/black"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/footer_text"
+                    android:layout_marginBottom="10dp"
+                    android:fontFamily="monospace"
+                    android:textColor="#85022E"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+        </RelativeLayout>
+        <!-- ========================================== -->
+        <!-- 🟢 END OF BLUR WRAPPER 🟢 -->
+        <!-- ========================================== -->
+
+        <!-- ========================================== -->
+        <!-- 🔴 FOREGROUND ELEMENTS 🔴 -->
+        <!-- Kept OUTSIDE the main_content_container so they DO NOT blur -->
+        <!-- ========================================== -->
         <View
             android:id="@+id/viewDim"
             android:layout_width="match_parent"
@@ -391,10 +554,10 @@
             android:id="@+id/layoutQuickActions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@id/button_container"
             android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="90dp"
             android:orientation="vertical"
             android:gravity="end">
 
@@ -569,6 +732,8 @@
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:layout_gravity="end"
+                android:layout_marginBottom="40dp"
+                android:layout_marginEnd="10dp"
                 android:src="@drawable/add"
                 android:scaleType="centerInside"
                 android:padding="12dp"
@@ -580,150 +745,6 @@
                 android:elevation="2dp"/>
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/button_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:orientation="vertical"
-            android:background="#E9E9E9"
-            android:gravity="center">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="10dp"
-                android:layout_marginHorizontal="12dp"
-                android:orientation="horizontal">
-                <LinearLayout
-                    android:id="@+id/btnHome"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless">
-                    <ImageView
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:src="@drawable/ic_home"
-                        app:tint="#85022E"
-                        android:contentDescription="@string/home"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="0dp"
-                        android:gravity="center"
-                        android:text="@string/home"
-                        android:textSize="10sp"
-                        android:textColor="@android:color/black"/>
-                </LinearLayout>
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="35dp"
-                    android:layout_gravity="center_vertical"
-                    android:background="#CCCCCC" />
-                <LinearLayout
-                    android:id="@+id/btn_complete_ledger"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless">
-                    <ImageView
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:src="@drawable/bank"
-                        app:tint="#85022E"
-                        android:contentDescription="@string/complete_ledger"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="0dp"
-                        android:gravity="center"
-                        android:text="@string/complete_ledger"
-                        android:textSize="10sp"
-                        android:textColor="@android:color/black"/>
-                </LinearLayout>
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="35dp"
-                    android:layout_gravity="center_vertical"
-                    android:background="#CCCCCC" />
-                <LinearLayout
-                    android:id="@+id/btn_all_individual_to_one_pdf"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless">
-                    <ImageView
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:src="@drawable/pdf"
-                        app:tint="#85022E"
-                        android:contentDescription="@string/all_in_one_pdf"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="0dp"
-                        android:gravity="center"
-                        android:text="@string/btn_export_all_pdf"
-                        android:textSize="10sp"
-                        android:textColor="@android:color/black"/>
-                </LinearLayout>
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="35dp"
-                    android:layout_gravity="center_vertical"
-                    android:background="#CCCCCC" />
-                <LinearLayout
-                    android:id="@+id/btn_share_all"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless">
-                    <ImageView
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        app:tint="#85022E"
-                        android:src="@drawable/share"
-                        android:contentDescription="@string/desc_share_ledger"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="0dp"
-                        android:text="@string/share_pdf"
-                        android:textSize="10sp"
-                        android:textColor="@android:color/black"/>
-                </LinearLayout>
-
-            </LinearLayout>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/footer_text"
-                android:layout_marginBottom="10dp"
-                android:fontFamily="monospace"
-                android:textColor="#85022E"
-                android:textSize="12sp" />
-        </LinearLayout>
     </RelativeLayout>
 
     <include layout="@layout/layout_universal_drawer" />
