@@ -69,8 +69,14 @@
         <activity
             android:name=".LoginActivity"
             android:exported="false" />
-        <activity android:name=".UtilityActivity"/>
-        <activity android:name=".SettingsActivity" />
+        <!-- Add the android:theme attribute to both of these -->
+        <activity
+            android:name=".UtilityActivity"
+            android:theme="@style/Theme.TripExpenseManager" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:theme="@style/Theme.TripExpenseManager" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

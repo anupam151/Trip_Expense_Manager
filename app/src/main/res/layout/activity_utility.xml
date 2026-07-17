@@ -6,7 +6,7 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ToolsActivity">
+    tools:context=".UtilityActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -49,7 +49,8 @@
                 android:scaleType="fitCenter"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/menu"
-                app:tint="#85022E"
+                android:tint="#85022E"
+                tools:ignore="UseAppTint"
                 android:contentDescription="Open Menu"/>
 
             <TextView
@@ -69,7 +70,7 @@
             android:layout_above="@id/button_container"
             android:layout_below="@id/tools_header"
             android:clipToPadding="false"
-            android:padding="8dp">
+            android:padding="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -280,7 +281,8 @@
                         android:layout_width="30dp"
                         android:layout_height="30dp"
                         android:src="@drawable/ic_add_expense"
-                        app:tint="#85022E"
+                        android:tint="#85022E"
+                        tools:ignore="UseAppTint"
                         android:contentDescription="@string/dash_btn_utility"/>
                     <TextView
                         android:layout_width="wrap_content"
@@ -288,8 +290,7 @@
                         android:layout_marginTop="0dp"
                         android:text="@string/dash_btn_utility"
                         android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:textColor="#85022E"/> <!-- Made text bold and red to show it is ACTIVE -->
+                        android:textColor="@android:color/black"/>
                 </LinearLayout>
                 <View
                     android:layout_width="1dp"
@@ -307,12 +308,15 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:background="?attr/selectableItemBackgroundBorderless">
+
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
                         android:src="@drawable/create_trip"
-                        app:tint="#85022E"
+                        android:tint="#85022E"
+                        tools:ignore="UseAppTint"
                         android:contentDescription="@string/dash_btn_create_trip"/>
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -341,7 +345,8 @@
                         android:layout_width="30dp"
                         android:layout_height="30dp"
                         android:src="@drawable/trip"
-                        app:tint="#85022E"
+                        android:tint="#85022E"
+                        tools:ignore="UseAppTint"
                         android:contentDescription="@string/dash_btn_view_trip"/>
                     <TextView
                         android:layout_width="wrap_content"
@@ -371,7 +376,8 @@
                         android:layout_width="30dp"
                         android:layout_height="30dp"
                         android:src="@drawable/settings"
-                        app:tint="#85022E"
+                        android:tint="#85022E"
+                        tools:ignore="UseAppTint"
                         android:contentDescription="@string/dash_btn_settings"/>
                     <TextView
                         android:layout_width="wrap_content"
@@ -396,7 +402,6 @@
 
     </RelativeLayout>
 
-    <!-- DRAWER INCLUSION -->
     <include layout="@layout/layout_universal_drawer" />
 
 </androidx.drawerlayout.widget.DrawerLayout>
