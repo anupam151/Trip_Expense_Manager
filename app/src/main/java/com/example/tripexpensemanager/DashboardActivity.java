@@ -159,15 +159,10 @@ public class DashboardActivity extends BaseDrawerActivity {
         String startDate = doc.getString("startDate") != null ? doc.getString("startDate") : "";
         String endDate = doc.getString("endDate") != null ? doc.getString("endDate") : "";
 
-        Long countLong = doc.getLong("memberCount");
-        int count = (countLong != null) ? countLong.intValue() : 1;
 
         View cardView = LayoutInflater.from(this).inflate(R.layout.item_trip, containerPinnedTripsStack, false);
 
         TextView txtTripName = cardView.findViewById(R.id.txt_item_trip_name);
-        TextView txtDestination = cardView.findViewById(R.id.txt_item_destination);
-        TextView txtMemberCount = cardView.findViewById(R.id.txt_item_member_count);
-        TextView txtStartDate = cardView.findViewById(R.id.txt_item_start_date);
         TextView txtTotalExpense = cardView.findViewById(R.id.txt_item_total_expense);
         TextView txtTotalReceived = cardView.findViewById(R.id.txt_item_total_received);
         TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
@@ -178,10 +173,7 @@ public class DashboardActivity extends BaseDrawerActivity {
         MaterialButton btnAddPayment = cardView.findViewById(R.id.btn_item_add_payment);
         TextView txtRoleBadge = cardView.findViewById(R.id.txt_item_role_badge);
 
-        txtTripName.setText(getString(R.string.fmt_dash_pinned_title, 1, name));
-        txtDestination.setText(getString(R.string.fmt_item_destination, destination));
-        txtMemberCount.setText(getString(R.string.fmt_item_member_count, count));
-        txtStartDate.setText(getString(R.string.fmt_item_start_date, startDate));
+        txtTripName.setText(getString(R.string.fmt_dash_pinned_title, 1, destination));
 
         TripFinanceCalculator.calculateFinances(tripId, new TripFinanceCalculator.FinanceResultListener() {
             @Override
@@ -232,14 +224,43 @@ public class DashboardActivity extends BaseDrawerActivity {
         final boolean canAddTransactions = isAdmin || isEditor;
         txtRoleBadge.setText(currentUserRole);
 
-        // Optional: Make the badge change color based on the role!
+
+
+        android.util.DisplayMetrics metrics = txtRoleBadge.getContext().getResources().getDisplayMetrics();
+
+        int horizontalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 13, metrics);
+        int verticalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 3, metrics);
+        float elevationPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
+        float cornerRadiusPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
+
+        android.graphics.drawable.GradientDrawable backgroundShape = new android.graphics.drawable.GradientDrawable();
+        backgroundShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        backgroundShape.setCornerRadius(cornerRadiusPx);
+
+        txtRoleBadge.setPadding(
+                horizontalPadding,
+                verticalPadding,
+                horizontalPadding,
+                verticalPadding
+        );
+
+        txtRoleBadge.setElevation(elevationPx);
+        txtRoleBadge.setText(currentUserRole);
+
         if ("Admin".equalsIgnoreCase(currentUserRole)) {
-            txtRoleBadge.setBackgroundColor(0xFF1E88E5); // Blue
+            backgroundShape.setColor(0xFF85022E); // Blue
+            txtRoleBadge.setTextColor(0xFFFAF7F7);
         } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
-            txtRoleBadge.setBackgroundColor(0xFF4CAF50); // Green
+            backgroundShape.setColor(0xFF3e8914); // Green
+            txtRoleBadge.setTextColor(0xFFF5FFF6);
         } else {
-            txtRoleBadge.setBackgroundColor(0xFF9E9E9E); // Gray for Viewer
+            backgroundShape.setColor(0xFF2f4550); // Gray for Viewer
+            txtRoleBadge.setTextColor(0xFFe9ecef);
         }
+
+        txtRoleBadge.setBackground(backgroundShape);
+
+
         // =================================================================
         // --- CLICK LISTENERS WITH TOAST INTERCEPTS ---
         // =================================================================

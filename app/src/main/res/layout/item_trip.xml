@@ -103,6 +103,7 @@
             android:orientation="horizontal"
             android:baselineAligned="false"
             android:layout_marginBottom="8dp">
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -111,45 +112,26 @@
                 android:paddingStart="4dp"
                 android:paddingEnd="1dp">
                 <TextView
+                    android:text="@string/label_role"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#5A6684"
+                    android:textSize="13sp"
+                    android:textStyle="bold"/>
+                <TextView
                     android:id="@+id/txt_item_role_badge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="2dp"
-                    android:textSize="12sp"
+                    android:textColor="#1A73E8"
+                    android:textSize="15sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    android:background="#85022E"
-                    android:layout_marginBottom="6dp"
-                    android:text="Role" />
-                <TextView
-                    android:id="@+id/txt_item_destination"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#3A4154"
-                    android:textSize="15sp"
-                    android:layout_marginBottom="5dp"
-                    tools:text="Destination: Victoria Memorial" />
-                <TextView
-                    android:id="@+id/txt_item_member_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#3A4154"
-                    android:textSize="15sp"
-                    android:layout_marginBottom="5dp"
-                    tools:text="No. of Members: 5" />
-                <TextView
-                    android:id="@+id/txt_item_start_date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#3A4154"
-                    android:textSize="15sp"
-                    tools:text="Start Date: 22/06/2026"
-                    android:layout_marginBottom="5dp"/>
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="4dp"
+                    tools:text="Admin" />
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
                     android:text="@string/label_fund_balance"
                     android:textColor="#5A6684"
                     android:textSize="13sp"
@@ -164,6 +146,7 @@
                     android:layout_marginBottom="2dp"
                     tools:text="₹0.00" />
             </LinearLayout>
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -175,9 +158,9 @@
                 android:paddingEnd="0dp"
                 tools:ignore="RtlSymmetry">
                 <TextView
+                    android:text="@string/label_total_expense"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/label_total_expense"
                     android:textColor="#5A6684"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -191,9 +174,9 @@
                     android:layout_marginBottom="14dp"
                     tools:text="₹0.00" />
                 <TextView
+                    android:text="@string/label_total_received"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/label_total_received"
                     android:textColor="#5A6684"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -204,9 +187,12 @@
                     android:textColor="#2E7D32"
                     android:textSize="20sp"
                     android:textStyle="bold"
+                    android:layout_marginBottom="2dp"
                     tools:text="₹0.00" />
             </LinearLayout>
         </LinearLayout>
+
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -231,6 +217,7 @@
                 android:textSize="14sp"
                 android:backgroundTint="#FFFFFF"
                 app:cornerRadius="8dp" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_item_add_payment"
                 android:layout_width="0dp"

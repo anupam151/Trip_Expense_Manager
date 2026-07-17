@@ -183,6 +183,7 @@
     <string name="label_journey_date">Journey Date</string>
     <string name="label_members">Members</string>
     <string name="label_fund_balance">Fund Balance:</string>
+    <string name="label_role">Role:</string>
     <string name="label_total_expenses">Total Expenses</string>
     <string name="label_total_receipts">Total Receipts</string>
 

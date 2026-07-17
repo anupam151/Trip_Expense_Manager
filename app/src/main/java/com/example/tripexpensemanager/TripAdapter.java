@@ -47,10 +47,6 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
         TripModel trip = tripList.get(position);
         Context context = holder.itemView.getContext();
 
-        holder.txtDestination.setText(context.getString(R.string.fmt_item_destination, trip.getDestination()));
-        holder.txtMemberCount.setText(context.getString(R.string.fmt_item_member_count, trip.getMemberCount()));
-        holder.txtStartDate.setText(context.getString(R.string.fmt_item_start_date, trip.getStartDate()));
-
         holder.txtTotalExpense.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses()));
         holder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments()));
         holder.txtFundBalance.setText(String.format(Locale.US, "₹%.2f", trip.getFundBalance()));
@@ -73,22 +69,49 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             }
         }
 
+        android.util.DisplayMetrics metrics = holder.itemView.getContext().getResources().getDisplayMetrics();
+
+        int horizontalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 13, metrics);
+        int verticalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 3, metrics);
+        float elevationPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
+        float cornerRadiusPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
+
+        android.graphics.drawable.GradientDrawable backgroundShape = new android.graphics.drawable.GradientDrawable();
+        backgroundShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        backgroundShape.setCornerRadius(cornerRadiusPx);
+
+        holder.txtRoleBadge.setPadding(
+                horizontalPadding,
+                verticalPadding,
+                horizontalPadding,
+                verticalPadding
+        );
+
+        holder.txtRoleBadge.setElevation(elevationPx);
         holder.txtRoleBadge.setText(currentUserRole);
+
+
         if ("Admin".equalsIgnoreCase(currentUserRole)) {
-            holder.txtRoleBadge.setBackgroundColor(0xFF1E88E5); // Blue
+            backgroundShape.setColor(0xFF85022E);
+            holder.txtRoleBadge.setTextColor(0xFFFAF7F7);
         } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
-            holder.txtRoleBadge.setBackgroundColor(0xFF4CAF50); // Green
+            backgroundShape.setColor(0xFF3e8914);
+            holder.txtRoleBadge.setTextColor(0xFFF5FFF6);
         } else {
-            holder.txtRoleBadge.setBackgroundColor(0xFF9E9E9E); // Grey
+            backgroundShape.setColor(0xFF2f4550);
+            holder.txtRoleBadge.setTextColor(0xFFe9ecef);
         }
+
+        holder.txtRoleBadge.setBackground(backgroundShape);
+
 
         // --- PIN STATE ---
         if (trip.getIsPinnedState() == 1) {
-            holder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getTripName()));
+            holder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getDestination()));
             holder.btnPin.setText(context.getString(R.string.action_state_unpin));
             holder.btnPin.setTextColor(0xFF2E7D32);
         } else {
-            holder.txtTripName.setText(context.getString(R.string.fmt_item_name_sequential, (position + 1), trip.getTripName()));
+            holder.txtTripName.setText(context.getString(R.string.fmt_item_name_sequential, (position + 1), trip.getDestination()));
             holder.btnPin.setText(context.getString(R.string.action_state_pin));
             holder.btnPin.setTextColor(0xFFC85A00);
         }
@@ -106,7 +129,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
     public int getItemCount() { return tripList.size(); }
 
     public static class TripViewHolder extends RecyclerView.ViewHolder {
-        TextView txtTripName, txtDestination, txtMemberCount, txtFundBalance, txtStartDate;
+        TextView txtTripName, txtFundBalance;
         TextView txtTotalExpense, txtTotalReceived;
         TextView btnPin, btnEdit, btnDelete, txtRoleBadge;
         MaterialButton btnAddExpense, btnAddPayment;
@@ -114,10 +137,7 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
         public TripViewHolder(@NonNull View itemView) {
             super(itemView);
             txtTripName = itemView.findViewById(R.id.txt_item_trip_name);
-            txtDestination = itemView.findViewById(R.id.txt_item_destination);
-            txtMemberCount = itemView.findViewById(R.id.txt_item_member_count);
             txtFundBalance = itemView.findViewById(R.id.txt_item_fund_balance);
-            txtStartDate = itemView.findViewById(R.id.txt_item_start_date);
             txtTotalExpense = itemView.findViewById(R.id.txt_item_total_expense);
             txtTotalReceived = itemView.findViewById(R.id.txt_item_total_received);
             btnPin = itemView.findViewById(R.id.btn_item_pin);

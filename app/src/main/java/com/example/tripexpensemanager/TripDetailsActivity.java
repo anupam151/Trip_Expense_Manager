@@ -291,15 +291,39 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 // =======================================================
                 TextView txtRoleBadge = findViewById(R.id.txt_item_role_badge);
                 if (txtRoleBadge != null) {
+                    android.util.DisplayMetrics metrics = txtRoleBadge.getContext().getResources().getDisplayMetrics();
+
+                    int horizontalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 13, metrics);
+                    int verticalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 3, metrics);
+                    float elevationPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
+                    float cornerRadiusPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
+
+                    android.graphics.drawable.GradientDrawable backgroundShape = new android.graphics.drawable.GradientDrawable();
+                    backgroundShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                    backgroundShape.setCornerRadius(cornerRadiusPx);
+
+                    txtRoleBadge.setPadding(
+                            horizontalPadding,
+                            verticalPadding,
+                            horizontalPadding,
+                            verticalPadding
+                    );
+
+                    txtRoleBadge.setElevation(elevationPx);
                     txtRoleBadge.setText(currentUserRole);
 
                     if ("Admin".equalsIgnoreCase(currentUserRole)) {
-                        txtRoleBadge.setBackgroundColor(0xFF1E88E5); // Blue
+                        backgroundShape.setColor(0xFF85022E);
+                        txtRoleBadge.setTextColor(0xFFFAF7F7);
                     } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
-                        txtRoleBadge.setBackgroundColor(0xFF4CAF50); // Green
+                        backgroundShape.setColor(0xFF3e8914);
+                        txtRoleBadge.setTextColor(0xFFF5FFF6);
                     } else {
-                        txtRoleBadge.setBackgroundColor(0xFF9E9E9E); // Grey
+                        backgroundShape.setColor(0xFF2f4550);
+                        txtRoleBadge.setTextColor(0xFFe9ecef);
                     }
+
+                    txtRoleBadge.setBackground(backgroundShape);
                 }
                 // =======================================================
 
