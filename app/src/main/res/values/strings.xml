@@ -281,6 +281,7 @@
     <string name="btn_export_excel">Export to Excel</string>
     <string name="btn_export_pdf">Export to PDF</string>
     <string name="btn_export_all_pdf">Export All to PDF</string>
+    <string name="role_assign">Assign Role</string>
     <string name="desc_share_ledger">Share PDF</string>
 
     <string name="txt_instruction_to_view_member_ledger">Tap on a member to view their individual ledger</string>

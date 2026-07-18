@@ -119,7 +119,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         endDateFromDatabase = getIntent().getStringExtra("END_DATE");
 
         // 1. Find the button
-        ImageButton btnManageAccess = findViewById(R.id.btn_manage_access);
+        LinearLayout btnManageAccess = findViewById(R.id.btn_manage_access);
 
         // 2. Set the click listener to open the dialog
         btnManageAccess.setOnClickListener(v -> {
@@ -132,11 +132,13 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         MaterialCardView btnAddPayment = findViewById(R.id.btnAddPayment);
         MaterialCardView btnEditTrip = findViewById(R.id.btnEditTrip);
         MaterialCardView btnDeleteTrip = findViewById(R.id.btnDeleteTrip);
+        MaterialCardView btnExportPdf = findViewById(R.id.btnallindividualtoonepdf);
 
         layoutExpense = findViewById(R.id.layoutExpense);
         layoutPayment = findViewById(R.id.layout_payment);
         layoutEdit = findViewById(R.id.layoutEdit);
         layoutDelete = findViewById(R.id.layoutDelete);
+        LinearLayout layoutPdf = findViewById(R.id.layoutpdf);
 
 
         viewDim = findViewById(R.id.viewDim);
@@ -145,6 +147,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         hideButton(layoutPayment);
         hideButton(layoutEdit);
         hideButton(layoutDelete);
+        hideButton(layoutPdf);
 
         fabQuickActions.setOnClickListener(v -> {
 
@@ -204,7 +207,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         });
         findViewById(R.id.btn_share_all).setOnClickListener(v -> exportManager.shareMasterPdf(tripId));
 
-        findViewById(R.id.btn_all_individual_to_one_pdf).setOnClickListener(v -> {
+        btnExportPdf.setOnClickListener(v -> {
             String fileName = (tripName != null ? tripName.replaceAll("[^a-zA-Z0-9]", "_") : "Trip") + "_Master_Ledger.pdf";
             createMasterPdfLauncher.launch(fileName);
         });
@@ -581,6 +584,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         showButton(layoutPayment, 40);
         showButton(layoutEdit, 80);
         showButton(layoutDelete, 120);
+        showButton(findViewById(R.id.layoutpdf), 160);
 
         fabQuickActions.animate()
                 .rotation(45f)
@@ -605,6 +609,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             }
         }
 
+        hideAnimated(findViewById(R.id.layoutpdf), 0);
         hideAnimated(layoutDelete, 0);
         hideAnimated(layoutEdit, 30);
         hideAnimated(layoutPayment, 60);

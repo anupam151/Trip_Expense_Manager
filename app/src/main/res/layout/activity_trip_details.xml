@@ -89,24 +89,12 @@
                     android:layout_height="wrap_content"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="2dp"
-                    android:layout_marginEnd="6dp"
-                    android:textSize="12sp"
+                    android:layout_marginEnd="18dp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
                     android:background="#85022E"
                     android:text="Role" />
-                <ImageButton
-                    android:id="@+id/btn_manage_access"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_marginEnd="8dp"
-                    android:padding="3dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/assign"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Manage Access"
-                    android:layout_gravity="end|top"
-                    app:tint="#85022E"/>
             </LinearLayout>
 
             <LinearLayout
@@ -435,6 +423,37 @@
                         android:layout_gravity="center_vertical"
                         android:background="#CCCCCC" />
                     <LinearLayout
+                        android:id="@+id/btn_manage_access"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless">
+                        <ImageView
+                            android:layout_width="35dp"
+                            android:layout_height="35dp"
+                            android:src="@drawable/role"
+                            app:tint="#85022E"
+                            android:contentDescription="@string/all_in_one_pdf"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="0dp"
+                            android:gravity="center"
+                            android:text="@string/role_assign"
+                            android:textSize="10sp"
+                            android:textColor="@android:color/black"/>
+                    </LinearLayout>
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="35dp"
+                        android:layout_gravity="center_vertical"
+                        android:background="#CCCCCC" />
+                    <LinearLayout
                         android:id="@+id/btn_complete_ledger"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -465,37 +484,7 @@
                         android:layout_height="35dp"
                         android:layout_gravity="center_vertical"
                         android:background="#CCCCCC" />
-                    <LinearLayout
-                        android:id="@+id/btn_all_individual_to_one_pdf"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackgroundBorderless">
-                        <ImageView
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
-                            android:src="@drawable/pdf"
-                            app:tint="#85022E"
-                            android:contentDescription="@string/all_in_one_pdf"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="0dp"
-                            android:gravity="center"
-                            android:text="@string/btn_export_all_pdf"
-                            android:textSize="10sp"
-                            android:textColor="@android:color/black"/>
-                    </LinearLayout>
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="35dp"
-                        android:layout_gravity="center_vertical"
-                        android:background="#CCCCCC" />
+
                     <LinearLayout
                         android:id="@+id/btn_share_all"
                         android:layout_width="0dp"
@@ -723,6 +712,46 @@
                     android:contentDescription="Delete Trip"/>
             </LinearLayout>
 
+
+            <LinearLayout
+                android:id="@+id/layoutpdf"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btnallindividualtoonepdf"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    app:cardCornerRadius="10dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:paddingHorizontal="18dp"
+                        android:gravity="center"
+                        android:text="Export All to PDF"
+                        android:textStyle="bold"
+                        android:textColor="#85022E"/>
+                </com.google.android.material.card.MaterialCardView>
+
+                <ImageButton
+                    android:id="@+id/iconpdf"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/bg_circle_white_2"
+                    android:src="@drawable/pdf"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    app:tint="#85022E"
+                    android:contentDescription="@string/btn_export_all_pdf"/>
+            </LinearLayout>
             <!-- Main FAB -->
             <ImageButton
                 android:id="@+id/fabQuickActions"

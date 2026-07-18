@@ -19,7 +19,9 @@ public class AboutActivity extends AppCompatActivity {
         // Handle phone back gesture
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
-            public void handleOnBackPressed() { navigateToDashboard(); }
+            public void handleOnBackPressed() {
+                finish();
+            }
         });
     }
 

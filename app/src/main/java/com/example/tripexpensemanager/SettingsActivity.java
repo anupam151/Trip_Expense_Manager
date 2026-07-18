@@ -39,11 +39,16 @@ public class SettingsActivity extends AppCompatActivity {
         // Link the Views (Declared as local variables as per best practices)
         TextView btnSignOut = findViewById(R.id.btn_setting_signout);
         TextView btnDeleteAccount = findViewById(R.id.btn_setting_delete_account);
+        android.view.View btnAbout = findViewById(R.id.btn_dash_about);
         SwitchCompat biometricSwitch = findViewById(R.id.switch_biometric_lock);
 
         // Profile Information Click Listener
         findViewById(R.id.btn_setting_profile).setOnClickListener(v ->
                 startActivity(new Intent(SettingsActivity.this, ProfileActivity.class)));
+
+        // About Click Listener
+        btnAbout.setOnClickListener(v ->
+                startActivity(new Intent(SettingsActivity.this, AboutActivity.class)));
 
         // Danger Zone Click Listeners
         btnSignOut.setOnClickListener(v -> signOutUser());
@@ -52,6 +57,8 @@ public class SettingsActivity extends AppCompatActivity {
         // Load saved state for Biometric Lock
         SharedPreferences prefs = getSharedPreferences("AppSettings", MODE_PRIVATE);
         biometricSwitch.setChecked(prefs.getBoolean("biometric_enabled", false));
+
+
 
         // Handle Biometric toggle
         biometricSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
