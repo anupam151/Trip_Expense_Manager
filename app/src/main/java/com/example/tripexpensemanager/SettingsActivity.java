@@ -3,6 +3,7 @@ package com.example.tripexpensemanager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -57,6 +58,20 @@ public class SettingsActivity extends AppCompatActivity {
         // Load saved state for Biometric Lock
         SharedPreferences prefs = getSharedPreferences("AppSettings", MODE_PRIVATE);
         biometricSwitch.setChecked(prefs.getBoolean("biometric_enabled", false));
+
+        LinearLayout btnHome = findViewById(R.id.btn_dash_home);
+        if (btnHome != null) {
+            btnHome.setOnClickListener(v -> {
+                Intent intent = new Intent(SettingsActivity.this, DashboardActivity.class);
+
+                // This clears everything above DashboardActivity in the stack and brings it to the front
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+
+                // This destroys the SettingsActivity so it is removed from the back-history
+                finish();
+            });
+        }
 
 
 
