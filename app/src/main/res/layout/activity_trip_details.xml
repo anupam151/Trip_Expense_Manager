@@ -22,6 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <!--Notification Bar Header-->
             <RelativeLayout
                 android:id="@+id/top_app_bar"
                 android:layout_width="match_parent"
@@ -41,6 +42,7 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
+            <!--Header-->
             <LinearLayout
                 android:id="@+id/header_layout"
                 android:layout_width="match_parent"
@@ -97,6 +99,17 @@
                     android:text="Role" />
             </LinearLayout>
 
+            <!--Swipe Refresh-->
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_refresh_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/header_layout"
+                android:layout_above="@id/button_container"
+                android:layout_marginBottom="2dp"
+                android:layout_marginHorizontal="6dp">
+
+            <!--Body-->
             <LinearLayout
                 android:id="@+id/members"
                 android:layout_width="match_parent"
@@ -367,6 +380,7 @@
                     </LinearLayout>
                 </ScrollView>
             </LinearLayout>
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnManageAccess"

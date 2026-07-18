@@ -222,6 +222,14 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             intent.putExtra("TRIP_ID", tripId);
             startActivity(intent);
         });
+
+        // 🟢 NEW: Setup SwipeRefreshLayout
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeColors(android.graphics.Color.parseColor("#85022E"));
+            swipeRefreshLayout.setOnRefreshListener(this::refreshTripDetails); // Triggers your existing refresh method
+        }
+
         // --- Navigation: Go to Dashboard (Home) ---
         LinearLayout btnHome = findViewById(R.id.btnHome);
         if (btnHome != null) {
@@ -340,7 +348,18 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
                 updateMemberGrids(inactiveRaw);
                 refreshSummaryCards();
+                androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
             }
+        }).addOnFailureListener(e -> {
+            Log.e("TripDetails", "Error refreshing trip details", e);
+            androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
+            }
+            Toast.makeText(this, "Failed to refresh data", Toast.LENGTH_SHORT).show();
         });
     }
 

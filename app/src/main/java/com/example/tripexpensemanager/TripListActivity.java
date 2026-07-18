@@ -205,6 +205,14 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         }
 
         loadAndFilterTrips();
+
+        // NEW: Setup SwipeRefreshLayout
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeColors(android.graphics.Color.parseColor("#85022E"));
+            swipeRefreshLayout.setOnRefreshListener(this::loadAndFilterTrips); // Triggers your existing fetch method
+        }
+
     }
 
     // ==========================================
@@ -442,6 +450,18 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
                     // --- NEW: Trigger Sort instead of standard refresh ---
                     applySorting(currentSortOption);
+                    androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
+                    if (swipeRefresh != null) {
+                        swipeRefresh.setRefreshing(false);
+                    }
+                })
+                // NEW: Catch errors and stop the spinner if the database fails
+                .addOnFailureListener(e -> {
+                    androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
+                    if (swipeRefresh != null) {
+                        swipeRefresh.setRefreshing(false);
+                    }
+                    Toast.makeText(this, "Failed to load trips.", Toast.LENGTH_SHORT).show();
                 });
     }
 
