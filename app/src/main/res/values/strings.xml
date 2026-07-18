@@ -13,7 +13,9 @@
 
     <string name="dash_app_title">Trip Expense Manager</string>
     <string name="dash_btn_create_trip">Create Trip</string>
+    <string name="btn_user_manual">User Manual</string>
     <string name="dash_btn_view_trip">View Trips</string>
+    <string name="btn_faq">FAQs</string>
     <string name="dash_btn_extra">Extra</string>
     <string name="dash_btn_utility">Utility</string>
     <string name="dash_btn_settings">Settings</string>

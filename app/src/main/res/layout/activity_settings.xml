@@ -196,55 +196,6 @@
                 </androidx.cardview.widget.CardView>
 
                 <!-- 3. HELP & SUPPORT GROUP -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="HELP &amp; SUPPORT"
-                    android:textColor="#3A4664"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginBottom="8dp"/>
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    app:cardBackgroundColor="#FFFFFF"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="0dp">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-                        <TextView
-                            android:id="@+id/btn_setting_faq"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:padding="16dp"
-                            android:text="❓  Frequently Asked Questions"
-                            android:textColor="#0D1A39"
-                            android:textSize="16sp"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true"/>
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="#F0F0F0"
-                            android:layout_marginHorizontal="16dp"/>
-                        <TextView
-                            android:id="@+id/btn_setting_manual"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:padding="16dp"
-                            android:text="📖  User Manual"
-                            android:textColor="#0D1A39"
-                            android:textSize="16sp"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
 
                 <!-- 4. ABOUT & LEGAL GROUP -->
                 <TextView
@@ -292,24 +243,7 @@
                             android:textColor="#0D1A39"
                             android:textSize="16sp"
                             android:foreground="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true"/>
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="#F0F0F0"
-                            android:layout_marginHorizontal="16dp"/>
-                        <TextView
-                            android:id="@+id/btn_setting_about_dev"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:padding="16dp"
-                            android:text="👨‍💻  About the Developer"
-                            android:textColor="#0D1A39"
-                            android:textSize="16sp"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:focusable="true"/>
+                            android:clickable="true"/>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
@@ -418,7 +352,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/btn_dash_create_trip"
+                    android:id="@+id/btn_user_manual"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -432,17 +366,17 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@drawable/create_trip"
+                        android:src="@drawable/user_manual"
                         android:tint="#85022E"
                         tools:ignore="UseAppTint"
                         tools2:ignore="UseAppTint"
-                        android:contentDescription="@string/dash_btn_create_trip"/>
+                        android:contentDescription="@string/btn_user_manual"/>
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
-                        android:text="@string/dash_btn_create_trip"
+                        android:text="@string/btn_user_manual"
                         android:textSize="10sp"
                         android:textColor="@android:color/black"/>
                 </LinearLayout>
@@ -452,7 +386,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/btn_dash_view_trips"
+                    android:id="@+id/btn_setting_faq"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -465,16 +399,16 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@drawable/trip"
+                        android:src="@drawable/faq"
                         android:tint="#85022E"
                         tools:ignore="UseAppTint"
                         tools2:ignore="UseAppTint"
-                        android:contentDescription="@string/dash_btn_view_trip"/>
+                        android:contentDescription="@string/btn_faq"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
-                        android:text="@string/dash_btn_view_trip"
+                        android:text="@string/btn_faq"
                         android:textSize="10sp"
                         android:textColor="@android:color/black"/>
                 </LinearLayout>

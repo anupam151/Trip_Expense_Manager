@@ -9,7 +9,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
@@ -25,7 +24,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends BaseDrawerActivity {
 
     private FirebaseAuth mAuth;
 
@@ -34,13 +33,69 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
+        // ==========================================
+        // 🟢 NEW: DRAWER SETUP 🟢
+        // ==========================================
+
+        // 1. Wire up the Universal Drawer
+        setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
+
+        // 2. Handle the Back button to close the drawer gracefully
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout != null && drawerLayout.isDrawerOpen(androidx.core.view.GravityCompat.START)) {
+                    drawerLayout.closeDrawer(androidx.core.view.GravityCompat.START);
+                } else {
+                    finish();
+                }
+            }
+        });
+
+        // 3. Wire up the hamburger menu icon
+        android.widget.ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
+        if (btnOpenDrawer != null) {
+            btnOpenDrawer.setOnClickListener(v -> {
+                if (drawerLayout != null) {
+                    drawerLayout.openDrawer(androidx.core.view.GravityCompat.START);
+                }
+            });
+        }
+        // ==========================================
+
+        // User Manual Click Listener (Temporary Work in Progress)
+        LinearLayout btnUserManual = findViewById(R.id.btn_user_manual);
+        if (btnUserManual != null) {
+            btnUserManual.setOnClickListener(v ->
+                    new AlertDialog.Builder(SettingsActivity.this)
+                            .setTitle("Work in Progress")
+                            .setMessage("The User Manual feature is currently under development. Please check back later!")
+                            .setIcon(android.R.drawable.ic_dialog_info)
+                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                            .show()
+            );
+        }
+
+        // FAQ Click Listener (Temporary Work in Progress)
+        LinearLayout btnFaq = findViewById(R.id.btn_setting_faq);
+        if (btnFaq != null) {
+            btnFaq.setOnClickListener(v ->
+                    new AlertDialog.Builder(SettingsActivity.this)
+                            .setTitle("Work in Progress")
+                            .setMessage("The FAQs feature is currently under development. Please check back later!")
+                            .setIcon(android.R.drawable.ic_dialog_info)
+                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                            .show()
+            );
+        }
+
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
         // Link the Views (Declared as local variables as per best practices)
         TextView btnSignOut = findViewById(R.id.btn_setting_signout);
         TextView btnDeleteAccount = findViewById(R.id.btn_setting_delete_account);
-        android.view.View btnAbout = findViewById(R.id.btn_dash_about);
+        LinearLayout btnAbout = findViewById(R.id.btn_dash_about);
         SwitchCompat biometricSwitch = findViewById(R.id.switch_biometric_lock);
 
         // Profile Information Click Listener
