@@ -23,6 +23,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Locale;
 
+import android.content.SharedPreferences;
+import androidx.annotation.NonNull;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
+import java.util.concurrent.Executor;
+
 // 1. EXTEND BaseDrawerActivity
 @SuppressWarnings("deprecation")
 public class DashboardActivity extends BaseDrawerActivity {
@@ -35,6 +41,18 @@ public class DashboardActivity extends BaseDrawerActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
+
+        // --- START BIOMETRIC LOCK CHECK ---
+        SharedPreferences prefs = getSharedPreferences("AppSettings", MODE_PRIVATE);
+        boolean isLockEnabled = prefs.getBoolean("biometric_enabled", false);
+
+        if (isLockEnabled) {
+            // Hide the screen content so data doesn't flash before unlocking
+            findViewById(R.id.drawer_layout).setVisibility(View.INVISIBLE);
+            requireAuthenticationToEnter();
+        }
+        // --- END BIOMETRIC LOCK CHECK ---
+
 
         db = FirebaseFirestore.getInstance();
 
@@ -383,5 +401,44 @@ public class DashboardActivity extends BaseDrawerActivity {
         intent.putExtra("TRIP_ID", tripId);
         intent.putExtra("TRIP_MEMBERS", members);
         startActivity(intent);
+    }
+    // =================================================================
+    // --- BIOMETRIC APP LOCK LOGIC ---
+    // =================================================================
+    private void requireAuthenticationToEnter() {
+        Executor executor = ContextCompat.getMainExecutor(this);
+
+        BiometricPrompt.AuthenticationCallback authCallback = new BiometricPrompt.AuthenticationCallback() {
+            @Override
+            public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                super.onAuthenticationSucceeded(result);
+                // Auth successful! Reveal the dashboard.
+                findViewById(R.id.drawer_layout).setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                super.onAuthenticationError(errorCode, errString);
+                // User backed out or cancelled -> close the app for security
+                finish();
+            }
+
+            @Override
+            public void onAuthenticationFailed() {
+                super.onAuthenticationFailed();
+                // Wrong attempt -> let the system dialog handle it, do not close yet
+            }
+        };
+
+        BiometricPrompt biometricPrompt = new BiometricPrompt(this, executor, authCallback);
+
+        BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("App Locked")
+                .setSubtitle("Verify your identity to open Trip Expense Manager")
+                .setAllowedAuthenticators(androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG |
+                        androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                .build();
+
+        biometricPrompt.authenticate(promptInfo);
     }
 }
