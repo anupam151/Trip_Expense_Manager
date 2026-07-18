@@ -1,14 +1,14 @@
 package com.example.tripexpensemanager;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-//import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-//import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,7 +24,6 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
 
     private String memberName, tripId;
     private final List<Transaction> transactionList = new ArrayList<>();
-    private String currentUserRole = "Viewer";
     // Export Manager
     private LedgerExportManager exportManager;
 
@@ -42,9 +41,10 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_member_ledger);
 
-        // --- NEW: Wire up the Universal Drawer ---
+        // --- Wire up the Universal Drawer ---
         setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
-        // --- NEW: Handle the Back button to close the drawer gracefully ---
+
+        // --- Handle the Back button to close the drawer gracefully ---
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -56,7 +56,7 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
             }
         });
 
-        // --- NEW: Wire up the hamburger menu icon ---
+        // --- Wire up the hamburger menu icon ---
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
         if (btnOpenDrawer != null) {
             btnOpenDrawer.setOnClickListener(v -> {
@@ -66,13 +66,33 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
             });
         }
 
+        // HOME BUTTON
+        LinearLayout btnHome = findViewById(R.id.btnHome);
+        if (btnHome != null) {
+            btnHome.setOnClickListener(v -> {
+                Intent intent = new Intent(this, DashboardActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
+            });
+        }
+
         // Retrieve passed data
         memberName = getIntent().getStringExtra("MEMBER_NAME");
         tripId = getIntent().getStringExtra("TRIP_ID");
 
-        // Initialize Export Engine (Passing a dummy helper to satisfy constructor)
-        exportManager = new LedgerExportManager(this, new TripDatabaseHelper(this));
+        // COMPLETE LEDGER BUTTON
+        LinearLayout btnCompleteLedger = findViewById(R.id.unv_btn_complete_ledger);
+        if (btnCompleteLedger != null) {
+            btnCompleteLedger.setOnClickListener(v -> {
+                Intent intent = new Intent(this, CompleteLedgerActivity.class);
+                intent.putExtra("TRIP_ID", tripId);
+                startActivity(intent);
+            });
+        }
 
+        // Initialize Export Engine
+        exportManager = new LedgerExportManager(this, new TripDatabaseHelper(this));
 
         TextView txtName = findViewById(R.id.txt_ledger_member_name);
         txtName.setText(memberName);
@@ -80,7 +100,14 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
         RecyclerView recyclerView = findViewById(R.id.recycler_transactions);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Load data using Firestore Engine
+        // 🟢 NEW: Setup SwipeRefreshLayout
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setColorSchemeColors(android.graphics.Color.parseColor("#85022E"));
+            swipeRefreshLayout.setOnRefreshListener(this::loadLedgerData);
+        }
+
+        // Load data using Firestore Engine initially
         loadLedgerData();
 
         // Hook up the Export to PDF Button
@@ -109,7 +136,7 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
                 transactionList.clear();
                 double totalDebit = 0;
                 double totalCredit = 0;
-                int mockIdCounter = 1; // Used to supply an ID to the Transaction object
+                int mockIdCounter = 1;
 
                 for (LedgerEntry entry : entries) {
                     String[] sharedArray = (entry.getSharedWith() != null && !entry.getSharedWith().isEmpty()) ? entry.getSharedWith().split(",\\s*") : new String[0];
@@ -143,24 +170,40 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
                         transactionList.add(new Transaction(
                                 mockIdCounter++,
                                 safeDate,
-                                safeDate + " 00:00:00", // Fallback timestamp, not used for sorting anymore
+                                safeDate + " 00:00:00",
                                 safePurpose,
                                 debit,
                                 credit
                         ));
                     }
                 }
-                // 1. Create final copies of the calculated totals
+
                 final double finalTotalDebit = totalDebit;
                 final double finalTotalCredit = totalCredit;
 
                 // Update UI on Main Thread
-                runOnUiThread(() -> updateUI(finalTotalDebit, finalTotalCredit));
+                runOnUiThread(() -> {
+                    updateUI(finalTotalDebit, finalTotalCredit);
+
+                    // 🟢 NEW: Stop the refresh animation on success
+                    androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
+                    if (swipeRefresh != null) {
+                        swipeRefresh.setRefreshing(false);
+                    }
+                });
             }
 
             @Override
             public void onError(Exception e) {
-                runOnUiThread(() -> Toast.makeText(MemberLedgerActivity.this, "Failed to load data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> {
+                    Toast.makeText(MemberLedgerActivity.this, "Failed to load data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    // 🟢 NEW: Stop the refresh animation on error
+                    androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
+                    if (swipeRefresh != null) {
+                        swipeRefresh.setRefreshing(false);
+                    }
+                });
             }
         });
     }
@@ -178,6 +221,7 @@ public class MemberLedgerActivity extends BaseDrawerActivity {
         txtBalance.setTextColor(balance < 0 ? Color.parseColor("#85022E") : Color.parseColor("#2E7D32"));
 
         RecyclerView recyclerView = findViewById(R.id.recycler_transactions);
+        String currentUserRole = "Viewer";
         recyclerView.setAdapter(new LedgerAdapter(transactionList, currentUserRole));
     }
 

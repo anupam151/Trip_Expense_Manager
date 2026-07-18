@@ -90,7 +90,7 @@
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="2dp"
                     android:layout_marginEnd="18dp"
-                    android:textSize="13sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
                     android:background="#85022E"
@@ -316,7 +316,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:elevation="2dp"
-                        android:padding="3dp"
                         android:background="@drawable/bg_box"
                         android:orientation="vertical">
                         <TextView
@@ -324,11 +323,16 @@
                             android:layout_height="wrap_content"
                             android:text="@string/label_active_members"
                             android:gravity="center"
-                            android:textSize="18sp"
+                            android:textSize="16sp"
                             android:textStyle="bold"
-                            android:layout_marginBottom="2dp"
-                            android:layout_marginTop="4dp"
-                            android:textColor="#85022E"/>
+                            android:background="#85022E"
+                            android:textColor="#FFFFFF"
+                            android:padding="2dp"
+                            android:layout_marginTop="0dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_marginLeft="-16dp"
+                            android:layout_marginRight="-16dp"
+                            android:fontFamily="monospace"/>
 
                         <GridLayout
                             android:id="@+id/grid_members"
@@ -342,11 +346,16 @@
                             android:layout_height="wrap_content"
                             android:text="@string/label_removed_members"
                             android:gravity="center"
-                            android:textSize="18sp"
+                            android:textSize="16sp"
                             android:textStyle="bold"
-                            android:layout_marginTop="4dp"
-                            android:layout_marginBottom="2dp"
-                            android:textColor="#85022E"
+                            android:background="#85022E"
+                            android:textColor="#FFFFFF"
+                            android:padding="2dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="5dp"
+                            android:layout_marginLeft="-16dp"
+                            android:layout_marginRight="-16dp"
+                            android:fontFamily="monospace"
                             android:visibility="gone"/>
 
                         <GridLayout
@@ -434,7 +443,7 @@
                         android:focusable="true"
                         android:background="?attr/selectableItemBackgroundBorderless">
                         <ImageView
-                            android:layout_width="35dp"
+                            android:layout_width="32dp"
                             android:layout_height="35dp"
                             android:src="@drawable/role"
                             app:tint="#85022E"

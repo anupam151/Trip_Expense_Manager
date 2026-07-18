@@ -191,8 +191,8 @@
     <string name="complete_ledger">View All Transactions</string>
     <string name="all_in_one_pdf">Export All in Single PDF</string>
 
-    <string name="label_active_members">👥 Active Members</string>
-    <string name="label_removed_members">👥 Inactive Members</string>
+    <string name="label_active_members">Active Members</string>
+    <string name="label_removed_members">Inactive Members</string>
 
     <string name="update_expense">Save Changes &amp; Split</string>
     <string name="update_payment">Save Changes</string>

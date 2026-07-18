@@ -162,6 +162,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
 
         btnAddExpense.setOnClickListener(v -> {
+            closeFabMenu();
             if ("Viewer".equals(currentUserRole)) {
                 Toast.makeText(this, "Only Admin and Editors can add expenses.", Toast.LENGTH_SHORT).show();
                 return;
@@ -173,6 +174,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         });
 
         btnAddPayment.setOnClickListener(v -> {
+            closeFabMenu();
             if ("Viewer".equals(currentUserRole)) {
                 Toast.makeText(this, "Only Admin and Editors can add payments.", Toast.LENGTH_SHORT).show();
                 return;
@@ -184,6 +186,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         });
 
         btnEditTrip.setOnClickListener(v -> {
+            closeFabMenu();
             if (!"Admin".equals(currentUserRole)) {
                 Toast.makeText(this, "Only the Admin can edit trips.", Toast.LENGTH_SHORT).show();
                 return;
@@ -199,6 +202,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         });
 
         btnDeleteTrip.setOnClickListener(v -> {
+            closeFabMenu();
             if (!"Admin".equals(currentUserRole)) {
                 Toast.makeText(this, "Only the Admin can delete trips.", Toast.LENGTH_SHORT).show();
                 return;
@@ -208,6 +212,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         findViewById(R.id.btn_share_all).setOnClickListener(v -> exportManager.shareMasterPdf(tripId));
 
         btnExportPdf.setOnClickListener(v -> {
+            closeFabMenu();
             String fileName = (tripName != null ? tripName.replaceAll("[^a-zA-Z0-9]", "_") : "Trip") + "_Master_Ledger.pdf";
             createMasterPdfLauncher.launch(fileName);
         });
@@ -610,10 +615,10 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         }
 
         hideAnimated(findViewById(R.id.layoutpdf), 0);
-        hideAnimated(layoutDelete, 0);
-        hideAnimated(layoutEdit, 30);
-        hideAnimated(layoutPayment, 60);
-        hideAnimated(layoutExpense, 90);
+        hideAnimated(layoutDelete, 30);
+        hideAnimated(layoutEdit, 60);
+        hideAnimated(layoutPayment, 90);
+        hideAnimated(layoutExpense, 120);
 
         fabQuickActions.animate()
                 .rotation(0f)
