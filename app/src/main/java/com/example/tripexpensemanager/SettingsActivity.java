@@ -75,14 +75,6 @@ public class SettingsActivity extends BaseDrawerActivity {
                             .show()
             );
         }
-
-        SwitchCompat switchNotificationPush = findViewById(R.id.switch_notification_push);
-
-        switchNotificationPush.setOnClickListener(v -> {
-            switchNotificationPush.setChecked(false); // Keep OFF
-            Toast.makeText(this, "This feature is coming soon.", Toast.LENGTH_SHORT).show();
-        });
-
         // FAQ Click Listener (Temporary Work in Progress)
         LinearLayout btnFaq = findViewById(R.id.btn_setting_faq);
         if (btnFaq != null) {
@@ -95,6 +87,47 @@ public class SettingsActivity extends BaseDrawerActivity {
                             .show()
             );
         }
+
+        SwitchCompat switchNotificationPush = findViewById(R.id.switch_notification_push);
+        if (switchNotificationPush != null) {
+            switchNotificationPush.setOnClickListener(v -> {
+                // Immediately set the switch back to unchecked
+                switchNotificationPush.setChecked(false);
+
+                // Show the Work in Progress dialog
+                new AlertDialog.Builder(SettingsActivity.this)
+                        .setTitle("Work in Progress")
+                        .setMessage("This Notification feature is currently under development. Please check back later!")
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                        .show();
+            });
+        }
+
+        TextView btnSettingPrivacy = findViewById(R.id.btn_setting_privacy);
+        if (btnSettingPrivacy != null) {
+            btnSettingPrivacy.setOnClickListener(v ->
+                    new AlertDialog.Builder(SettingsActivity.this)
+                            .setTitle("Work in Progress")
+                            .setMessage("The Privacy Policy feature is currently under development. Please check back later!")
+                            .setIcon(android.R.drawable.ic_dialog_info)
+                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                            .show()
+            );
+        }
+
+        TextView btnSettingRate = findViewById(R.id.btn_setting_rate);
+        if (btnSettingRate != null) {
+            btnSettingRate.setOnClickListener(v ->
+                    new AlertDialog.Builder(SettingsActivity.this)
+                            .setTitle("Work in Progress")
+                            .setMessage("The Rate the App feature is currently under development. Please check back later!")
+                            .setIcon(android.R.drawable.ic_dialog_info)
+                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                            .show()
+            );
+        }
+
 
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();

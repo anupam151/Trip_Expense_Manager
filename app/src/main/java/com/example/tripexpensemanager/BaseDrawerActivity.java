@@ -78,10 +78,12 @@ public abstract class BaseDrawerActivity extends AppCompatActivity {
             navigateSafely(CreateTripActivity.class);
         } else if (id == R.id.nav_view_trips) {
             navigateSafely(TripListActivity.class);
+        } else if (id == R.id.nav_utility) {
+            navigateSafely(UtilityActivity.class);
+        } else if (id == R.id.nav_settings) {
+            navigateSafely(SettingsActivity.class);
         } else if (id == R.id.nav_about) {
             navigateSafely(AboutActivity.class);
-        } else if (id == R.id.nav_backup || id == R.id.nav_restore) {
-            Toast.makeText(this, "Auto-Sync is active! Your data is safe in the Cloud.", Toast.LENGTH_LONG).show();
         }
 
         if (drawerLayout != null) {

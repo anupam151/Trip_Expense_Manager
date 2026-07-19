@@ -108,8 +108,7 @@
                         android:text="🍕  Quick Bill Splitter"
                         android:textColor="#0D1A39"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                        android:textStyle="bold"/>
                 </androidx.cardview.widget.CardView>
 
                 <!-- TOOL 2: All-Time Statistics -->
@@ -131,8 +130,7 @@
                         android:text="📊  All-Time Statistics"
                         android:textColor="#0D1A39"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                        android:textStyle="bold"/>
                 </androidx.cardview.widget.CardView>
 
                 <!-- TOOL 3: Reports Vault -->
@@ -154,8 +152,7 @@
                         android:text="📁  Reports Vault (PDFs &amp; CSVs)"
                         android:textColor="#0D1A39"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                        android:textStyle="bold"/>
                 </androidx.cardview.widget.CardView>
 
                 <!-- TOOL 4: Live Currency Converter -->
@@ -177,8 +174,7 @@
                         android:text="💱  Live Currency Converter"
                         android:textColor="#0D1A39"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                        android:textStyle="bold"/>
                 </androidx.cardview.widget.CardView>
 
                 <!-- TOOL 5: Travel Checklist -->
@@ -200,8 +196,7 @@
                         android:text="🎒  Travel Checklist"
                         android:textColor="#0D1A39"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                        android:textStyle="bold"/>
                 </androidx.cardview.widget.CardView>
 
                 <!-- TOOL 6: Fuel Calculator -->
@@ -223,8 +218,7 @@
                         android:text="⛽  Road Trip Fuel Calculator"
                         android:textColor="#0D1A39"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                        android:textStyle="bold" />
                 </androidx.cardview.widget.CardView>
 
                 <!-- TOOL 7: Archived Trips -->
@@ -246,8 +240,7 @@
                         android:text="📦  Archived Trips"
                         android:textColor="#0D1A39"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        app:drawableEndCompat="@android:drawable/ic_media_next" />
+                        android:textStyle="bold" />
                 </androidx.cardview.widget.CardView>
 
             </LinearLayout>
