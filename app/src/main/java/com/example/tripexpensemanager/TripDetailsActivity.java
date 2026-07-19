@@ -483,7 +483,9 @@ public class TripDetailsActivity extends BaseDrawerActivity {
     }
 
     private void updateMemberGrids(String inactiveRaw) {
-        ((TextView) findViewById(R.id.txt_details_member_count)).setText(String.valueOf(currentMembersList.size()));
+        int count = currentMembersList.size();
+        String displayText = count + (count == 1 ? " Person" : " Persons");
+        ((TextView) findViewById(R.id.txt_details_member_count)).setText(displayText);
 
         GridLayout gridActive = findViewById(R.id.grid_members);
         gridActive.removeAllViews();
