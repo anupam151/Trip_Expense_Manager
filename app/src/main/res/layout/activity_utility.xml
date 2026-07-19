@@ -221,27 +221,7 @@
                         android:textStyle="bold" />
                 </androidx.cardview.widget.CardView>
 
-                <!-- TOOL 7: Archived Trips -->
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/card_tool_archived"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="30dp"
-                    android:foreground="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="#FFFFFF"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="0dp">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:text="📦  Archived Trips"
-                        android:textColor="#0D1A39"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-                </androidx.cardview.widget.CardView>
+
 
             </LinearLayout>
         </ScrollView>
@@ -263,7 +243,7 @@
                 android:layout_marginHorizontal="12dp"
                 android:orientation="horizontal">
                 <LinearLayout
-                    android:id="@+id/btn_dash_utility"
+                    android:id="@+id/btn_home"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -276,16 +256,16 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@drawable/ic_add_expense"
+                        android:src="@drawable/ic_home"
                         android:tint="#85022E"
                         tools:ignore="UseAppTint"
-                        android:contentDescription="@string/dash_btn_utility"
+                        android:contentDescription="@string/home"
                         tools2:ignore="UseAppTint" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
-                        android:text="@string/dash_btn_utility"
+                        android:text="@string/home"
                         android:textSize="10sp"
                         android:textColor="@android:color/black"/>
                 </LinearLayout>
@@ -295,7 +275,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/btn_dash_create_trip"
+                    android:id="@+id/btn_archive"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -309,17 +289,17 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@drawable/create_trip"
+                        android:src="@drawable/archive"
                         android:tint="#85022E"
                         tools:ignore="UseAppTint"
-                        android:contentDescription="@string/dash_btn_create_trip"
+                        android:contentDescription="@string/archive"
                         tools2:ignore="UseAppTint" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
-                        android:text="@string/dash_btn_create_trip"
+                        android:text="@string/archive"
                         android:textSize="10sp"
                         android:textColor="@android:color/black"/>
                 </LinearLayout>

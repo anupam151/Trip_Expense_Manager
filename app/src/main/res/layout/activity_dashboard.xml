@@ -212,36 +212,7 @@
                     android:layout_height="35dp"
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
-                <LinearLayout
-                    android:id="@+id/btn_dash_view_trips"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless">
-                    <ImageView
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:src="@drawable/trip"
-                        app:tint="#85022E"
-                        android:contentDescription="@string/dash_btn_view_trip"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="0dp"
-                        android:text="@string/dash_btn_view_trip"
-                        android:textSize="10sp"
-                        android:textColor="@android:color/black"/>
-                </LinearLayout>
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="35dp"
-                    android:layout_gravity="center_vertical"
-                    android:background="#CCCCCC" />
+
                 <LinearLayout
                     android:id="@+id/btn_dash_utility"
                     android:layout_width="0dp"
@@ -264,6 +235,36 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
                         android:text="@string/dash_btn_utility"
+                        android:textSize="10sp"
+                        android:textColor="@android:color/black"/>
+                </LinearLayout>
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="35dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="#CCCCCC" />
+                <LinearLayout
+                    android:id="@+id/btn_dash_view_trips"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless">
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/trip"
+                        app:tint="#85022E"
+                        android:contentDescription="@string/dash_btn_view_trip"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="0dp"
+                        android:text="@string/dash_btn_view_trip"
                         android:textSize="10sp"
                         android:textColor="@android:color/black"/>
                 </LinearLayout>
