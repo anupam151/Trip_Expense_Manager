@@ -1,17 +1,20 @@
 package com.example.tripexpensemanager;
 
-//import android.content.Intent;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.GravityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,20 +26,26 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-//import java.util.Set;
+import java.util.Locale;
 
-// 1. Extend BaseDrawerActivity so the side menu works!
 public class ArchivedTripsActivity extends BaseDrawerActivity {
 
-    private final List<DocumentSnapshot> archivedTripsList = new ArrayList<>();
+    private final List<DocumentSnapshot> masterArchivedList = new ArrayList<>();
     private final List<DocumentSnapshot> filteredList = new ArrayList<>();
 
     private ArchivedTripAdapter adapter;
     private FirebaseFirestore db;
     private String userEmail;
-    private boolean isSortAscending = true;
+
+    // --- Search & Sort Variables matching TripListActivity ---
+    private int currentSortOption = 1; // Default to Departure Ascending
+    private String currentSearchQuery = "";
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
     private TextView txtEmptyMessage;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -47,58 +56,45 @@ public class ArchivedTripsActivity extends BaseDrawerActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_archived_trips);
 
-
-        View btnHome = findViewById(R.id.btnHome);
-        if (btnHome != null) {
-            btnHome.setOnClickListener(v -> {
-                Intent intent = new Intent(ArchivedTripsActivity.this, DashboardActivity.class);
-                startActivity(intent);
-                finish();
-            });
-        }
-
-        View btnUtility = findViewById(R.id.btnUtility);
-        if (btnUtility != null) {
-            btnUtility.setOnClickListener(v -> {
-                Intent intent = new Intent(ArchivedTripsActivity.this, UtilityActivity.class);
-                startActivity(intent);
-            });
-        }
-
-        View btnViewTrips = findViewById(R.id.view_trips);
-        if (btnViewTrips != null) {
-            btnViewTrips.setOnClickListener(v -> {
-                Intent intent = new Intent(ArchivedTripsActivity.this, TripListActivity.class);
-                startActivity(intent);
-            });
-        }
-
-        View btnSettings = findViewById(R.id.btn_settings);
-        if (btnSettings != null) {
-            btnSettings.setOnClickListener(v -> {
-                Intent intent = new Intent(ArchivedTripsActivity.this, SettingsActivity.class);
-                startActivity(intent);
-            });
-        }
-
-
-        // 2. Setup the Universal Drawer using IDs from your layout
+        // 1. Setup Universal Drawer
         setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
 
+        // 2. Handle the Back button to close the drawer gracefully
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                } else {
+                    finish();
+                }
+            }
+        });
+
+        // 3. Hamburger Menu
+        ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
+        if (btnOpenDrawer != null) {
+            btnOpenDrawer.setOnClickListener(v -> {
+                if (drawerLayout != null) {
+                    drawerLayout.openDrawer(GravityCompat.START);
+                }
+            });
+        }
+
+        // 4. Firebase Setup
         db = FirebaseFirestore.getInstance();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             userEmail = user.getEmail();
         }
 
-        // 3. Change the title to indicate we are in the Archive
+        // 5. UI Mappings
         TextView txtCategoryTitle = findViewById(R.id.txt_trip_list_category_title);
         txtCategoryTitle.setText("Archived Trips");
 
-        // 4. Map the UI elements
         txtEmptyMessage = findViewById(R.id.txt_empty_trips_message);
         txtCurrentSort = findViewById(R.id.txt_current_sort);
-        txtCurrentSort.setText("Dest A-Z ▲");
+        txtCurrentSort.setText("Departure ▲");
 
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setColorSchemeColors(android.graphics.Color.parseColor("#85022E"));
@@ -107,156 +103,244 @@ public class ArchivedTripsActivity extends BaseDrawerActivity {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_trips);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Note: Adapter uses DocumentSnapshot so we don't break your existing ArchivedTripAdapter
         adapter = new ArchivedTripAdapter(filteredList, doc -> unarchiveTrip(doc.getId()));
         recyclerView.setAdapter(adapter);
 
-        // 5. Drawer Menu Button
-        ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
-        btnOpenDrawer.setOnClickListener(v -> {
-            if (drawerLayout != null) {
-                drawerLayout.openDrawer(GravityCompat.START);
-            }
-        });
+        // 6. Bottom Navigation
+        setupBottomNavigation();
 
-        // 7. Sort Dropdown
-        LinearLayout btnSort = findViewById(R.id.btn_sort_dropdown);
-        btnSort.setOnClickListener(v -> {
-            isSortAscending = !isSortAscending;
-            txtCurrentSort.setText(isSortAscending ? "Dest A-Z ▲" : "Dest Z-A ▼");
-            loadArchivedTrips();
-        });
+        // 7. Advanced Dual-Popup Sorting Setup
+        LinearLayout btnSortDropdown = findViewById(R.id.btn_sort_dropdown);
+        if (btnSortDropdown != null) {
+            btnSortDropdown.setOnClickListener(v -> showSortPopupMenu(v, txtCurrentSort));
+        }
 
-        // 8. Search Bar
+        // 8. Advanced Search Setup (Typing + Keyboard Hiding)
         EditText etSearch = findViewById(R.id.edit_search_trips);
-        etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        if (etSearch != null) {
+            etSearch.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterTrips(s.toString());
-            }
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    currentSearchQuery = s.toString().toLowerCase().trim();
+                    applyFilterAndSort();
+                }
 
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
 
-        // Load the data!
+            // Hide keyboard on "Done"
+            etSearch.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    etSearch.clearFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                    }
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        // 9. Initial Load
         swipeRefreshLayout.setRefreshing(true);
         loadArchivedTrips();
     }
-    // How to fetch the archived trips from the cloud
+
+    // ==========================================
+    // --- BOTTOM NAVIGATION ---
+    // ==========================================
+    private void setupBottomNavigation() {
+        View btnHome = findViewById(R.id.btnHome);
+        if (btnHome != null) btnHome.setOnClickListener(v -> {
+            startActivity(new Intent(this, DashboardActivity.class));
+            finish();
+        });
+
+        View btnUtility = findViewById(R.id.btnUtility);
+        if (btnUtility != null) btnUtility.setOnClickListener(v ->startActivity(new Intent(this, UtilityActivity.class)));
+
+        View btnViewTrips = findViewById(R.id.view_trips);
+        if (btnViewTrips != null) btnViewTrips.setOnClickListener(v ->startActivity(new Intent(this, TripListActivity.class)));
+
+        View btnSettings = findViewById(R.id.btn_settings);
+        if (btnSettings != null) btnSettings.setOnClickListener(v ->startActivity(new Intent(this, SettingsActivity.class)));
+    }
+
+    // ==========================================
+    // --- ADVANCED SORTING ENGINE ---
+    // ==========================================
+    private void showSortPopupMenu(View anchor, TextView txtCurrentSort) {
+        androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, anchor, android.view.Gravity.END);
+        popup.getMenu().add(0, 10, 0, "Departure");
+        popup.getMenu().add(0, 20, 0, "Destination"); // Shifted Destination to ID 20
+
+        popup.setOnMenuItemClickListener(item -> {
+            String safeTitle = item.getTitle() != null ? item.getTitle().toString() : "";
+            showOrderPopupMenu(anchor, txtCurrentSort, safeTitle, item.getItemId());
+            return true;
+        });
+        popup.show();
+    }
+
+    private void showOrderPopupMenu(View anchor, TextView txtCurrentSort, String categoryName, int categoryId) {
+        androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, anchor, android.view.Gravity.END);
+
+        int ascId = 0, descId = 0;
+        if (categoryId == 10) { ascId = 1; descId = 2; }       // Departure
+        else if (categoryId == 20) { ascId = 3; descId = 4; }  // Destination
+
+        popup.getMenu().add(0, ascId, 0, "Ascending");
+        popup.getMenu().add(0, descId, 0, "Descending");
+
+        popup.setOnMenuItemClickListener(item -> {
+            String safeTitle = item.getTitle() != null ? item.getTitle().toString() : "";
+            String arrow = safeTitle.equals("Ascending") ? "▲" : "▼";
+            txtCurrentSort.setText(categoryName + " " + arrow);
+
+            currentSortOption = item.getItemId();
+            applyFilterAndSort();
+            return true;
+        });
+        popup.show();
+    }
+
+    private int compareDates(String d1, String d2, boolean ascending) {
+        try {
+            Date date1 = (d1 != null && !d1.isEmpty()) ? dateFormatter.parse(d1) : new Date(0);
+            Date date2 = (d2 != null && !d2.isEmpty()) ? dateFormatter.parse(d2) : new Date(0);
+            if (date1 == null) date1 = new Date(0);
+            if (date2 == null) date2 = new Date(0);
+            return ascending ? date1.compareTo(date2) : date2.compareTo(date1);
+        } catch (ParseException e) {
+            return 0;
+        }
+    }
+
+    private int compareStrings(String s1, String s2, boolean ascending) {
+        String str1 = s1 != null ? s1.toLowerCase() : "";
+        String str2 = s2 != null ? s2.toLowerCase() : "";
+        return ascending ? str1.compareTo(str2) : str2.compareTo(str1);
+    }
+
+    // ==========================================
+    // --- DATA FETCHING & FILTERING ---
+    // ==========================================
     private void loadArchivedTrips() {
         if (userEmail == null) {
             if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
             return;
         }
 
-        // 1. Fetch the user's private list of archived IDs first
         db.collection("Users").document(userEmail).get()
                 .addOnSuccessListener(userDoc -> {
 
-                    // Get cloud array safely
                     List<String> cloudArchivedIds = new java.util.ArrayList<>();
                     if (userDoc.exists() && userDoc.contains("archivedTripIds")) {
                         Object rawList = userDoc.get("archivedTripIds");
-
-                        // Safely check that it is a list, and only pull out the Strings
                         if (rawList instanceof java.util.List<?>) {
                             for (Object item : (java.util.List<?>) rawList) {
-                                if (item instanceof String) {
-                                    cloudArchivedIds.add((String) item);
-                                }
+                                if (item instanceof String) cloudArchivedIds.add((String) item);
                             }
                         }
                     }
 
-                    // Just check if it's empty!
                     if (cloudArchivedIds.isEmpty()) {
-                        archivedTripsList.clear();
-                        filterTrips("");
+                        masterArchivedList.clear();
+                        applyFilterAndSort();
                         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
                         return;
                     }
+
                     final List<String> finalArchivedIds = cloudArchivedIds;
 
-                    // 2. Fetch the trips and filter against the cloud list
-                    db.collection("Trips")
-                            .whereArrayContains("sharedEmails", userEmail)
-                            .get()
+                    db.collection("Trips").whereArrayContains("sharedEmails", userEmail).get()
                             .addOnSuccessListener(queryDocumentSnapshots -> {
-                                archivedTripsList.clear();
+                                masterArchivedList.clear();
 
                                 for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                                     if (finalArchivedIds.contains(doc.getId())) {
-                                        archivedTripsList.add(doc);
+                                        masterArchivedList.add(doc);
                                     }
                                 }
-
-                                // Sort and update UI
-                                archivedTripsList.sort((d1, d2) -> {
-                                    String dest1 = d1.getString("destination");
-                                    String dest2 = d2.getString("destination");
-                                    String name1 = (dest1 != null) ? dest1 : "";
-                                    String name2 = (dest2 != null) ? dest2 : "";
-                                    return isSortAscending ? name1.compareToIgnoreCase(name2) : name2.compareToIgnoreCase(name1);
-                                });
-
-                                EditText etSearch = findViewById(R.id.edit_search_trips);
-                                filterTrips(etSearch != null ? etSearch.getText().toString() : "");
-
+                                applyFilterAndSort();
                                 if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
                             });
                 })
                 .addOnFailureListener(e -> {
                     if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
-
-                    // 1. Show the exact error on the screen
                     Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-
-                    // 2. Print the full red error trace to Logcat
-                    android.util.Log.e("FirestoreError", "Why did it fail?", e);
                 });
     }
 
-    // Your updated Restore/Unarchive action
-    private void unarchiveTrip(String tripId) {
-        if (userEmail == null) return;
-
-        // Remove the ID from the array
-        db.collection("Users").document(userEmail)
-                .update("archivedTripIds", FieldValue.arrayRemove(tripId))
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Trip restored to dashboard.", Toast.LENGTH_SHORT).show();
-                    loadArchivedTrips(); // Reload the list
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, "Failed to restore trip.", Toast.LENGTH_SHORT).show());
-    }
-    private void filterTrips(String text) {
+    private void applyFilterAndSort() {
         filteredList.clear();
-        if (text.isEmpty()) {
-            filteredList.addAll(archivedTripsList);
-        } else {
-            String lowerText = text.toLowerCase();
-            for (DocumentSnapshot doc : archivedTripsList) {
-                String dest = doc.getString("destination");
-                String name = doc.getString("tripName");
 
-                if ((dest != null && dest.toLowerCase().contains(lowerText)) ||
-                        (name != null && name.toLowerCase().contains(lowerText))) {
+        // 1. FILTERING (Deep Search)
+        if (currentSearchQuery.isEmpty()) {
+            filteredList.addAll(masterArchivedList);
+        } else {
+            for (DocumentSnapshot doc : masterArchivedList) {
+
+                // Grab the raw strings once
+                String rawName = doc.getString("tripName");
+                String rawDest = doc.getString("destination");
+                String rawMembers = doc.getString("members");
+                String rawInactive = doc.getString("inactiveMembers");
+
+                // Now safely convert them to lowercase
+                String name = rawName != null ? rawName.toLowerCase() : "";
+                String dest = rawDest != null ? rawDest.toLowerCase() : "";
+                String members = rawMembers != null ? rawMembers.toLowerCase() : "";
+                String inactive = rawInactive != null ? rawInactive.toLowerCase() : "";
+
+                if (name.contains(currentSearchQuery) || dest.contains(currentSearchQuery) ||
+                        members.contains(currentSearchQuery) || inactive.contains(currentSearchQuery)) {
                     filteredList.add(doc);
                 }
             }
         }
 
-        // Handle Empty State Visibility
+        // 2. SORTING (Using the dual popup selection)
+        // 2. SORTING (Using the dual popup selection)
+        filteredList.sort((d1, d2) -> {
+            try {
+                switch (currentSortOption) {
+                    case 1: return compareDates(d1.getString("startDate"), d2.getString("startDate"), true); // Departure ▲
+                    case 2: return compareDates(d1.getString("startDate"), d2.getString("startDate"), false); // Departure ▼
+                    case 3: return compareStrings(d1.getString("destination"), d2.getString("destination"), true); // Destination ▲
+                    case 4: return compareStrings(d1.getString("destination"), d2.getString("destination"), false); // Destination ▼
+                    default: return 0;
+                }
+            } catch (Exception e) {
+                return 0;
+            }
+        });
+
+        // 3. UI Update
+        adapter.notifyDataSetChanged();
         if (filteredList.isEmpty()) {
             txtEmptyMessage.setVisibility(View.VISIBLE);
             txtEmptyMessage.setText("No archived trips found.");
         } else {
             txtEmptyMessage.setVisibility(View.GONE);
         }
+    }
 
-        adapter.notifyDataSetChanged();
+    private void unarchiveTrip(String tripId) {
+        if (userEmail == null) return;
+
+        db.collection("Users").document(userEmail)
+                .update("archivedTripIds", FieldValue.arrayRemove(tripId))
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Trip restored to dashboard.", Toast.LENGTH_SHORT).show();
+                    loadArchivedTrips();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to restore trip.", Toast.LENGTH_SHORT).show());
     }
 }
