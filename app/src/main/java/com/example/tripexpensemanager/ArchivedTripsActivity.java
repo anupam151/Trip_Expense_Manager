@@ -62,7 +62,6 @@ public class ArchivedTripsActivity extends BaseDrawerActivity {
             btnUtility.setOnClickListener(v -> {
                 Intent intent = new Intent(ArchivedTripsActivity.this, UtilityActivity.class);
                 startActivity(intent);
-                finish();
             });
         }
 
@@ -71,7 +70,6 @@ public class ArchivedTripsActivity extends BaseDrawerActivity {
             btnViewTrips.setOnClickListener(v -> {
                 Intent intent = new Intent(ArchivedTripsActivity.this, TripListActivity.class);
                 startActivity(intent);
-                finish();
             });
         }
 
@@ -80,7 +78,6 @@ public class ArchivedTripsActivity extends BaseDrawerActivity {
             btnSettings.setOnClickListener(v -> {
                 Intent intent = new Intent(ArchivedTripsActivity.this, SettingsActivity.class);
                 startActivity(intent);
-                finish();
             });
         }
 

@@ -65,6 +65,7 @@ public abstract class BaseDrawerActivity extends AppCompatActivity {
     }
 
     // 3. Centralized Click Handling
+    // 3. Centralized Click Handling
     private boolean handleNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
 
@@ -78,12 +79,16 @@ public abstract class BaseDrawerActivity extends AppCompatActivity {
             navigateSafely(CreateTripActivity.class);
         } else if (id == R.id.nav_view_trips) {
             navigateSafely(TripListActivity.class);
+        } else if (id == R.id.nav_archived_trips) {           // 🟢 ADDED THIS BLOCK
+            navigateSafely(ArchivedTripsActivity.class);      // 🟢 NAVIGATES TO ARCHIVE
         } else if (id == R.id.nav_utility) {
             navigateSafely(UtilityActivity.class);
         } else if (id == R.id.nav_settings) {
             navigateSafely(SettingsActivity.class);
         } else if (id == R.id.nav_about) {
             navigateSafely(AboutActivity.class);
+        } else if (id == R.id.nav_home) {
+            navigateSafely(DashboardActivity.class);
         }
 
         if (drawerLayout != null) {

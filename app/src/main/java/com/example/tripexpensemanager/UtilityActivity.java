@@ -125,7 +125,6 @@ public class UtilityActivity extends BaseDrawerActivity {
             btnArchive.setOnClickListener(v -> {
                 Intent intent = new Intent(UtilityActivity.this, ArchivedTripsActivity.class);
                 startActivity(intent);
-                finish();
             });
         }
 
@@ -134,7 +133,6 @@ public class UtilityActivity extends BaseDrawerActivity {
             btnViewTrips.setOnClickListener(v -> {
                 Intent intent = new Intent(UtilityActivity.this, TripListActivity.class);
                 startActivity(intent);
-                finish();
             });
         }
 
@@ -143,7 +141,6 @@ public class UtilityActivity extends BaseDrawerActivity {
             btnSettings.setOnClickListener(v -> {
                 Intent intent = new Intent(UtilityActivity.this, SettingsActivity.class);
                 startActivity(intent);
-                finish();
             });
         }
     }
