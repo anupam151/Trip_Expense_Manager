@@ -76,6 +76,13 @@ public class SettingsActivity extends BaseDrawerActivity {
             );
         }
 
+        SwitchCompat switchNotificationPush = findViewById(R.id.switch_notification_push);
+
+        switchNotificationPush.setOnClickListener(v -> {
+            switchNotificationPush.setChecked(false); // Keep OFF
+            Toast.makeText(this, "This feature is coming soon.", Toast.LENGTH_SHORT).show();
+        });
+
         // FAQ Click Listener (Temporary Work in Progress)
         LinearLayout btnFaq = findViewById(R.id.btn_setting_faq);
         if (btnFaq != null) {

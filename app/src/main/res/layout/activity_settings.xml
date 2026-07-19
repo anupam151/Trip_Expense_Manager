@@ -156,8 +156,11 @@
                                 android:id="@+id/switch_biometric_lock"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                app:thumbTint="#85022E"
-                                app:trackTint="#CCCCCC" />
+                                android:thumb="@drawable/custom_thumb"
+                                app:track="@drawable/custom_track"
+                                app:switchMinWidth="60dp"
+                                app:trackTint="@null"
+                                app:thumbTint="@null"/> <!-- Defines how wide the pill is -->
                         </LinearLayout>
 
                         <View
@@ -188,8 +191,11 @@
                                 android:id="@+id/switch_notification_push"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                app:thumbTint="#85022E"
-                                app:trackTint="#CCCCCC" />
+                                android:thumb="@drawable/custom_thumb_noti"
+                                app:track="@drawable/custom_track"
+                                app:switchMinWidth="60dp"
+                                app:trackTint="@null"
+                                app:thumbTint="@null"/>
                         </LinearLayout>
 
                     </LinearLayout>
