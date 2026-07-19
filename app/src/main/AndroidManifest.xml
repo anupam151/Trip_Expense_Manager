@@ -80,6 +80,8 @@
         <activity
             android:name=".ProfileActivity"
             android:exported="false" />
+        <activity android:name=".ArchivedTripsActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

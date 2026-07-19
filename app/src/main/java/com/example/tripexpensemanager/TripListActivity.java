@@ -33,9 +33,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 //import java.util.Collections;
 import java.util.Date;
-import java.util.List;
+//import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+//import java.util.Map;
+//import java.util.Set;
 
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -375,96 +376,123 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
             return;
         }
 
-        db.collection("Trips").whereArrayContains("sharedEmails", account.getEmail()).get()
-                .addOnSuccessListener(querySnapshot -> {
-                    masterTripList.clear();
-                    Calendar cal = Calendar.getInstance();
-                    cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
-                    Date today = cal.getTime();
+        String userEmail = account.getEmail();
 
-                    for (DocumentSnapshot doc : querySnapshot) {
-                        String startStr = doc.getString("startDate") != null ? doc.getString("startDate") : "";
-                        String endStr = doc.getString("endDate") != null ? doc.getString("endDate") : "";
+        // 1. Fetch the user's private list of hidden IDs from the cloud first
+        db.collection("Users").document(userEmail).get()
+                .addOnSuccessListener(userDoc -> {
 
-                        boolean shouldAdd = false;
-                        if (currentCategoryLabel.equalsIgnoreCase("All Trips")) {
-                            shouldAdd = true;
-                        } else {
-                            try {
-                                // Warning fix: Safe null and empty checking
-                                Date sDate = (startStr != null && !startStr.isEmpty()) ? dateFormatter.parse(startStr) : null;
-                                Date eDate = (endStr != null && !endStr.isEmpty()) ? dateFormatter.parse(endStr) : null;
-
-                                if (currentCategoryLabel.equalsIgnoreCase("Upcoming Trips") && sDate != null && sDate.after(today)) {
-                                    shouldAdd = true;
-                                } else if (currentCategoryLabel.equalsIgnoreCase("Ongoing Trips") && sDate != null && eDate != null && !sDate.after(today) && !eDate.before(today)) {
-                                    shouldAdd = true;
-                                } else if (currentCategoryLabel.equalsIgnoreCase("Ended Trips") && eDate != null && eDate.before(today)) {
-                                    shouldAdd = true;
+                    // Safely get the cloud array without triggering warnings
+                    java.util.List<String> cloudArchivedIds = new java.util.ArrayList<>();
+                    if (userDoc.exists() && userDoc.contains("archivedTripIds")) {
+                        Object rawList = userDoc.get("archivedTripIds");
+                        if (rawList instanceof java.util.List<?>) {
+                            for (Object item : (java.util.List<?>) rawList) {
+                                if (item instanceof String) {
+                                    cloudArchivedIds.add((String) item);
                                 }
-                            } catch (ParseException ignored) {
-                                shouldAdd = true;
                             }
                         }
+                    }
 
-                        if (shouldAdd) {
-                            // Warning fix: Safe Long to int conversion
-                            Long countLong = doc.getLong("memberCount");
-                            int memberCount = (countLong != null) ? countLong.intValue() : 0;
+                    // 2. Fetch ALL trips you are a part of
+                    db.collection("Trips").whereArrayContains("sharedEmails", userEmail).get()
+                            .addOnSuccessListener(querySnapshot -> {
+                                masterTripList.clear();
 
-                            TripModel trip = new TripModel(
-                                    doc.getId(),
-                                    doc.getString("tripName"),
-                                    doc.getString("destination"),
-                                    doc.getString("members"),
-                                    memberCount,
-                                    startStr,
-                                    endStr
-                            );
+                                Calendar cal = Calendar.getInstance();
+                                cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
+                                Date today = cal.getTime();
 
-                            // --- NEW FIX: Parse Pinned State from Firestore ---
-                            Boolean isPinnedCloud = doc.getBoolean("isPinned");
-                            trip.setIsPinnedState((isPinnedCloud != null && isPinnedCloud) ? 1 : 0);
+                                for (DocumentSnapshot doc : querySnapshot) {
 
-                            trip.setInactiveMembers(doc.getString("inactiveMembers"));
+                                    // --- NEW: If this trip is in the Cloud Archive list, SKIP IT! ---
+                                    if (cloudArchivedIds.contains(doc.getId())) {
+                                        continue;
+                                    }
 
-                            // --- NEW: Parse Role Data for Click Blockers ---
-                            trip.setOwnerEmail(doc.getString("ownerEmail"));
-                            List<Map<String, Object>> rawMemberDetails = (List<Map<String, Object>>) doc.get("memberDetails");
-                            if (rawMemberDetails != null) {
-                                ArrayList<TripMember> parsedMembers = new ArrayList<>();
-                                for (Map<String, Object> map : rawMemberDetails) {
-                                    parsedMembers.add(new TripMember((String) map.get("memberName"), (String) map.get("emailId"), (String) map.get("role")));
+                                    String startStr = doc.getString("startDate") != null ? doc.getString("startDate") : "";
+                                    String endStr = doc.getString("endDate") != null ? doc.getString("endDate") : "";
+
+                                    boolean shouldAdd = false;
+                                    if (currentCategoryLabel.equalsIgnoreCase("All Trips")) {
+                                        shouldAdd = true;
+                                    } else {
+                                        try {
+                                            Date sDate = (startStr != null && !startStr.isEmpty()) ? dateFormatter.parse(startStr) : null;
+                                            Date eDate = (endStr != null && !endStr.isEmpty()) ? dateFormatter.parse(endStr) : null;
+
+                                            if (currentCategoryLabel.equalsIgnoreCase("Upcoming Trips") && sDate != null && sDate.after(today)) {
+                                                shouldAdd = true;
+                                            } else if (currentCategoryLabel.equalsIgnoreCase("Ongoing Trips") && sDate != null && eDate != null && !sDate.after(today) && !eDate.before(today)) {
+                                                shouldAdd = true;
+                                            } else if (currentCategoryLabel.equalsIgnoreCase("Ended Trips") && eDate != null && eDate.before(today)) {
+                                                shouldAdd = true;
+                                            }
+                                        } catch (ParseException ignored) {
+                                            shouldAdd = true;
+                                        }
+                                    }
+
+                                    if (shouldAdd) {
+                                        Long countLong = doc.getLong("memberCount");
+                                        int memberCount = (countLong != null) ? countLong.intValue() : 0;
+
+                                        TripModel trip = new TripModel(
+                                                doc.getId(),
+                                                doc.getString("tripName"),
+                                                doc.getString("destination"),
+                                                doc.getString("members"),
+                                                memberCount,
+                                                startStr,
+                                                endStr
+                                        );
+
+                                        Boolean isPinnedCloud = doc.getBoolean("isPinned");
+                                        trip.setIsPinnedState((isPinnedCloud != null && isPinnedCloud) ? 1 : 0);
+
+                                        trip.setInactiveMembers(doc.getString("inactiveMembers"));
+
+                                        trip.setOwnerEmail(doc.getString("ownerEmail"));
+                                        java.util.List<java.util.Map<String, Object>> rawMemberDetails = (java.util.List<java.util.Map<String, Object>>) doc.get("memberDetails");
+                                        if (rawMemberDetails != null) {
+                                            java.util.ArrayList<TripMember> parsedMembers = new java.util.ArrayList<>();
+                                            for (java.util.Map<String, Object> map : rawMemberDetails) {
+                                                parsedMembers.add(new TripMember((String) map.get("memberName"), (String) map.get("emailId"), (String) map.get("role")));
+                                            }
+                                            trip.setMemberDetails(parsedMembers);
+                                        }
+
+                                        masterTripList.add(trip);
+
+                                        calculateTripFinance(trip);
+                                    }
                                 }
-                                trip.setMemberDetails(parsedMembers);
-                            }
+                                applyFilterAndSort();
+                                txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
 
-                            masterTripList.add(trip);
-
-                            // Execute the background math
-                            calculateTripFinance(trip);
-                        }
-                    }
-                    applyFilterAndSort();
-                    txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
-
-                    // --- NEW: Trigger Sort instead of standard refresh ---
-                    applySorting(currentSortOption);
-                    androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
-                    if (swipeRefresh != null) {
-                        swipeRefresh.setRefreshing(false);
-                    }
+                                applySorting(currentSortOption);
+                                androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
+                                if (swipeRefresh != null) {
+                                    swipeRefresh.setRefreshing(false);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
+                                if (swipeRefresh != null) {
+                                    swipeRefresh.setRefreshing(false);
+                                }
+                                Toast.makeText(this, "Failed to load trips.", Toast.LENGTH_SHORT).show();
+                            });
                 })
-                // NEW: Catch errors and stop the spinner if the database fails
                 .addOnFailureListener(e -> {
                     androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh_layout);
                     if (swipeRefresh != null) {
                         swipeRefresh.setRefreshing(false);
                     }
-                    Toast.makeText(this, "Failed to load trips.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to check archive status.", Toast.LENGTH_SHORT).show();
                 });
     }
-
     private void calculateTripFinance(TripModel trip) {
         TripFinanceCalculator.calculateFinances(trip.getTripId(), new TripFinanceCalculator.FinanceResultListener() {
             @Override

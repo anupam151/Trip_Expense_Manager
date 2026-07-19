@@ -294,6 +294,7 @@
     <string name="format_trip_name_header">%1$s</string>
 
     <string name="txt_all_trips">Trip List</string>
+    <string name="archived_trips">Archived Trips</string>
 
     <string name="title_select_trip_export">Select Trip to Export in one PDF</string>
     <string name="action_cancel">Cancel</string>

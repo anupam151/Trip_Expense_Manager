@@ -44,6 +44,11 @@ import java.util.Map;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.firestore.DocumentReference;
+
 @SuppressWarnings("deprecation")
 public class TripDetailsActivity extends BaseDrawerActivity {
 
@@ -270,6 +275,74 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 String inactiveRaw = doc.getString("inactiveMembers");
                 rawLegacyMembers = doc.getString("members");
 
+                ImageButton btnArchiveTrip = findViewById(R.id.btn_archive_trip);
+
+                btnArchiveTrip.setOnClickListener(v ->
+                        new androidx.appcompat.app.AlertDialog.Builder(TripDetailsActivity.this)
+                                .setTitle("Archive Trip")
+                                .setMessage("Are you sure you want to archive this trip? (If you are Admin, Editors will be downgraded to Viewers globally)")
+                                .setPositiveButton("Archive", (dialog, which) -> {
+
+                                    GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(TripDetailsActivity.this);
+                                    String myEmail = (account != null && account.getEmail() != null) ? account.getEmail() : "";
+
+                                    if (myEmail.isEmpty()) return;
+
+                                    // 1. Initialize a WriteBatch to do everything atomically
+                                    WriteBatch batch = db.batch();
+
+                                    // 2. Personal Update: Add Trip ID to User's private array
+                                    DocumentReference userRef = db.collection("Users").document(myEmail);
+                                    java.util.Map<String, Object> userUpdate = new java.util.HashMap<>();
+                                    userUpdate.put("archivedTripIds", FieldValue.arrayUnion(tripId));
+                                    // Use merge() so it creates the user document if this is their first time archiving
+                                    batch.set(userRef, userUpdate, SetOptions.merge());
+
+                                    // 3. Global Update: Unpin and Downgrade roles
+                                    DocumentReference tripRef = db.collection("Trips").document(tripId);
+                                    java.util.Map<String, Object> firestoreUpdates = new java.util.HashMap<>();
+                                    firestoreUpdates.put("isPinned", false);
+
+                                    boolean tempRolesChanged = false;
+
+                                    if ("Admin".equalsIgnoreCase(currentUserRole) && currentMembersList != null) {
+                                        List<java.util.Map<String, Object>> updatedMemberDetails = new java.util.ArrayList<>();
+                                        for (TripMember m : currentMembersList) {
+                                            if ("Editor".equalsIgnoreCase(m.getRole())) {
+                                                m.setRole("Viewer");
+                                                tempRolesChanged = true;
+                                            }
+                                            java.util.Map<String, Object> map = new java.util.HashMap<>();
+                                            map.put("memberName", m.getMemberName());
+                                            map.put("emailId", m.getEmailId());
+                                            map.put("role", m.getRole());
+                                            updatedMemberDetails.add(map);
+                                        }
+                                        if (tempRolesChanged) {
+                                            firestoreUpdates.put("memberDetails", updatedMemberDetails);
+                                        }
+                                    }
+
+                                    final boolean rolesChangedFinal = tempRolesChanged;
+                                    batch.update(tripRef, firestoreUpdates);
+
+                                    // 4. Commit the batch
+                                    batch.commit()
+                                            .addOnSuccessListener(aVoid -> {
+                                                Toast.makeText(TripDetailsActivity.this,
+                                                        rolesChangedFinal ? "Unpinned, Archived & Editors locked out." : "Trip Unpinned & Archived.",
+                                                        Toast.LENGTH_SHORT).show();
+
+                                                Intent intent = new Intent(TripDetailsActivity.this, DashboardActivity.class);
+                                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                                startActivity(intent);
+                                                finish();
+                                            })
+                                            .addOnFailureListener(e ->Toast.makeText(TripDetailsActivity.this, "Network error. Could not archive.", Toast.LENGTH_SHORT).show());
+                                })
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                );
                 // --- Extract Rich Member Details ---
                 currentMembersList.clear();
                 List<Map<String, Object>> rawMemberDetails = (List<Map<String, Object>>) doc.get("memberDetails");

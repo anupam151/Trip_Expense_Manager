@@ -243,7 +243,7 @@
                 android:layout_marginHorizontal="12dp"
                 android:orientation="horizontal">
                 <LinearLayout
-                    android:id="@+id/btn_home"
+                    android:id="@+id/btn_home_utility"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -275,7 +275,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/btn_archive"
+                    android:id="@+id/btn_archive_utility"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -289,7 +289,7 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@drawable/archive"
+                        android:src="@drawable/archived"
                         android:tint="#85022E"
                         tools:ignore="UseAppTint"
                         android:contentDescription="@string/archive"
@@ -309,7 +309,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/btn_dash_view_trips"
+                    android:id="@+id/btn_view_trips_utility"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -340,7 +340,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/btn_dash_settings"
+                    android:id="@+id/btn_settings_utility"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"

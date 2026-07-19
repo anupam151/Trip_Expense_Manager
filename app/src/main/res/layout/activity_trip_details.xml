@@ -97,6 +97,17 @@
                     android:textColor="#FFFFFF"
                     android:background="#85022E"
                     android:text="Role" />
+                <ImageButton
+                    android:id="@+id/btn_archive_trip"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_marginEnd="14dp"
+                    android:src="@drawable/archived"
+                    android:padding="6dp"
+                    android:scaleType="fitCenter"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="#85022E"
+                    android:contentDescription="Archive Trip" />
             </LinearLayout>
 
             <!--Swipe Refresh-->

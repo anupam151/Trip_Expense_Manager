@@ -2,14 +2,11 @@ package com.example.tripexpensemanager;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-
+//import android.widget.LinearLayout;
 import androidx.appcompat.app.AlertDialog;
-
-
 import androidx.core.view.GravityCompat;
-
 // 1. Extend BaseDrawerActivity instead of Activity
 public class UtilityActivity extends BaseDrawerActivity {
 
@@ -21,7 +18,6 @@ public class UtilityActivity extends BaseDrawerActivity {
         // 2. Wire up the Universal Drawer
         // Note: Ensure the NavigationView inside your layout_universal_drawer.xml has android:id="@+id/nav_view"
         setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
-
         // 3. Make the custom hamburger menu button open the drawer
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
         if (btnOpenDrawer != null) {
@@ -115,30 +111,7 @@ public class UtilityActivity extends BaseDrawerActivity {
         }
 
 
-        //Archived Trips
-        android.widget.LinearLayout btnArchive = findViewById(R.id.btn_archive);
-        if (btnArchive != null) {
-            btnArchive.setOnClickListener(v ->
-                    new AlertDialog.Builder(UtilityActivity.this)
-                            .setTitle("Work in Progress")
-                            .setMessage("The Archive feature is currently under development. Please check back later!")
-                            .setIcon(android.R.drawable.ic_dialog_info)
-                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
-                            .show()
-            );
-        }
-
-        LinearLayout btnViewTrips = findViewById(R.id.btn_dash_view_trips);
-        if (btnViewTrips != null) {
-            // 2. Set the click listener to launch TripListActivity
-            btnViewTrips.setOnClickListener(v -> {
-                Intent intent = new Intent(UtilityActivity.this, TripListActivity.class);
-                startActivity(intent);
-                finish();
-            });
-        }
-
-        LinearLayout btnHome = findViewById(R.id.btn_home);
+        View btnHome = findViewById(R.id.btn_home_utility);
         if (btnHome != null) {
             btnHome.setOnClickListener(v -> {
                 Intent intent = new Intent(UtilityActivity.this, DashboardActivity.class);
@@ -147,7 +120,25 @@ public class UtilityActivity extends BaseDrawerActivity {
             });
         }
 
-        LinearLayout btnSettings = findViewById(R.id.btn_dash_settings);
+        View btnArchive= findViewById(R.id.btn_archive_utility);
+        if (btnArchive != null) {
+            btnArchive.setOnClickListener(v -> {
+                Intent intent = new Intent(UtilityActivity.this, ArchivedTripsActivity.class);
+                startActivity(intent);
+                finish();
+            });
+        }
+
+        View btnViewTrips = findViewById(R.id.btn_view_trips_utility);
+        if (btnViewTrips != null) {
+            btnViewTrips.setOnClickListener(v -> {
+                Intent intent = new Intent(UtilityActivity.this, TripListActivity.class);
+                startActivity(intent);
+                finish();
+            });
+        }
+
+        View btnSettings = findViewById(R.id.btn_settings_utility);
         if (btnSettings != null) {
             btnSettings.setOnClickListener(v -> {
                 Intent intent = new Intent(UtilityActivity.this, SettingsActivity.class);
@@ -155,7 +146,5 @@ public class UtilityActivity extends BaseDrawerActivity {
                 finish();
             });
         }
-
-
     }
 }
