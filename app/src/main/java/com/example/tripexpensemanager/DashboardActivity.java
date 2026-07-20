@@ -29,7 +29,6 @@ import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 import java.util.concurrent.Executor;
 
-// 1. EXTEND BaseDrawerActivity
 @SuppressWarnings("deprecation")
 public class DashboardActivity extends BaseDrawerActivity {
 
@@ -47,16 +46,13 @@ public class DashboardActivity extends BaseDrawerActivity {
         boolean isLockEnabled = prefs.getBoolean("biometric_enabled", false);
 
         if (isLockEnabled) {
-            // Hide the screen content so data doesn't flash before unlocking
             findViewById(R.id.drawer_layout).setVisibility(View.INVISIBLE);
             requireAuthenticationToEnter();
         }
         // --- END BIOMETRIC LOCK CHECK ---
 
-
         db = FirebaseFirestore.getInstance();
 
-        // 2. TELL THE BASE CLASS TO WIRE UP THE DRAWER!
         setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
 
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
@@ -86,21 +82,17 @@ public class DashboardActivity extends BaseDrawerActivity {
         findViewById(R.id.btn_dash_view_trips).setOnClickListener(v -> launchTripListActivity());
         findViewById(R.id.btn_create_new_trips).setOnClickListener(v -> launchCreateTripActivity());
 
-        // Add these lines inside your onCreate method:
-
-        findViewById(R.id.btn_dash_utility).setOnClickListener(v ->startActivity(new Intent(this, UtilityActivity.class)));
-
-        findViewById(R.id.btn_dash_settings).setOnClickListener(v ->startActivity(new Intent(this, SettingsActivity.class)));
+        findViewById(R.id.btn_dash_utility).setOnClickListener(v -> startActivity(new Intent(this, UtilityActivity.class)));
+        findViewById(R.id.btn_dash_settings).setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        updateSignInUI(); // (This method comes for free from BaseDrawerActivity!)
+        updateSignInUI();
         fetchTripsFromCloud();
     }
 
-    // 3. If a user logs in via the drawer, fetch their trips!
     @Override
     protected void onUserSuccessfullySignedIn(GoogleSignInAccount account) {
         fetchTripsFromCloud();
@@ -115,7 +107,6 @@ public class DashboardActivity extends BaseDrawerActivity {
     }
 
     // --- Firebase Data Fetching ---
-    // --- Firebase Data Fetching ---
     private void fetchTripsFromCloud() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null || account.getEmail() == null) {
@@ -123,40 +114,69 @@ public class DashboardActivity extends BaseDrawerActivity {
             return;
         }
 
-        // --- CHANGED: Now looks for trips shared with this user! ---
-        // 1. Try Server (Source.DEFAULT)
-        db.collection("Trips")
-                .whereArrayContains("sharedEmails", account.getEmail())
-                .get(com.google.firebase.firestore.Source.DEFAULT)
-                .addOnSuccessListener(this::processTripData)
-                .addOnFailureListener(e -> {
-                    // 2. If Server Fails (Offline), Fallback to Cache
+        String userEmail = account.getEmail();
+
+        // 1. Fetch user document to get personal private pinnedTripId
+        db.collection("Users").document(userEmail).get()
+                .addOnSuccessListener(userDoc -> {
+                    String pinnedTripId = userDoc.exists() ? userDoc.getString("pinnedTripId") : null;
+
+                    // 2. Fetch Trips shared with this user
                     db.collection("Trips")
-                            .whereArrayContains("sharedEmails", account.getEmail())
-                            .get(com.google.firebase.firestore.Source.CACHE)
-                            .addOnSuccessListener(this::processTripData)
-                            .addOnFailureListener(err -> {
-                                // Truly no data found
-                                clearWorkspace();
-                            });
-                });
+                            .whereArrayContains("sharedEmails", userEmail)
+                            .get(com.google.firebase.firestore.Source.DEFAULT)
+                            .addOnSuccessListener(snapshot -> processTripData(snapshot, pinnedTripId))
+                            .addOnFailureListener(e -> db.collection("Trips")
+                                    .whereArrayContains("sharedEmails", userEmail)
+                                    .get(com.google.firebase.firestore.Source.CACHE)
+                                    .addOnSuccessListener(snapshot -> processTripData(snapshot, pinnedTripId))
+                                    .addOnFailureListener(err -> clearWorkspace()));
+                })
+                .addOnFailureListener(e -> clearWorkspace());
     }
 
-    private void processTripData(com.google.firebase.firestore.QuerySnapshot queryDocumentSnapshots) {
+    private void processTripData(com.google.firebase.firestore.QuerySnapshot queryDocumentSnapshots, String pinnedTripId) {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        String currentUserEmail = (account != null && account.getEmail() != null) ? account.getEmail() : "";
+
         DocumentSnapshot pinnedTripDoc = null;
         for (DocumentSnapshot doc : queryDocumentSnapshots) {
-            Object isPinnedObj = doc.get("isPinned");
-            boolean isPinned = false;
 
-            if (isPinnedObj instanceof Boolean) {
-                isPinned = (Boolean) isPinnedObj;
-            } else if (isPinnedObj instanceof Number) {
-                isPinned = ((Number) isPinnedObj).intValue() == 1;
-            } else if (isPinnedObj instanceof String) {
-                isPinned = Boolean.parseBoolean((String) isPinnedObj) || "1".equals(isPinnedObj);
+            // ==========================================
+            // SECURITY CHECK: DOES THIS USER STILL HAVE ACCESS?
+            // ==========================================
+            String ownerEmail = doc.getString("ownerEmail");
+            boolean hasAccess = false;
+
+            if (currentUserEmail.equalsIgnoreCase(ownerEmail)) {
+                hasAccess = true;
+            } else {
+                Object rawData = doc.get("memberDetails");
+                if (rawData instanceof java.util.List) {
+                    for (Object item : (java.util.List<?>) rawData) {
+                        if (item instanceof java.util.Map) {
+                            java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
+                            String memberEmail = (String) map.get("emailId");
+
+                            if (currentUserEmail.equalsIgnoreCase(memberEmail)) {
+                                String role = (String) map.get("role");
+
+                                if (role == null || !role.trim().equalsIgnoreCase("No Access")) {
+                                    hasAccess = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
-            if (isPinned) {
+            if (!hasAccess) {
+                continue;
+            }
+            // ==========================================
+
+            if (pinnedTripId != null && pinnedTripId.equals(doc.getId())) {
                 pinnedTripDoc = doc;
                 break;
             }
@@ -169,7 +189,6 @@ public class DashboardActivity extends BaseDrawerActivity {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void populateWorkspace(DocumentSnapshot doc) {
         containerPinnedTripsStack.removeAllViews();
         layoutNoPinnedTrips.setVisibility(View.GONE);
@@ -182,7 +201,6 @@ public class DashboardActivity extends BaseDrawerActivity {
         String members = doc.getString("members") != null ? doc.getString("members") : "";
         String startDate = doc.getString("startDate") != null ? doc.getString("startDate") : "";
         String endDate = doc.getString("endDate") != null ? doc.getString("endDate") : "";
-
 
         View cardView = LayoutInflater.from(this).inflate(R.layout.item_trip, containerPinnedTripsStack, false);
 
@@ -220,23 +238,25 @@ public class DashboardActivity extends BaseDrawerActivity {
 
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         String currentUserEmail = (account != null && account.getEmail() != null) ? account.getEmail() : "";
-        String currentUserRole = "Viewer"; // Safest default
+        String currentUserRole = "Viewer";
 
         String ownerEmail = doc.getString("ownerEmail");
         if (!currentUserEmail.isEmpty()) {
             if (currentUserEmail.equalsIgnoreCase(ownerEmail)) {
                 currentUserRole = "Admin";
             } else {
-                java.util.List<java.util.Map<String, Object>> rawMemberDetails =
-                        (java.util.List<java.util.Map<String, Object>>) doc.get("memberDetails");
+                Object rawData = doc.get("memberDetails");
+                if (rawData instanceof java.util.List) {
+                    for (Object item : (java.util.List<?>) rawData) {
+                        if (item instanceof java.util.Map) {
+                            java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
+                            String memberEmail = (String) map.get("emailId");
 
-                if (rawMemberDetails != null) {
-                    for (java.util.Map<String, Object> memberMap : rawMemberDetails) {
-                        String memberEmail = (String) memberMap.get("emailId");
-                        if (currentUserEmail.equalsIgnoreCase(memberEmail)) {
-                            String role = (String) memberMap.get("role");
-                            currentUserRole = (role != null) ? role : "Viewer";
-                            break;
+                            if (currentUserEmail.equalsIgnoreCase(memberEmail)) {
+                                String role = (String) map.get("role");
+                                currentUserRole = (role != null) ? role : "Viewer";
+                                break;
+                            }
                         }
                     }
                 }
@@ -247,8 +267,6 @@ public class DashboardActivity extends BaseDrawerActivity {
         final boolean isEditor = "Editor".equalsIgnoreCase(currentUserRole);
         final boolean canAddTransactions = isAdmin || isEditor;
         txtRoleBadge.setText(currentUserRole);
-
-
 
         android.util.DisplayMetrics metrics = txtRoleBadge.getContext().getResources().getDisplayMetrics();
 
@@ -261,29 +279,22 @@ public class DashboardActivity extends BaseDrawerActivity {
         backgroundShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
         backgroundShape.setCornerRadius(cornerRadiusPx);
 
-        txtRoleBadge.setPadding(
-                horizontalPadding,
-                verticalPadding,
-                horizontalPadding,
-                verticalPadding
-        );
-
+        txtRoleBadge.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
         txtRoleBadge.setElevation(elevationPx);
         txtRoleBadge.setText(currentUserRole);
 
         if ("Admin".equalsIgnoreCase(currentUserRole)) {
-            backgroundShape.setColor(0xFF85022E); // Blue
+            backgroundShape.setColor(0xFF85022E);
             txtRoleBadge.setTextColor(0xFFFAF7F7);
         } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
-            backgroundShape.setColor(0xFF3e8914); // Green
+            backgroundShape.setColor(0xFF3e8914);
             txtRoleBadge.setTextColor(0xFFF5FFF6);
         } else {
-            backgroundShape.setColor(0xFF2f4550); // Gray for Viewer
+            backgroundShape.setColor(0xFF2f4550);
             txtRoleBadge.setTextColor(0xFFe9ecef);
         }
 
         txtRoleBadge.setBackground(backgroundShape);
-
 
         // =================================================================
         // --- CLICK LISTENERS WITH TOAST INTERCEPTS ---
@@ -291,9 +302,8 @@ public class DashboardActivity extends BaseDrawerActivity {
 
         btnPin.setText(getString(R.string.action_unpin));
         btnPin.setTextColor(0xFF2E7D32);
-        btnPin.setOnClickListener(v -> handlePinToggle(tripId, name));
+        btnPin.setOnClickListener(v -> handlePinToggle(name));
 
-        // Edit Button Logic
         btnEdit.setOnClickListener(v -> {
             if (isAdmin) {
                 navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate);
@@ -302,7 +312,6 @@ public class DashboardActivity extends BaseDrawerActivity {
             }
         });
 
-        // Delete Button Logic
         btnDelete.setOnClickListener(v -> {
             if (isAdmin) {
                 showDeleteDialog(tripId, name);
@@ -311,7 +320,6 @@ public class DashboardActivity extends BaseDrawerActivity {
             }
         });
 
-        // Add Expense Button Logic
         btnAddExpense.setOnClickListener(v -> {
             if (canAddTransactions) {
                 navigateToAddExpense(tripId, members);
@@ -320,7 +328,6 @@ public class DashboardActivity extends BaseDrawerActivity {
             }
         });
 
-        // Add Payment Button Logic
         btnAddPayment.setOnClickListener(v -> {
             if (canAddTransactions) {
                 navigateToAddPayment(tripId, members);
@@ -340,11 +347,16 @@ public class DashboardActivity extends BaseDrawerActivity {
         layoutNoPinnedTrips.setVisibility(View.VISIBLE);
     }
 
-    private void handlePinToggle(String tripId, String tripName) {
-        db.collection("Trips").document(tripId).update("isPinned", false).addOnSuccessListener(aVoid -> {
-            Toast.makeText(DashboardActivity.this, "'" + tripName + "' unpinned!", Toast.LENGTH_SHORT).show();
-            fetchTripsFromCloud();
-        });
+    private void handlePinToggle(String tripName) {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null || account.getEmail() == null) return;
+        String userEmail = account.getEmail();
+
+        db.collection("Users").document(userEmail).update("pinnedTripId", null)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(DashboardActivity.this, "'" + tripName + "' unpinned!", Toast.LENGTH_SHORT).show();
+                    fetchTripsFromCloud();
+                });
     }
 
     private void showDeleteDialog(String tripId, String tripName) {
@@ -402,35 +414,12 @@ public class DashboardActivity extends BaseDrawerActivity {
         intent.putExtra("TRIP_MEMBERS", members);
         startActivity(intent);
     }
+
     // =================================================================
     // --- BIOMETRIC APP LOCK LOGIC ---
     // =================================================================
     private void requireAuthenticationToEnter() {
-        Executor executor = ContextCompat.getMainExecutor(this);
-
-        BiometricPrompt.AuthenticationCallback authCallback = new BiometricPrompt.AuthenticationCallback() {
-            @Override
-            public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
-                super.onAuthenticationSucceeded(result);
-                // Auth successful! Reveal the dashboard.
-                findViewById(R.id.drawer_layout).setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                super.onAuthenticationError(errorCode, errString);
-                // User backed out or cancelled -> close the app for security
-                finish();
-            }
-
-            @Override
-            public void onAuthenticationFailed() {
-                super.onAuthenticationFailed();
-                // Wrong attempt -> let the system dialog handle it, do not close yet
-            }
-        };
-
-        BiometricPrompt biometricPrompt = new BiometricPrompt(this, executor, authCallback);
+        BiometricPrompt biometricPrompt = createBiometricPrompt();
 
         BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
                 .setTitle("App Locked")
@@ -440,5 +429,30 @@ public class DashboardActivity extends BaseDrawerActivity {
                 .build();
 
         biometricPrompt.authenticate(promptInfo);
+    }
+
+    private BiometricPrompt createBiometricPrompt() {
+        Executor executor = ContextCompat.getMainExecutor(this);
+
+        BiometricPrompt.AuthenticationCallback authCallback = new BiometricPrompt.AuthenticationCallback() {
+            @Override
+            public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                super.onAuthenticationSucceeded(result);
+                findViewById(R.id.drawer_layout).setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                super.onAuthenticationError(errorCode, errString);
+                finish();
+            }
+
+            @Override
+            public void onAuthenticationFailed() {
+                super.onAuthenticationFailed();
+            }
+        };
+
+        return new BiometricPrompt(this, executor, authCallback);
     }
 }

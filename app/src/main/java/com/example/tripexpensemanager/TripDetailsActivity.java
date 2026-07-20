@@ -48,6 +48,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.DocumentReference;
+import androidx.annotation.NonNull;
 
 @SuppressWarnings("deprecation")
 public class TripDetailsActivity extends BaseDrawerActivity {
@@ -56,9 +57,9 @@ public class TripDetailsActivity extends BaseDrawerActivity {
     private String startDateFromDatabase;
     private String endDateFromDatabase;
     private String tripName;
-    private String tripOwnerEmail = ""; // NEW: Tracks who created the trip
+    private String tripOwnerEmail = ""; // Tracks who created the trip
 
-    // --- CHANGED: Now holds complex TripMember objects! ---
+    // --- Now holds complex TripMember objects! ---
     private final ArrayList<TripMember> currentMembersList = new ArrayList<>();
     private String rawLegacyMembers = "";
 
@@ -103,8 +104,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             }
         });
 
-
-
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
         if (btnOpenDrawer != null) {
             btnOpenDrawer.setOnClickListener(v -> {
@@ -127,9 +126,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         LinearLayout btnManageAccess = findViewById(R.id.btn_manage_access);
 
         // 2. Set the click listener to open the dialog
-        btnManageAccess.setOnClickListener(v -> {
-            showManageAccessDialog(); // This calls the method we built together!
-        });
+        btnManageAccess.setOnClickListener(v ->showManageAccessDialog());
 
         fabQuickActions = findViewById(R.id.fabQuickActions);
 
@@ -145,7 +142,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         layoutDelete = findViewById(R.id.layoutDelete);
         LinearLayout layoutPdf = findViewById(R.id.layoutpdf);
 
-
         viewDim = findViewById(R.id.viewDim);
 
         hideButton(layoutExpense);
@@ -155,16 +151,13 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         hideButton(layoutPdf);
 
         fabQuickActions.setOnClickListener(v -> {
-
             if (fabExpanded)
                 closeFabMenu();
             else
                 openFabMenu();
-
         });
 
         viewDim.setOnClickListener(v -> closeFabMenu());
-
 
         btnAddExpense.setOnClickListener(v -> {
             closeFabMenu();
@@ -228,11 +221,11 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             startActivity(intent);
         });
 
-        // 🟢 NEW: Setup SwipeRefreshLayout
+        // Setup SwipeRefreshLayout
         androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setColorSchemeColors(android.graphics.Color.parseColor("#85022E"));
-            swipeRefreshLayout.setOnRefreshListener(this::refreshTripDetails); // Triggers your existing refresh method
+            swipeRefreshLayout.setOnRefreshListener(this::refreshTripDetails);
         }
 
         // --- Navigation: Go to Dashboard (Home) ---
@@ -240,10 +233,9 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         if (btnHome != null) {
             btnHome.setOnClickListener(v -> {
                 Intent intent = new Intent(this, DashboardActivity.class);
-                // Clears all other activities off the stack and brings the existing Dashboard to the front
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
-                finish(); // Closes the current TripDetailsActivity
+                finish();
             });
         }
 
@@ -263,7 +255,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         db.collection("Trips").document(tripId).get(Source.DEFAULT).addOnSuccessListener(doc -> {
             if (doc.exists()) {
                 tripName = doc.getString("tripName");
-                tripOwnerEmail = doc.getString("ownerEmail"); // Grab the Admin's email
+                tripOwnerEmail = doc.getString("ownerEmail");
 
                 ((TextView) findViewById(R.id.txt_details_trip_name)).setText(getString(R.string.format_trip_name_header, tripName));
                 ((TextView) findViewById(R.id.txt_details_destination)).setText(doc.getString("destination"));
@@ -288,17 +280,13 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
                                     if (myEmail.isEmpty()) return;
 
-                                    // 1. Initialize a WriteBatch to do everything atomically
                                     WriteBatch batch = db.batch();
 
-                                    // 2. Personal Update: Add Trip ID to User's private array
                                     DocumentReference userRef = db.collection("Users").document(myEmail);
                                     java.util.Map<String, Object> userUpdate = new java.util.HashMap<>();
                                     userUpdate.put("archivedTripIds", FieldValue.arrayUnion(tripId));
-                                    // Use merge() so it creates the user document if this is their first time archiving
                                     batch.set(userRef, userUpdate, SetOptions.merge());
 
-                                    // 3. Global Update: Unpin and Downgrade roles
                                     DocumentReference tripRef = db.collection("Trips").document(tripId);
                                     java.util.Map<String, Object> firestoreUpdates = new java.util.HashMap<>();
                                     firestoreUpdates.put("isPinned", false);
@@ -326,7 +314,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                                     final boolean rolesChangedFinal = tempRolesChanged;
                                     batch.update(tripRef, firestoreUpdates);
 
-                                    // 4. Commit the batch
                                     batch.commit()
                                             .addOnSuccessListener(aVoid -> {
                                                 Toast.makeText(TripDetailsActivity.this,
@@ -338,11 +325,12 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                                                 startActivity(intent);
                                                 finish();
                                             })
-                                            .addOnFailureListener(e ->Toast.makeText(TripDetailsActivity.this, "Network error. Could not archive.", Toast.LENGTH_SHORT).show());
+                                            .addOnFailureListener(e -> Toast.makeText(TripDetailsActivity.this, "Network error. Could not archive.", Toast.LENGTH_SHORT).show());
                                 })
                                 .setNegativeButton("Cancel", null)
                                 .show()
                 );
+
                 // --- Extract Rich Member Details ---
                 currentMembersList.clear();
                 List<Map<String, Object>> rawMemberDetails = (List<Map<String, Object>>) doc.get("memberDetails");
@@ -355,7 +343,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                         currentMembersList.add(new TripMember(mName, mEmail, mRole));
                     }
                 } else if (rawLegacyMembers != null && !rawLegacyMembers.isEmpty()) {
-                    // Legacy Fallback
                     for (String name : rawLegacyMembers.split(",")) {
                         currentMembersList.add(new TripMember(name.trim(), null, null));
                     }
@@ -368,7 +355,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                     if (myEmail.equalsIgnoreCase(tripOwnerEmail)) {
                         currentUserRole = "Admin";
                     } else {
-                        currentUserRole = "Viewer"; // Default
+                        currentUserRole = "Viewer";
                         for (TripMember m : currentMembersList) {
                             if (m.getEmailId() != null && m.getEmailId().equalsIgnoreCase(myEmail)) {
                                 currentUserRole = m.getRole() != null ? m.getRole() : "Viewer";
@@ -378,9 +365,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                     }
                 }
 
-                // =======================================================
-                // --- NEW CODE: UPDATE THE ROLE BADGE UI ---
-                // =======================================================
+                // --- UPDATE THE ROLE BADGE UI ---
                 TextView txtRoleBadge = findViewById(R.id.txt_item_role_badge);
                 if (txtRoleBadge != null) {
                     android.util.DisplayMetrics metrics = txtRoleBadge.getContext().getResources().getDisplayMetrics();
@@ -394,13 +379,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                     backgroundShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
                     backgroundShape.setCornerRadius(cornerRadiusPx);
 
-                    txtRoleBadge.setPadding(
-                            horizontalPadding,
-                            verticalPadding,
-                            horizontalPadding,
-                            verticalPadding
-                    );
-
+                    txtRoleBadge.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
                     txtRoleBadge.setElevation(elevationPx);
                     txtRoleBadge.setText(currentUserRole);
 
@@ -417,7 +396,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
                     txtRoleBadge.setBackground(backgroundShape);
                 }
-                // =======================================================
 
                 updateMemberGrids(inactiveRaw);
                 refreshSummaryCards();
@@ -436,8 +414,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         });
     }
 
-    // --- NEW: The Share Trip Dashboard Logic ---
-    // --- NEW: The Share Trip Dashboard Logic ---
     private void showManageAccessDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_manage_access, null);
@@ -467,7 +443,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             txtName.setText(member.getMemberName());
             txtName.setTextSize(16f);
             txtName.setTextColor(android.graphics.Color.BLACK);
-            // --- FIX 1: Corrected method to set text to BOLD ---
             txtName.setTypeface(null, android.graphics.Typeface.BOLD);
             textContainer.addView(txtName);
 
@@ -479,7 +454,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 textContainer.addView(txtEmail);
                 row.addView(textContainer);
 
-                // --- FIX 2: Extracted Spinner Logic to a Helper Method ---
                 Spinner spinner = createRoleSpinner(member.getRole());
 
                 roleSpinners.add(spinner);
@@ -504,32 +478,18 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         }
 
         view.findViewById(R.id.btn_dialog_close).setOnClickListener(v -> dialog.dismiss());
+
         view.findViewById(R.id.btn_dialog_save_access).setOnClickListener(v -> {
-            // 1. Update the local list first
-            for (int i = 0; i < roleSpinners.size(); i++) {
-                String selected = roleSpinners.get(i).getSelectedItem().toString();
-                String newRole = selected.equals("No Access") ? null : selected;
-                linkedMembers.get(i).setRole(newRole);
-            }
+            view.findViewById(R.id.btn_dialog_save_access).setEnabled(false); // Disable to prevent double-clicks
 
-            // 2. Convert to Map for Firestore
-            ArrayList<Map<String, Object>> memberDetailsList = new ArrayList<>();
-            for (TripMember m : currentMembersList) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("memberName", m.getMemberName());
-                map.put("emailId", m.getEmailId());
-                map.put("role", m.getRole());
-                memberDetailsList.add(map);
-            }
+            // Calls the extracted method to generate the update map securely
+            Map<String, Object> updates = buildAccessUpdateMap(roleSpinners, linkedMembers);
 
-            // 3. Update Firestore and REFRESH immediately
-            view.findViewById(R.id.btn_dialog_save_access).setEnabled(false);// Disable to prevent double-clicks
             db.collection("Trips").document(tripId)
-                    .update("memberDetails", memberDetailsList)
+                    .update(updates)
                     .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Roles updated!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Roles and access updated!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
-                        // CRITICAL: Refresh the UI immediately so the buttons enable/disable
                         refreshTripDetails();
                     })
                     .addOnFailureListener(e -> {
@@ -541,7 +501,47 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         dialog.show();
     }
 
-    // --- NEW: Helper Method to keep code clean and satisfy Android Studio ---
+    @NonNull
+    private Map<String, Object> buildAccessUpdateMap(ArrayList<Spinner> roleSpinners, ArrayList<TripMember> linkedMembers) {
+        // 1. Update the local list directly from spinners (No redundant variables)
+        for (int i = 0; i < roleSpinners.size(); i++) {
+            linkedMembers.get(i).setRole(roleSpinners.get(i).getSelectedItem().toString());
+        }
+
+        // 2. Convert to Map for Firestore AND rebuild sharedEmails dynamically
+        ArrayList<Map<String, Object>> memberDetailsList = new ArrayList<>();
+        ArrayList<String> sharedEmailsList = new ArrayList<>();
+
+        for (TripMember m : currentMembersList) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("memberName", m.getMemberName());
+            map.put("emailId", m.getEmailId());
+            map.put("role", m.getRole());
+            memberDetailsList.add(map);
+
+            // --- CRITICAL SECURITY CHECK ---
+            // Only include the email in sharedEmails if they DO NOT have "No Access"
+            String role = m.getRole();
+            boolean isNoAccess = role == null || role.trim().equalsIgnoreCase("No Access");
+
+            if (!isNoAccess && m.getEmailId() != null && !m.getEmailId().isEmpty()) {
+                sharedEmailsList.add(m.getEmailId());
+            }
+        }
+
+        // Ensure the trip owner's email is always kept in sharedEmails
+        if (tripOwnerEmail != null && !tripOwnerEmail.isEmpty() && !sharedEmailsList.contains(tripOwnerEmail)) {
+            sharedEmailsList.add(tripOwnerEmail);
+        }
+
+        // 3. Prepare the final update map package for Firestore
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("memberDetails", memberDetailsList);
+        updates.put("sharedEmails", sharedEmailsList);
+
+        return updates;
+    }
+
     private Spinner createRoleSpinner(String currentRole) {
         Spinner spinner = new Spinner(this);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"No Access", "Viewer", "Editor"});
@@ -657,6 +657,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
     private void openFabMenu() {
         fabExpanded = true;
 
@@ -667,10 +668,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .setDuration(200)
                 .start();
 
-        // Apply Blur Effect for Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Replace 'main_content_container' with the ID of the view holding your background UI.
-            // Do NOT use the root drawer layout, or the FABs will blur too!
             View contentToBlur = findViewById(R.id.main_content_container);
             if (contentToBlur != null) {
                 contentToBlur.setRenderEffect(
@@ -700,7 +698,6 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .withEndAction(() -> viewDim.setVisibility(View.GONE))
                 .start();
 
-        // Remove Blur Effect for Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             View contentToBlur = findViewById(R.id.main_content_container);
             if (contentToBlur != null) {
@@ -719,25 +716,20 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .setDuration(250)
                 .start();
     }
-    private void showButton(View view,long delay){
 
+    private void showButton(View view, long delay) {
         view.setVisibility(View.VISIBLE);
-
         view.setAlpha(0f);
-
         view.setTranslationY(80f);
-
         view.animate()
                 .alpha(1f)
                 .translationY(0f)
                 .setStartDelay(delay)
                 .setDuration(220)
                 .start();
-
     }
 
-    private void hideAnimated(View view,long delay){
-
+    private void hideAnimated(View view, long delay) {
         view.animate()
                 .alpha(0f)
                 .translationY(80f)
@@ -746,27 +738,17 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
-
                         view.setVisibility(View.GONE);
-
                         view.setAlpha(1f);
-
                         view.setTranslationY(0);
-
                         view.animate().setListener(null);
-
                     }
                 }).start();
-
     }
 
-    private void hideButton(View view){
-
+    private void hideButton(View view) {
         view.setVisibility(View.GONE);
-
         view.setAlpha(1f);
-
         view.setTranslationY(0);
-
     }
 }

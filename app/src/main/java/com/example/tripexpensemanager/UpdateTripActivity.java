@@ -440,7 +440,12 @@ public class UpdateTripActivity extends AppCompatActivity {
 
             // 3. Build Search Index Array
             if (mem.getEmailId() != null && !mem.getEmailId().isEmpty()) {
-                sharedEmailsList.add(mem.getEmailId());
+                String role = mem.getRole();
+                boolean isNoAccess = role != null && role.trim().equalsIgnoreCase("No Access");
+
+                if (!isNoAccess) {
+                    sharedEmailsList.add(mem.getEmailId()); // Only add if they are allowed access!
+                }
             }
         }
 

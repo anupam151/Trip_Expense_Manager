@@ -17,7 +17,6 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
-//import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -26,17 +25,17 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-//import java.util.Collections;
 import java.util.Date;
-//import java.util.List;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
-//import java.util.Map;
-//import java.util.Set;
+import java.util.Map;
 
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -48,9 +47,6 @@ import android.widget.ImageButton;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.GravityCompat;
 
-//import android.view.Gravity;
-//import androidx.appcompat.widget.PopupMenu;
-
 @SuppressWarnings("deprecation")
 public class TripListActivity extends BaseDrawerActivity implements TripAdapter.OnTripActionListener {
 
@@ -60,16 +56,13 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     private String currentCategoryLabel;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
-    // --- NEW: Keep track of current sort option ---
     private int currentSortOption = 1; // Default to Departure Ascending
 
     private FirebaseFirestore db;
     private TripDatabaseHelper dbHelper;
     private LedgerExportManager exportManager;
     private String selectedTripIdForExport = null;
-    // Keep your existing variables...
 
-    // --- NEW: Search Variables ---
     private final ArrayList<TripModel> masterTripList = new ArrayList<>();
     private String currentSearchQuery = "";
 
@@ -85,10 +78,8 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_list);
-        // --- NEW: Wire up the Universal Drawer ---
         setupUniversalDrawer(R.id.drawer_layout, R.id.navigation_view);
 
-        // --- NEW: Handle the Back button to close the drawer gracefully ---
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -100,7 +91,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
             }
         });
 
-        // --- NEW: Wire up the hamburger menu icon ---
         ImageButton btnOpenDrawer = findViewById(R.id.btn_open_drawer);
         if (btnOpenDrawer != null) {
             btnOpenDrawer.setOnClickListener(v -> {
@@ -110,26 +100,22 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
             });
         }
 
-        // Warning fix: Moved recyclerView to a local variable
         RecyclerView recyclerView = findViewById(R.id.recycler_view_trips);
         txtEmptyMessage = findViewById(R.id.txt_empty_trips_message);
         TextView txtCategoryTitle = findViewById(R.id.txt_trip_list_category_title);
 
         LinearLayout btnHeaderAddNewTrip = findViewById(R.id.btn_header_add_new_trip);
 
-        // --- Bind the Sort Dropdown ---
         LinearLayout btnSortDropdown = findViewById(R.id.btn_sort_dropdown);
         TextView txtCurrentSort = findViewById(R.id.txt_current_sort);
 
         if (btnSortDropdown != null && txtCurrentSort != null) {
-            // 1. Force the default text to match the default sorting math!
             txtCurrentSort.setText("Departure ▲");
-
             btnSortDropdown.setOnClickListener(v -> showSortPopupMenu(v, txtCurrentSort));
         }
 
         db = FirebaseFirestore.getInstance();
-        dbHelper = new TripDatabaseHelper(this); // Preserved for Legacy Export compatibility
+        dbHelper = new TripDatabaseHelper(this);
         exportManager = new LedgerExportManager(this, dbHelper);
 
         if (getIntent() != null && getIntent().getStringExtra("CATEGORY_TITLE") != null) {
@@ -141,7 +127,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         txtCategoryTitle.setText(currentCategoryLabel);
         txtEmptyMessage.setText(getString(R.string.msg_no_trip_added));
 
-        // --- NEW: Bind Search Bar and Listen for Typing ---
         EditText editSearchTrips = findViewById(R.id.edit_search_trips);
         if (editSearchTrips != null) {
             editSearchTrips.addTextChangedListener(new TextWatcher() {
@@ -150,35 +135,31 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    // Grab the typed text, convert to lowercase for easy matching!
                     currentSearchQuery = s.toString().toLowerCase().trim();
-                    applyFilterAndSort(); // Run our new combined engine
+                    applyFilterAndSort();
                 }
 
                 @Override
                 public void afterTextChanged(Editable s) {}
             });
         }
-// --- NEW: Hide Keyboard when "Done" is pressed ---
+
         if (editSearchTrips != null) {
             editSearchTrips.setOnEditorActionListener((v, actionId, event) -> {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    // 1. Clear the focus so the blinking cursor stops
                     editSearchTrips.clearFocus();
-
-                    // 2. Force the keyboard to hide
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     if (imm != null) {
                         imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
                     }
-                    return true; // Tells Android we successfully handled the click
+                    return true;
                 }
                 return false;
             });
         }
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TripAdapter(tripList, this);
+        adapter = new TripAdapter(tripList, true, this);
         recyclerView.setAdapter(adapter);
 
         if (btnHeaderAddNewTrip != null) {
@@ -207,18 +188,12 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
         loadAndFilterTrips();
 
-        // NEW: Setup SwipeRefreshLayout
         androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setColorSchemeColors(android.graphics.Color.parseColor("#85022E"));
-            swipeRefreshLayout.setOnRefreshListener(this::loadAndFilterTrips); // Triggers your existing fetch method
+            swipeRefreshLayout.setOnRefreshListener(this::loadAndFilterTrips);
         }
-
     }
-
-    // ==========================================
-    // --- NEW: THE COMPLETE SORTING ENGINE ---
-    // ==========================================
 
     private void showSortPopupMenu(View anchor, TextView txtCurrentSort) {
         androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, anchor, android.view.Gravity.END);
@@ -230,8 +205,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
         popup.setOnMenuItemClickListener(item -> {
             String safeTitle = item.getTitle() != null ? item.getTitle().toString() : "";
-
-            // This calls the second method (Fixes the "never used" error!)
             showOrderPopupMenu(anchor, txtCurrentSort, safeTitle, item.getItemId());
             return true;
         });
@@ -252,14 +225,8 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
         popup.setOnMenuItemClickListener(item -> {
             String safeTitle = item.getTitle() != null ? item.getTitle().toString() : "";
-
-            // Figure out which arrow to use
             String arrow = safeTitle.equals("Ascending") ? "▲" : "▼";
-
-            // Combine the category name and the arrow (Fixes the "Cannot resolve" error!)
             txtCurrentSort.setText(categoryName + " " + arrow);
-
-            // Actually sort the list!
             applySorting(item.getItemId());
             return true;
         });
@@ -270,12 +237,10 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         currentSortOption = sortOption;
         applyFilterAndSort();
         tripList.sort((t1, t2) -> {
-            // RULE 1: Pinned trips ALWAYS stay at the very top!
             if (t1.getIsPinnedState() != t2.getIsPinnedState()) {
                 return Integer.compare(t2.getIsPinnedState(), t1.getIsPinnedState());
             }
 
-            // RULE 2: Apply user sort choice
             try {
                 switch (sortOption) {
                     case 1: return compareDates(t1.getStartDate(), t2.getStartDate(), true);
@@ -284,13 +249,12 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                     case 4: return compareDates(t1.getEndDate(), t2.getEndDate(), false);
                     case 5: return compareStrings(t1.getDestination(), t2.getDestination(), true);
                     case 6: return compareStrings(t1.getDestination(), t2.getDestination(), false);
-                    // FIXED: 7 and 8 now correctly sort by Total Expenses!
                     case 7: return Double.compare(t1.getTotalExpenses(), t2.getTotalExpenses());
                     case 8: return Double.compare(t2.getTotalExpenses(), t1.getTotalExpenses());
                     default: return 0;
                 }
             } catch (Exception e) {
-                return 0; // Fallback in case of missing data
+                return 0;
             }
         });
         adapter.notifyDataSetChanged();
@@ -313,8 +277,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         String str2 = s2 != null ? s2.toLowerCase() : "";
         return ascending ? str1.compareTo(str2) : str2.compareTo(str1);
     }
-    // ==========================================
-
 
     private void fetchTripsAndShowSelectionDialog(boolean isForExport) {
         buildAndShowDialog(tripList, isForExport);
@@ -366,7 +328,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         dialog.show();
     }
 
-    @SuppressWarnings("unchecked")
     private void loadAndFilterTrips() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null || account.getEmail() == null) {
@@ -378,24 +339,30 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
         String userEmail = account.getEmail();
 
-        // 1. Fetch the user's private list of hidden IDs from the cloud first
+        // 1. Fetch user document to get personal archived IDs and private pinnedTripId
         db.collection("Users").document(userEmail).get()
                 .addOnSuccessListener(userDoc -> {
 
-                    // Safely get the cloud array without triggering warnings
-                    java.util.List<String> cloudArchivedIds = new java.util.ArrayList<>();
-                    if (userDoc.exists() && userDoc.contains("archivedTripIds")) {
-                        Object rawList = userDoc.get("archivedTripIds");
-                        if (rawList instanceof java.util.List<?>) {
-                            for (Object item : (java.util.List<?>) rawList) {
-                                if (item instanceof String) {
-                                    cloudArchivedIds.add((String) item);
+                    List<String> cloudArchivedIds = new ArrayList<>();
+                    String userPinnedTripId = null;
+
+                    if (userDoc.exists()) {
+                        if (userDoc.contains("archivedTripIds")) {
+                            Object rawList = userDoc.get("archivedTripIds");
+                            if (rawList instanceof List<?>) {
+                                for (Object item : (List<?>) rawList) {
+                                    if (item instanceof String) {
+                                        cloudArchivedIds.add((String) item);
+                                    }
                                 }
                             }
                         }
+                        userPinnedTripId = userDoc.getString("pinnedTripId");
                     }
 
-                    // 2. Fetch ALL trips you are a part of
+                    final String finalPinnedTripId = userPinnedTripId;
+
+                    // 2. Fetch ALL trips shared with this user
                     db.collection("Trips").whereArrayContains("sharedEmails", userEmail).get()
                             .addOnSuccessListener(querySnapshot -> {
                                 masterTripList.clear();
@@ -406,8 +373,38 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
                                 for (DocumentSnapshot doc : querySnapshot) {
 
-                                    // --- NEW: If this trip is in the Cloud Archive list, SKIP IT! ---
                                     if (cloudArchivedIds.contains(doc.getId())) {
+                                        continue;
+                                    }
+
+                                    // SECURITY CHECK: DOES THIS USER STILL HAVE ACCESS?
+                                    String ownerEmail = doc.getString("ownerEmail");
+                                    boolean hasAccess = false;
+
+                                    if (userEmail.equalsIgnoreCase(ownerEmail)) {
+                                        hasAccess = true;
+                                    } else {
+                                        Object rawData = doc.get("memberDetails");
+                                        if (rawData instanceof List) {
+                                            for (Object item : (List<?>) rawData) {
+                                                if (item instanceof Map) {
+                                                    Map<?, ?> map = (Map<?, ?>) item;
+                                                    String memberEmail = (String) map.get("emailId");
+
+                                                    if (userEmail.equalsIgnoreCase(memberEmail)) {
+                                                        String role = (String) map.get("role");
+
+                                                        if (role == null || !role.trim().equalsIgnoreCase("No Access")) {
+                                                            hasAccess = true;
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (!hasAccess) {
                                         continue;
                                     }
 
@@ -448,23 +445,30 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                                                 endStr
                                         );
 
-                                        Boolean isPinnedCloud = doc.getBoolean("isPinned");
-                                        trip.setIsPinnedState((isPinnedCloud != null && isPinnedCloud) ? 1 : 0);
+                                        // Set pin state based on private user setting instead of global document
+                                        boolean isPinnedLocal = finalPinnedTripId != null && finalPinnedTripId.equals(doc.getId());
+                                        trip.setIsPinnedState(isPinnedLocal ? 1 : 0);
 
                                         trip.setInactiveMembers(doc.getString("inactiveMembers"));
-
                                         trip.setOwnerEmail(doc.getString("ownerEmail"));
-                                        java.util.List<java.util.Map<String, Object>> rawMemberDetails = (java.util.List<java.util.Map<String, Object>>) doc.get("memberDetails");
-                                        if (rawMemberDetails != null) {
-                                            java.util.ArrayList<TripMember> parsedMembers = new java.util.ArrayList<>();
-                                            for (java.util.Map<String, Object> map : rawMemberDetails) {
-                                                parsedMembers.add(new TripMember((String) map.get("memberName"), (String) map.get("emailId"), (String) map.get("role")));
+
+                                        Object rawData = doc.get("memberDetails");
+                                        if (rawData instanceof List) {
+                                            ArrayList<TripMember> parsedMembers = new ArrayList<>();
+                                            for (Object item : (List<?>) rawData) {
+                                                if (item instanceof Map) {
+                                                    Map<?, ?> map = (Map<?, ?>) item;
+                                                    parsedMembers.add(new TripMember(
+                                                            (String) map.get("memberName"),
+                                                            (String) map.get("emailId"),
+                                                            (String) map.get("role")
+                                                    ));
+                                                }
                                             }
                                             trip.setMemberDetails(parsedMembers);
                                         }
 
                                         masterTripList.add(trip);
-
                                         calculateTripFinance(trip);
                                     }
                                 }
@@ -490,24 +494,21 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                     if (swipeRefresh != null) {
                         swipeRefresh.setRefreshing(false);
                     }
-                    Toast.makeText(this, "Failed to check archive status.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to check user status.", Toast.LENGTH_SHORT).show();
                 });
     }
+
     private void calculateTripFinance(TripModel trip) {
         TripFinanceCalculator.calculateFinances(trip.getTripId(), new TripFinanceCalculator.FinanceResultListener() {
             @Override
-            public void onStart() {
-                // Optional: You can update the UI or leave this empty
-            }
+            public void onStart() {}
 
             @Override
             public void onResult(double totalExp, double totalRec, double fundBal) {
-                // Update your model data
                 trip.setTotalExpenses(totalExp);
                 trip.setTotalPayments(totalRec);
                 trip.setFundBalance(fundBal);
 
-                // --- CHANGED: Dynamically resort if sorting by Expense (IDs 7 or 8) ---
                 if (currentSortOption == 7 || currentSortOption == 8) {
                     applySorting(currentSortOption);
                 } else {
@@ -516,6 +517,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
             }
         });
     }
+
     @SuppressWarnings("unused")
     private ArrayList<String> getHistoricalMembers(String tripId) {
         ArrayList<String> members = new ArrayList<>();
@@ -528,34 +530,28 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         }
         return members;
     }
+
     private void applyFilterAndSort() {
         tripList.clear();
 
-        // 1. FILTERING (The Search Logic)
         if (currentSearchQuery.isEmpty()) {
             tripList.addAll(masterTripList);
         } else {
             for (TripModel trip : masterTripList) {
-                // Safely grab text and make it lowercase to match the search query
                 String name = trip.getTripName() != null ? trip.getTripName().toLowerCase() : "";
                 String dest = trip.getDestination() != null ? trip.getDestination().toLowerCase() : "";
                 String members = trip.getMembersListString() != null ? trip.getMembersListString().toLowerCase() : "";
-
-                // --- NEW: Grab the inactive members safely ---
                 String inactive = trip.getInactiveMembers() != null ? trip.getInactiveMembers().toLowerCase() : "";
 
-                // --- CHANGED: Check if the query matches ANY of the 4 strings! ---
                 if (name.contains(currentSearchQuery) ||
                         dest.contains(currentSearchQuery) ||
                         members.contains(currentSearchQuery) ||
                         inactive.contains(currentSearchQuery)) {
-
                     tripList.add(trip);
                 }
             }
         }
 
-        // 2. SORTING (Your existing logic)
         tripList.sort((t1, t2) -> {
             if (t1.getIsPinnedState() != t2.getIsPinnedState()) {
                 return Integer.compare(t2.getIsPinnedState(), t1.getIsPinnedState());
@@ -577,7 +573,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
             }
         });
 
-        // 3. Update the UI
         adapter.notifyDataSetChanged();
         txtEmptyMessage.setVisibility(tripList.isEmpty() ? View.VISIBLE : View.GONE);
     }
@@ -585,43 +580,26 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     @Override
     public void onPinToggleClick(TripModel trip, int position) {
         boolean currentlyPinned = trip.getIsPinnedState() == 1;
+        String myEmail = getCurrentUserEmail();
+        if (myEmail.isEmpty()) return;
 
-        if (!currentlyPinned) {
-            // 1. PINNING A NEW TRIP
+        com.google.firebase.firestore.DocumentReference userRef = db.collection("Users").document(myEmail);
+        Map<String, Object> update = new HashMap<>();
 
-            // Loop through our (now always accurate) local list to unpin the old one
-            for (TripModel t : masterTripList) {
-                if (t.getIsPinnedState() == 1) {
-                    t.setIsPinnedState(0); // Update local state
-                    // Update Firestore (Safe from permission errors because we already have access to this trip)
-                    db.collection("Trips").document(t.getTripId()).update("isPinned", false);
-                }
-            }
+        // If currently pinned, clear it (null). Otherwise, assign this trip ID privately.
+        update.put("pinnedTripId", currentlyPinned ? null : trip.getTripId());
 
-            // Now, pin the newly selected trip
-            db.collection("Trips").document(trip.getTripId()).update("isPinned", true)
-                    .addOnSuccessListener(a -> {
-                        trip.setIsPinnedState(1);
-                        applySorting(currentSortOption); // Refresh the UI immediately
-                        Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to pin: " + e.getMessage(), Toast.LENGTH_LONG).show());
-
-        } else {
-            // 2. UNPINNING THE CURRENT TRIP
-            db.collection("Trips").document(trip.getTripId()).update("isPinned", false)
-                    .addOnSuccessListener(a -> {
-                        trip.setIsPinnedState(0);
-                        applySorting(currentSortOption); // Refresh the UI immediately
-                        Toast.makeText(this, "Trip unpinned!", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to unpin: " + e.getMessage(), Toast.LENGTH_LONG).show());
-        }
+        userRef.set(update, SetOptions.merge())
+                .addOnSuccessListener(a -> {
+                    loadAndFilterTrips();
+                    Toast.makeText(this, currentlyPinned ? "Trip unpinned!" : "Trip pinned!", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to update pin: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     @Override
     public void onDeleteClick(TripModel trip) {
-        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        String myEmail = getCurrentUserEmail();
         if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
             Toast.makeText(this, "Only the Admin can delete trips.", Toast.LENGTH_SHORT).show();
             return;
@@ -649,7 +627,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
     @Override
     public void onEditClick(TripModel trip) {
-        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        String myEmail = getCurrentUserEmail();
         if (!"Admin".equals(trip.getCurrentUserRole(myEmail))) {
             Toast.makeText(this, "Only the Admin can edit trips.", Toast.LENGTH_SHORT).show();
             return;
@@ -666,7 +644,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
     @Override
     public void onAddExpenseClick(TripModel trip) {
-        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        String myEmail = getCurrentUserEmail();
         if ("Viewer".equals(trip.getCurrentUserRole(myEmail))) {
             Toast.makeText(this, "Only Admin and Editors can add expenses.", Toast.LENGTH_SHORT).show();
             return;
@@ -679,7 +657,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
     @Override
     public void onAddPaymentClick(TripModel trip) {
-        String myEmail = getCurrentUserEmail(); // <--- FIXED
+        String myEmail = getCurrentUserEmail();
         if ("Viewer".equals(trip.getCurrentUserRole(myEmail))) {
             Toast.makeText(this, "Only Admin and Editors can add payments.", Toast.LENGTH_SHORT).show();
             return;
@@ -695,7 +673,7 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         super.onResume();
         loadAndFilterTrips();
     }
-    // --- Helper to safely get the current user's email ---
+
     private String getCurrentUserEmail() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null && account.getEmail() != null) {

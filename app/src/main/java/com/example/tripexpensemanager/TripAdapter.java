@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -16,10 +17,14 @@ import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 import java.util.Locale;
 
-public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder> {
+public class TripAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private final ArrayList<TripModel> tripList;
     private final OnTripActionListener actionListener;
+    private final boolean isMinimalMode;
+
+    private static final int VIEW_TYPE_FULL = 0;
+    private static final int VIEW_TYPE_MINIMAL = 1;
 
     public interface OnTripActionListener {
         void onEditClick(TripModel trip);
@@ -30,28 +35,38 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
         void onTripItemClick(TripModel trip);
     }
 
-    public TripAdapter(ArrayList<TripModel> tripList, OnTripActionListener actionListener) {
+    // Constructor: Used by both Dashboard and TripListActivity
+    public TripAdapter(ArrayList<TripModel> tripList, boolean isMinimalMode, OnTripActionListener actionListener) {
         this.tripList = tripList;
+        this.isMinimalMode = isMinimalMode;
         this.actionListener = actionListener;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return isMinimalMode ? VIEW_TYPE_MINIMAL : VIEW_TYPE_FULL;
     }
 
     @NonNull
     @Override
-    public TripViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_trip, parent, false);
-        return new TripViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == VIEW_TYPE_MINIMAL) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_trip_minimal, parent, false);
+            return new MinimalTripViewHolder(view);
+        } else {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_trip, parent, false);
+            return new FullTripViewHolder(view);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull TripViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         TripModel trip = tripList.get(position);
         Context context = holder.itemView.getContext();
 
-        holder.txtTotalExpense.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses()));
-        holder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments()));
-        holder.txtFundBalance.setText(String.format(Locale.US, "₹%.2f", trip.getFundBalance()));
-
-        // --- ROLE CALCULATION & BADGE UI ---
+        // ==========================================
+        // 1. CALCULATE ROLE & BADGE STYLE ONCE
+        // ==========================================
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String currentUserEmail = (user != null && user.getEmail() != null) ? user.getEmail() : "";
         String currentUserRole = "Viewer";
@@ -69,72 +84,112 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             }
         }
 
-        android.util.DisplayMetrics metrics = holder.itemView.getContext().getResources().getDisplayMetrics();
+        // Setup Badge Background & Colors
+        android.util.DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int hPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 10, metrics);
+        int vPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 2, metrics);
+        float radius = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
 
-        int horizontalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 13, metrics);
-        int verticalPadding = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 3, metrics);
-        float elevationPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
-        float cornerRadiusPx = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 4, metrics);
+        android.graphics.drawable.GradientDrawable roleBg = new android.graphics.drawable.GradientDrawable();
+        roleBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        roleBg.setCornerRadius(radius);
 
-        android.graphics.drawable.GradientDrawable backgroundShape = new android.graphics.drawable.GradientDrawable();
-        backgroundShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        backgroundShape.setCornerRadius(cornerRadiusPx);
-
-        holder.txtRoleBadge.setPadding(
-                horizontalPadding,
-                verticalPadding,
-                horizontalPadding,
-                verticalPadding
-        );
-
-        holder.txtRoleBadge.setElevation(elevationPx);
-        holder.txtRoleBadge.setText(currentUserRole);
-
-
+        int roleTextColor;
         if ("Admin".equalsIgnoreCase(currentUserRole)) {
-            backgroundShape.setColor(0xFF85022E);
-            holder.txtRoleBadge.setTextColor(0xFFFAF7F7);
+            roleBg.setColor(0xFF85022E);
+            roleTextColor = 0xFFFAF7F7;
         } else if ("Editor".equalsIgnoreCase(currentUserRole)) {
-            backgroundShape.setColor(0xFF3e8914);
-            holder.txtRoleBadge.setTextColor(0xFFF5FFF6);
+            roleBg.setColor(0xFF3e8914);
+            roleTextColor = 0xFFF5FFF6;
         } else {
-            backgroundShape.setColor(0xFF2f4550);
-            holder.txtRoleBadge.setTextColor(0xFFe9ecef);
+            roleBg.setColor(0xFF2f4550);
+            roleTextColor = 0xFFe9ecef;
         }
 
-        holder.txtRoleBadge.setBackground(backgroundShape);
+        // ==========================================
+        // 2. APPLY TO THE CORRECT LAYOUT
+        // ==========================================
+        if (holder.getItemViewType() == VIEW_TYPE_MINIMAL) {
 
+            MinimalTripViewHolder minHolder = (MinimalTripViewHolder) holder;
 
-        // --- PIN STATE ---
-        if (trip.getIsPinnedState() == 1) {
-            holder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getDestination()));
-            holder.btnPin.setText(context.getString(R.string.action_state_unpin));
-            holder.btnPin.setTextColor(0xFF2E7D32);
+            // Serial Number
+            minHolder.txtSlNo.setText((position + 1) + ".");
+
+            // 1. Destination (Only the destination, no heading)
+            String dest = (trip.getDestination() != null && !trip.getDestination().trim().isEmpty()) ? trip.getDestination() : "Unknown Destination";
+            minHolder.txtDestination.setText(dest);
+
+            // 2. Departure Date and Fund Balance
+            String date = trip.getStartDate() != null ? trip.getStartDate() : "TBD";
+            String balance = String.format(Locale.US, "₹%.2f", trip.getFundBalance());
+            minHolder.txtDateBalance.setText(date + "  •  Bal: " + balance);
+
+            // 3. Total Expense and Total Payment
+            String expense = context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses());
+            String payment = context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments());
+            minHolder.txtExpensePayment.setText("Exp: " + expense + "  •  Pay: " + payment);
+
+            // 4. Apply Role Badge
+            minHolder.txtRoleBadge.setText(currentUserRole);
+            minHolder.txtRoleBadge.setTextColor(roleTextColor);
+            minHolder.txtRoleBadge.setBackground(roleBg);
+            minHolder.txtRoleBadge.setPadding(hPadding, vPadding, hPadding, vPadding);
+
+            // Switch Logic (Remove listener first to prevent recycling issues)
+            minHolder.switchPinToggle.setOnCheckedChangeListener(null);
+            minHolder.switchPinToggle.setChecked(trip.getIsPinnedState() == 1);
+            minHolder.switchPinToggle.setOnCheckedChangeListener((btn, isChecked) ->
+                    actionListener.onPinToggleClick(trip, position)
+            );
+
+            minHolder.itemView.setOnClickListener(v -> actionListener.onTripItemClick(trip));
+
         } else {
-            holder.txtTripName.setText(context.getString(R.string.fmt_item_name_sequential, (position + 1), trip.getDestination()));
-            holder.btnPin.setText(context.getString(R.string.action_state_pin));
-            holder.btnPin.setTextColor(0xFFC85A00);
-        }
 
-        // --- LISTENERS ---
-        holder.itemView.setOnClickListener(v -> actionListener.onTripItemClick(trip));
-        holder.btnPin.setOnClickListener(v -> actionListener.onPinToggleClick(trip, holder.getBindingAdapterPosition()));
-        holder.btnEdit.setOnClickListener(v -> actionListener.onEditClick(trip));
-        holder.btnDelete.setOnClickListener(v -> actionListener.onDeleteClick(trip));
-        holder.btnAddExpense.setOnClickListener(v -> actionListener.onAddExpenseClick(trip));
-        holder.btnAddPayment.setOnClickListener(v -> actionListener.onAddPaymentClick(trip));
+            FullTripViewHolder fullHolder = (FullTripViewHolder) holder;
+
+            fullHolder.txtTotalExpense.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses()));
+            fullHolder.txtTotalReceived.setText(context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments()));
+            fullHolder.txtFundBalance.setText(String.format(Locale.US, "₹%.2f", trip.getFundBalance()));
+
+            // Apply Role Badge
+            fullHolder.txtRoleBadge.setText(currentUserRole);
+            fullHolder.txtRoleBadge.setTextColor(roleTextColor);
+            fullHolder.txtRoleBadge.setBackground(roleBg);
+            fullHolder.txtRoleBadge.setPadding(hPadding, vPadding, hPadding, vPadding);
+
+            // Pin State text logic
+            if (trip.getIsPinnedState() == 1) {
+                fullHolder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getDestination()));
+                fullHolder.btnPin.setText(context.getString(R.string.action_state_unpin));
+                fullHolder.btnPin.setTextColor(0xFF2E7D32);
+            } else {
+                fullHolder.txtTripName.setText(context.getString(R.string.fmt_item_name_sequential, (position + 1), trip.getDestination()));
+                fullHolder.btnPin.setText(context.getString(R.string.action_state_pin));
+                fullHolder.btnPin.setTextColor(0xFFC85A00);
+            }
+
+            // Listeners
+            fullHolder.itemView.setOnClickListener(v -> actionListener.onTripItemClick(trip));
+            fullHolder.btnPin.setOnClickListener(v -> actionListener.onPinToggleClick(trip, position));
+            fullHolder.btnEdit.setOnClickListener(v -> actionListener.onEditClick(trip));
+            fullHolder.btnDelete.setOnClickListener(v -> actionListener.onDeleteClick(trip));
+            fullHolder.btnAddExpense.setOnClickListener(v -> actionListener.onAddExpenseClick(trip));
+            fullHolder.btnAddPayment.setOnClickListener(v -> actionListener.onAddPaymentClick(trip));
+        }
     }
 
     @Override
     public int getItemCount() { return tripList.size(); }
 
-    public static class TripViewHolder extends RecyclerView.ViewHolder {
+    public static class FullTripViewHolder extends RecyclerView.ViewHolder {
         TextView txtTripName, txtFundBalance;
         TextView txtTotalExpense, txtTotalReceived;
         TextView btnPin, btnEdit, btnDelete, txtRoleBadge;
         MaterialButton btnAddExpense, btnAddPayment;
 
-        public TripViewHolder(@NonNull View itemView) {
+        public FullTripViewHolder(@NonNull View itemView) {
             super(itemView);
             txtTripName = itemView.findViewById(R.id.txt_item_trip_name);
             txtFundBalance = itemView.findViewById(R.id.txt_item_fund_balance);
@@ -146,6 +201,21 @@ public class TripAdapter extends RecyclerView.Adapter<TripAdapter.TripViewHolder
             btnAddExpense = itemView.findViewById(R.id.btn_item_add_expense);
             btnAddPayment = itemView.findViewById(R.id.btn_item_add_payment);
             txtRoleBadge = itemView.findViewById(R.id.txt_item_role_badge);
+        }
+    }
+
+    public static class MinimalTripViewHolder extends RecyclerView.ViewHolder {
+        TextView txtSlNo, txtDestination, txtDateBalance, txtExpensePayment, txtRoleBadge;
+        SwitchCompat switchPinToggle;
+
+        public MinimalTripViewHolder(@NonNull View itemView) {
+            super(itemView);
+            txtSlNo = itemView.findViewById(R.id.txt_sl_no);
+            txtDestination = itemView.findViewById(R.id.txt_destination);
+            txtDateBalance = itemView.findViewById(R.id.txt_date_balance);
+            txtExpensePayment = itemView.findViewById(R.id.txt_expense_payment);
+            txtRoleBadge = itemView.findViewById(R.id.txt_role_badge);
+            switchPinToggle = itemView.findViewById(R.id.switch_pin_toggle);
         }
     }
 }
