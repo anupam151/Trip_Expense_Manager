@@ -141,6 +141,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         layoutEdit = findViewById(R.id.layoutEdit);
         layoutDelete = findViewById(R.id.layoutDelete);
         LinearLayout layoutPdf = findViewById(R.id.layoutpdf);
+        LinearLayout layout_archive = findViewById(R.id.layout_archive);
 
         viewDim = findViewById(R.id.viewDim);
 
@@ -149,6 +150,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         hideButton(layoutEdit);
         hideButton(layoutDelete);
         hideButton(layoutPdf);
+        hideButton(layout_archive);
 
         fabQuickActions.setOnClickListener(v -> {
             if (fabExpanded)
@@ -267,7 +269,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                 String inactiveRaw = doc.getString("inactiveMembers");
                 rawLegacyMembers = doc.getString("members");
 
-                ImageButton btnArchiveTrip = findViewById(R.id.btn_archive_trip);
+                com.google.android.material.card.MaterialCardView btnArchiveTrip = findViewById(R.id.btn_archive_trip);
 
                 btnArchiveTrip.setOnClickListener(v ->
                         new androidx.appcompat.app.AlertDialog.Builder(TripDetailsActivity.this)
@@ -280,52 +282,71 @@ public class TripDetailsActivity extends BaseDrawerActivity {
 
                                     if (myEmail.isEmpty()) return;
 
-                                    WriteBatch batch = db.batch();
-
                                     DocumentReference userRef = db.collection("Users").document(myEmail);
-                                    java.util.Map<String, Object> userUpdate = new java.util.HashMap<>();
-                                    userUpdate.put("archivedTripIds", FieldValue.arrayUnion(tripId));
-                                    batch.set(userRef, userUpdate, SetOptions.merge());
 
-                                    DocumentReference tripRef = db.collection("Trips").document(tripId);
-                                    java.util.Map<String, Object> firestoreUpdates = new java.util.HashMap<>();
-                                    firestoreUpdates.put("isPinned", false);
+                                    // 1. Fetch the user's document FIRST to check what trip is currently pinned
+                                    userRef.get().addOnSuccessListener(userDoc -> {
 
-                                    boolean tempRolesChanged = false;
+                                        WriteBatch batch = db.batch();
+                                        java.util.Map<String, Object> userUpdate = new java.util.HashMap<>();
 
-                                    if ("Admin".equalsIgnoreCase(currentUserRole) && currentMembersList != null) {
-                                        List<java.util.Map<String, Object>> updatedMemberDetails = new java.util.ArrayList<>();
-                                        for (TripMember m : currentMembersList) {
-                                            if ("Editor".equalsIgnoreCase(m.getRole())) {
-                                                m.setRole("Viewer");
-                                                tempRolesChanged = true;
+                                        // Always add this trip to the archived array
+                                        userUpdate.put("archivedTripIds", FieldValue.arrayUnion(tripId));
+
+                                        // 2. ONLY unpin if the currently pinned trip is the EXACT one we are archiving
+                                        if (userDoc.exists() && tripId.equals(userDoc.getString("pinnedTripId"))) {
+                                            userUpdate.put("pinnedTripId", null);
+                                        }
+
+                                        // Apply the personal update
+                                        batch.set(userRef, userUpdate, SetOptions.merge());
+
+                                        // 3. Global Update: Downgrade roles if Admin
+                                        DocumentReference tripRef = db.collection("Trips").document(tripId);
+                                        java.util.Map<String, Object> firestoreUpdates = new java.util.HashMap<>();
+
+                                        boolean tempRolesChanged = false;
+
+                                        if ("Admin".equalsIgnoreCase(currentUserRole) && currentMembersList != null) {
+                                            List<java.util.Map<String, Object>> updatedMemberDetails = new java.util.ArrayList<>();
+                                            for (TripMember m : currentMembersList) {
+                                                if ("Editor".equalsIgnoreCase(m.getRole())) {
+                                                    m.setRole("Viewer");
+                                                    tempRolesChanged = true;
+                                                }
+                                                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                                                map.put("memberName", m.getMemberName());
+                                                map.put("emailId", m.getEmailId());
+                                                map.put("role", m.getRole());
+                                                updatedMemberDetails.add(map);
                                             }
-                                            java.util.Map<String, Object> map = new java.util.HashMap<>();
-                                            map.put("memberName", m.getMemberName());
-                                            map.put("emailId", m.getEmailId());
-                                            map.put("role", m.getRole());
-                                            updatedMemberDetails.add(map);
+                                            if (tempRolesChanged) {
+                                                firestoreUpdates.put("memberDetails", updatedMemberDetails);
+                                            }
                                         }
-                                        if (tempRolesChanged) {
-                                            firestoreUpdates.put("memberDetails", updatedMemberDetails);
+
+                                        final boolean rolesChangedFinal = tempRolesChanged;
+
+                                        // Only update Firestore if member roles actually changed
+                                        if (!firestoreUpdates.isEmpty()) {
+                                            batch.update(tripRef, firestoreUpdates);
                                         }
-                                    }
 
-                                    final boolean rolesChangedFinal = tempRolesChanged;
-                                    batch.update(tripRef, firestoreUpdates);
+                                        // 4. Commit the batch
+                                        batch.commit()
+                                                .addOnSuccessListener(aVoid -> {
+                                                    Toast.makeText(TripDetailsActivity.this,
+                                                            rolesChangedFinal ? "Archived & Editors locked out." : "Trip Archived successfully.",
+                                                            Toast.LENGTH_SHORT).show();
 
-                                    batch.commit()
-                                            .addOnSuccessListener(aVoid -> {
-                                                Toast.makeText(TripDetailsActivity.this,
-                                                        rolesChangedFinal ? "Unpinned, Archived & Editors locked out." : "Trip Unpinned & Archived.",
-                                                        Toast.LENGTH_SHORT).show();
+                                                    Intent intent = new Intent(TripDetailsActivity.this, DashboardActivity.class);
+                                                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                                    startActivity(intent);
+                                                    finish();
+                                                })
+                                                .addOnFailureListener(e -> Toast.makeText(TripDetailsActivity.this, "Network error. Could not archive.", Toast.LENGTH_SHORT).show());
 
-                                                Intent intent = new Intent(TripDetailsActivity.this, DashboardActivity.class);
-                                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                startActivity(intent);
-                                                finish();
-                                            })
-                                            .addOnFailureListener(e -> Toast.makeText(TripDetailsActivity.this, "Network error. Could not archive.", Toast.LENGTH_SHORT).show());
+                                    }).addOnFailureListener(e -> Toast.makeText(TripDetailsActivity.this, "Failed to verify pin state.", Toast.LENGTH_SHORT).show());
                                 })
                                 .setNegativeButton("Cancel", null)
                                 .show()
@@ -494,7 +515,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
                     })
                     .addOnFailureListener(e -> {
                         view.findViewById(R.id.btn_dialog_save_access).setEnabled(true);
-                        Toast.makeText(this, "Failed to save roles", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Only Admin can assign the role.", Toast.LENGTH_SHORT).show();
                     });
         });
 
@@ -682,6 +703,7 @@ public class TripDetailsActivity extends BaseDrawerActivity {
         showButton(layoutEdit, 80);
         showButton(layoutDelete, 120);
         showButton(findViewById(R.id.layoutpdf), 160);
+        showButton(findViewById(R.id.layout_archive), 200);
 
         fabQuickActions.animate()
                 .rotation(45f)
@@ -705,11 +727,13 @@ public class TripDetailsActivity extends BaseDrawerActivity {
             }
         }
 
-        hideAnimated(findViewById(R.id.layoutpdf), 0);
-        hideAnimated(layoutDelete, 30);
-        hideAnimated(layoutEdit, 60);
-        hideAnimated(layoutPayment, 90);
-        hideAnimated(layoutExpense, 120);
+        hideAnimated(findViewById(R.id.layout_archive), 0);
+        hideAnimated(findViewById(R.id.layoutpdf), 30);
+        hideAnimated(layoutDelete, 60);
+        hideAnimated(layoutEdit, 90);
+        hideAnimated(layoutPayment, 120);
+        hideAnimated(layoutExpense, 150);
+
 
         fabQuickActions.animate()
                 .rotation(0f)

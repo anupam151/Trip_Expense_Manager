@@ -70,7 +70,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="10dp"
-                    android:gravity="start|center_vertical"
+                    android:gravity="start"
                     android:textColor="#85022E"
                     android:textSize="25sp"
                     android:textStyle="bold"
@@ -85,30 +85,21 @@
                     app:autoSizeMinTextSize="6sp"
                     app:autoSizeMaxTextSize="22sp"
                     app:autoSizeStepGranularity="1sp" />
-                <TextView
-                    android:id="@+id/txt_item_role_badge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="2dp"
-                    android:layout_marginEnd="18dp"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    android:background="#85022E"
-                    android:text="Role" />
-                <ImageButton
-                    android:id="@+id/btn_archive_trip"
-                    android:layout_width="35dp"
-                    android:layout_height="35dp"
-                    android:layout_marginEnd="14dp"
-                    android:src="@drawable/archived"
-                    android:padding="6dp"
-                    android:scaleType="fitCenter"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="#85022E"
-                    android:contentDescription="Archive Trip" />
+
+                    <TextView
+                        android:id="@+id/txt_item_role_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="2dp"
+                        android:layout_marginEnd="18dp"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:background="#85022E"
+                        android:text="Role" />
             </LinearLayout>
+
 
             <!--Swipe Refresh-->
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -132,10 +123,91 @@
                 android:layout_marginHorizontal="6dp"
                 android:paddingHorizontal="6dp"
                 android:paddingTop="4dp">
+
+
+
                 <GridLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:columnCount="2"
+                    android:columnCount="1"
+                    android:rowCount="1"
+                    android:padding="0dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#FFFFFF">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:weightSum="3"
+                            android:paddingVertical="15dp"
+                            android:paddingHorizontal="10dp"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:gravity="start">
+                                <TextView
+                                    android:id="@+id/txt_details_member_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="#2E7D32"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:gravity="center">
+                                <TextView
+                                    android:id="@+id/txt_details_destination"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="#85022E"
+                                    android:gravity="center"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:gravity="end">
+                                <TextView
+                                    android:id="@+id/txt_details_dates"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#85022E"/>
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                </GridLayout>
+
+
+
+
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="3"
                     android:padding="0dp">
                     <androidx.cardview.widget.CardView
                         android:layout_width="0dp"
@@ -145,119 +217,25 @@
                         app:cardCornerRadius="6dp"
                         app:cardElevation="3dp"
                         app:cardBackgroundColor="#FFFFFF">
-
                         <LinearLayout
+                            android:orientation="vertical"
+                            android:paddingVertical="6dp"
+                            android:paddingHorizontal="10dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:paddingVertical="6dp"
-                            android:paddingHorizontal="10dp"
                             android:gravity="center">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/label_destination"
-                                android:textSize="12sp"
-                                android:textColor="#000000"
-                                android:layout_marginBottom="3dp"/>
-
-                            <TextView
-                                android:id="@+id/txt_details_destination"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textColor="#85022E"
-                                android:textSize="18sp"
-                                android:textStyle="bold"/>
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="4dp"
-                        app:cardCornerRadius="6dp"
-                        app:cardElevation="3dp"
-                        app:cardBackgroundColor="#FFFFFF">
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:paddingVertical="6dp"
-                            android:paddingHorizontal="10dp"
-                            android:gravity="center">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/label_members_details"
-                                android:textSize="12sp"
-                                android:textColor="#000000"
-                                android:layout_marginBottom="3dp"/>
-                            <TextView
-                                android:id="@+id/txt_details_member_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textColor="#2E7D32"
-                                android:textSize="18sp"
-                                android:textStyle="bold"/>
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="4dp"
-                        app:cardCornerRadius="6dp"
-                        app:cardElevation="3dp"
-                        app:cardBackgroundColor="#FFFFFF">
-                        <LinearLayout
-                            android:orientation="vertical"
-                            android:paddingVertical="6dp"
-                            android:paddingHorizontal="10dp"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/date_departure"
-                                android:textSize="12sp"
-                                android:textColor="#000000"
-                                android:layout_marginBottom="3dp"/>
-                            <TextView
-                                android:id="@+id/txt_details_dates"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:textColor="#85022E"/>
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="4dp"
-                        app:cardCornerRadius="6dp"
-                        app:cardElevation="3dp"
-                        app:cardBackgroundColor="#FFFFFF">
-                        <LinearLayout
-                            android:orientation="vertical"
-                            android:paddingVertical="6dp"
-                            android:paddingHorizontal="10dp"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/label_fund_balance"
-                                android:textSize="12sp"
+                                android:textSize="11sp"
                                 android:textColor="#000000"
                                 android:layout_marginBottom="3dp"/>
                             <TextView
                                 android:id="@+id/txt_details_fund_balance"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textSize="18sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold"
                                 android:textColor="#2E7D32"/>
                         </LinearLayout>
@@ -275,19 +253,20 @@
                             android:paddingVertical="6dp"
                             android:paddingHorizontal="10dp"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
+                            android:layout_height="wrap_content"
+                            android:gravity="center">
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/label_total_receipts"
-                                android:textSize="12sp"
+                                android:textSize="11dp"
                                 android:textColor="#000000"
                                 android:layout_marginBottom="3dp"/>
                             <TextView
                                 android:id="@+id/txt_details_total_receipts"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textSize="18sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold"
                                 android:textColor="#2E7D32"/>
                         </LinearLayout>
@@ -305,19 +284,20 @@
                             android:paddingVertical="6dp"
                             android:paddingHorizontal="10dp"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
+                            android:layout_height="wrap_content"
+                            android:gravity="center">
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/label_total_expenses"
-                                android:textSize="12sp"
+                                android:textSize="11sp"
                                 android:textColor="#000000"
                                 android:layout_marginBottom="3dp"/>
                             <TextView
                                 android:id="@+id/txt_details_total_expenses"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textSize="18sp"
+                                android:textSize="15sp"
                                 android:textStyle="bold"
                                 android:textColor="#85022E"/>
                         </LinearLayout>
@@ -754,8 +734,7 @@
                     app:tint="#85022E"
                     android:contentDescription="Delete Trip"/>
             </LinearLayout>
-
-
+            <!-- Export to PDF -->
             <LinearLayout
                 android:id="@+id/layoutpdf"
                 android:layout_width="wrap_content"
@@ -781,7 +760,6 @@
                         android:textStyle="bold"
                         android:textColor="#85022E"/>
                 </com.google.android.material.card.MaterialCardView>
-
                 <ImageButton
                     android:id="@+id/iconpdf"
                     android:layout_width="48dp"
@@ -790,6 +768,44 @@
                     android:layout_marginEnd="16dp"
                     android:background="@drawable/bg_circle_white_2"
                     android:src="@drawable/pdf"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    app:tint="#85022E"
+                    android:contentDescription="@string/btn_export_all_pdf"/>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/layout_archive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_archive_trip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    app:cardCornerRadius="10dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:paddingHorizontal="18dp"
+                        android:gravity="center"
+                        android:text="Archive Trip"
+                        android:textStyle="bold"
+                        android:textColor="#85022E"/>
+                </com.google.android.material.card.MaterialCardView>
+                <ImageButton
+                    android:id="@+id/archive"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/bg_circle_white_2"
+                    android:src="@drawable/archived"
                     android:padding="12dp"
                     android:scaleType="centerInside"
                     app:tint="#85022E"
