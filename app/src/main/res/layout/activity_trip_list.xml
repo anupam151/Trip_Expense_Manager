@@ -241,7 +241,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/unv_btn_all_individual_to_one_pdf"
+                    android:id="@+id/btn_dash_utility"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -254,15 +254,14 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@drawable/pdf"
+                        android:src="@drawable/ic_add_expense"
                         app:tint="#85022E"
-                        android:contentDescription="@string/all_in_one_pdf"/>
+                        android:contentDescription="@string/dash_btn_utility"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
-                        android:gravity="center"
-                        android:text="@string/all_in_one_pdf"
+                        android:text="@string/dash_btn_utility"
                         android:textSize="10sp"
                         android:textColor="@android:color/black"/>
                 </LinearLayout>
@@ -272,7 +271,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="#CCCCCC" />
                 <LinearLayout
-                    android:id="@+id/unv_btn_complete_ledger"
+                    android:id="@+id/btn_dash_settings"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -285,15 +284,14 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@drawable/bank"
+                        android:src="@drawable/settings"
                         app:tint="#85022E"
-                        android:contentDescription="@string/complete_ledger"/>
+                        android:contentDescription="@string/dash_btn_settings"/>
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
-                        android:gravity="center"
-                        android:text="@string/complete_ledger"
+                        android:text="@string/dash_btn_settings"
                         android:textSize="10sp"
                         android:textColor="@android:color/black"/>
                 </LinearLayout>

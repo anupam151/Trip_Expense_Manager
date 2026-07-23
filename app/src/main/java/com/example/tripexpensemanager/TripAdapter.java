@@ -120,15 +120,13 @@ public class TripAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             String dest = (trip.getDestination() != null && !trip.getDestination().trim().isEmpty()) ? trip.getDestination() : "Unknown Destination";
             minHolder.txtDestination.setText(dest);
 
-            // 2. Departure Date and Fund Balance
-            String date = trip.getStartDate() != null ? trip.getStartDate() : "TBD";
-            String balance = String.format(Locale.US, "₹%.2f", trip.getFundBalance());
-            minHolder.txtDateBalance.setText(date + "  •  Bal: " + balance);
+            // 2. Date and Balance
+            minHolder.txtDate.setText(trip.getStartDate() != null ? trip.getStartDate() : "TBD");
+            minHolder.txtBalance.setText(String.format(Locale.US, "Bal: ₹%.2f", trip.getFundBalance()));
 
-            // 3. Total Expense and Total Payment
-            String expense = context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses());
-            String payment = context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments());
-            minHolder.txtExpensePayment.setText("Exp: " + expense + "  •  Pay: " + payment);
+            // 3. Expense and Payment
+            minHolder.txtExpense.setText("Exp: " + context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalExpenses()));
+            minHolder.txtPayment.setText("Pay: " + context.getString(R.string.fmt_dash_currency_rupees, trip.getTotalPayments()));
 
             // 4. Apply Role Badge
             minHolder.txtRoleBadge.setText(currentUserRole);
@@ -205,15 +203,17 @@ public class TripAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     public static class MinimalTripViewHolder extends RecyclerView.ViewHolder {
-        TextView txtSlNo, txtDestination, txtDateBalance, txtExpensePayment, txtRoleBadge;
+        TextView txtSlNo, txtDestination, txtDate, txtBalance, txtExpense, txtPayment, txtRoleBadge;
         SwitchCompat switchPinToggle;
 
         public MinimalTripViewHolder(@NonNull View itemView) {
             super(itemView);
             txtSlNo = itemView.findViewById(R.id.txt_sl_no);
             txtDestination = itemView.findViewById(R.id.txt_destination);
-            txtDateBalance = itemView.findViewById(R.id.txt_date_balance);
-            txtExpensePayment = itemView.findViewById(R.id.txt_expense_payment);
+            txtDate = itemView.findViewById(R.id.txt_date);
+            txtBalance=itemView.findViewById(R.id.txt_balance);
+            txtExpense = itemView.findViewById(R.id.txt_expense);
+            txtPayment=itemView.findViewById(R.id.txt_payment);
             txtRoleBadge = itemView.findViewById(R.id.txt_role_badge);
             switchPinToggle = itemView.findViewById(R.id.switch_pin_toggle);
         }

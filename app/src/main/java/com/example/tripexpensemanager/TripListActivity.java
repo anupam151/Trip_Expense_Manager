@@ -1,28 +1,27 @@
 package com.example.tripexpensemanager;
 
-import android.app.Dialog;
 import android.content.Intent;
-import android.database.Cursor;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.view.GravityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -37,16 +36,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.widget.EditText;
-import android.content.Context;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.ImageButton;
-import androidx.activity.OnBackPressedCallback;
-import androidx.core.view.GravityCompat;
-
 @SuppressWarnings("deprecation")
 public class TripListActivity extends BaseDrawerActivity implements TripAdapter.OnTripActionListener {
 
@@ -59,20 +48,8 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
     private int currentSortOption = 1; // Default to Departure Ascending
 
     private FirebaseFirestore db;
-    private TripDatabaseHelper dbHelper;
-    private LedgerExportManager exportManager;
-    private String selectedTripIdForExport = null;
-
     private final ArrayList<TripModel> masterTripList = new ArrayList<>();
     private String currentSearchQuery = "";
-
-    private final ActivityResultLauncher<String> createMasterPdfLauncher = registerForActivityResult(
-            new ActivityResultContracts.CreateDocument("application/pdf"),
-            uri -> {
-                if (uri != null && exportManager != null && selectedTripIdForExport != null) {
-                    exportManager.exportAllMembersToSinglePdf(uri, selectedTripIdForExport);
-                }
-            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,8 +92,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         }
 
         db = FirebaseFirestore.getInstance();
-        dbHelper = new TripDatabaseHelper(this);
-        exportManager = new LedgerExportManager(this, dbHelper);
 
         if (getIntent() != null && getIntent().getStringExtra("CATEGORY_TITLE") != null) {
             currentCategoryLabel = getIntent().getStringExtra("CATEGORY_TITLE");
@@ -176,15 +151,9 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
             });
         }
 
-        LinearLayout btnExportAll = findViewById(R.id.unv_btn_all_individual_to_one_pdf);
-        if (btnExportAll != null) {
-            btnExportAll.setOnClickListener(v -> fetchTripsAndShowSelectionDialog(true));
-        }
 
-        LinearLayout btnCompleteLedger = findViewById(R.id.unv_btn_complete_ledger);
-        if (btnCompleteLedger != null) {
-            btnCompleteLedger.setOnClickListener(v -> fetchTripsAndShowSelectionDialog(false));
-        }
+        findViewById(R.id.btn_dash_utility).setOnClickListener(v -> startActivity(new Intent(this, UtilityActivity.class)));
+        findViewById(R.id.btn_dash_settings).setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
 
         loadAndFilterTrips();
 
@@ -278,56 +247,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         return ascending ? str1.compareTo(str2) : str2.compareTo(str1);
     }
 
-    private void fetchTripsAndShowSelectionDialog(boolean isForExport) {
-        buildAndShowDialog(tripList, isForExport);
-    }
-
-    private void buildAndShowDialog(ArrayList<TripModel> allTrips, boolean isForExport) {
-        if (allTrips.isEmpty()) {
-            Toast.makeText(this, "No trips available.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_export_trips);
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        }
-
-        TextView txtTitle = dialog.findViewById(R.id.txt_dialog_title);
-        if (txtTitle != null) {
-            txtTitle.setText(isForExport ? R.string.title_select_trip_export : R.string.title_select_trip_transactions);
-        }
-
-        LinearLayout container = dialog.findViewById(R.id.container_dialog_trips);
-        for (TripModel trip : allTrips) {
-            View rowView = LayoutInflater.from(this).inflate(R.layout.item_dialog_trip, container, false);
-            ((TextView) rowView.findViewById(R.id.txt_dialog_trip_name)).setText(trip.getTripName());
-            ((TextView) rowView.findViewById(R.id.txt_dialog_trip_date)).setText(trip.getStartDate());
-
-            rowView.setOnClickListener(v -> {
-                dialog.dismiss();
-                if (isForExport) {
-                    selectedTripIdForExport = trip.getTripId();
-                    String safeTripName = trip.getTripName().replaceAll("[^a-zA-Z0-9]", "_");
-                    createMasterPdfLauncher.launch(safeTripName + "_Master_Ledger.pdf");
-                } else {
-                    Intent intent = new Intent(this, CompleteLedgerActivity.class);
-                    intent.putExtra("TRIP_ID", trip.getTripId());
-                    intent.putExtra("TRIP_NAME", trip.getTripName());
-                    startActivity(intent);
-                }
-            });
-            container.addView(rowView);
-        }
-
-        dialog.findViewById(R.id.btn_dialog_cancel).setOnClickListener(v -> dialog.dismiss());
-        dialog.show();
-    }
-
     private void loadAndFilterTrips() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account == null || account.getEmail() == null) {
@@ -339,7 +258,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
         String userEmail = account.getEmail();
 
-        // 1. Fetch user document to get personal archived IDs and private pinnedTripId
         db.collection("Users").document(userEmail).get()
                 .addOnSuccessListener(userDoc -> {
 
@@ -362,7 +280,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
 
                     final String finalPinnedTripId = userPinnedTripId;
 
-                    // 2. Fetch ALL trips shared with this user
                     db.collection("Trips").whereArrayContains("sharedEmails", userEmail).get()
                             .addOnSuccessListener(querySnapshot -> {
                                 masterTripList.clear();
@@ -377,7 +294,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                                         continue;
                                     }
 
-                                    // SECURITY CHECK: DOES THIS USER STILL HAVE ACCESS?
                                     String ownerEmail = doc.getString("ownerEmail");
                                     boolean hasAccess = false;
 
@@ -445,7 +361,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
                                                 endStr
                                         );
 
-                                        // Set pin state based on private user setting instead of global document
                                         boolean isPinnedLocal = finalPinnedTripId != null && finalPinnedTripId.equals(doc.getId());
                                         trip.setIsPinnedState(isPinnedLocal ? 1 : 0);
 
@@ -518,19 +433,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         });
     }
 
-    @SuppressWarnings("unused")
-    private ArrayList<String> getHistoricalMembers(String tripId) {
-        ArrayList<String> members = new ArrayList<>();
-        String query = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ? UNION SELECT DISTINCT payment_by FROM payments WHERE payment_trip_id = ?";
-        try (Cursor c = dbHelper.getReadableDatabase().rawQuery(query, new String[]{tripId, tripId})) {
-            while (c.moveToNext()) {
-                String name = c.getString(0).trim();
-                if (!"Fund".equalsIgnoreCase(name) && !members.contains(name)) members.add(name);
-            }
-        }
-        return members;
-    }
-
     private void applyFilterAndSort() {
         tripList.clear();
 
@@ -586,7 +488,6 @@ public class TripListActivity extends BaseDrawerActivity implements TripAdapter.
         com.google.firebase.firestore.DocumentReference userRef = db.collection("Users").document(myEmail);
         Map<String, Object> update = new HashMap<>();
 
-        // If currently pinned, clear it (null). Otherwise, assign this trip ID privately.
         update.put("pinnedTripId", currentlyPinned ? null : trip.getTripId());
 
         userRef.set(update, SetOptions.merge())
