@@ -194,8 +194,6 @@ public class TripAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             txtTotalExpense = itemView.findViewById(R.id.txt_item_total_expense);
             txtTotalReceived = itemView.findViewById(R.id.txt_item_total_received);
             btnPin = itemView.findViewById(R.id.btn_item_pin);
-            btnEdit = itemView.findViewById(R.id.btn_item_edit);
-            btnDelete = itemView.findViewById(R.id.btn_item_delete);
             btnAddExpense = itemView.findViewById(R.id.btn_item_add_expense);
             btnAddPayment = itemView.findViewById(R.id.btn_item_add_payment);
             txtRoleBadge = itemView.findViewById(R.id.txt_item_role_badge);

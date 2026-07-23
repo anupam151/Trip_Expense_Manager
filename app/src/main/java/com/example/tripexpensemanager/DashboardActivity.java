@@ -11,7 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AlertDialog;
+//import androidx.appcompat.app.AlertDialog;
 import androidx.core.view.GravityCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -209,8 +209,6 @@ public class DashboardActivity extends BaseDrawerActivity {
         TextView txtTotalReceived = cardView.findViewById(R.id.txt_item_total_received);
         TextView txtFundBalance = cardView.findViewById(R.id.txt_item_fund_balance);
         TextView btnPin = cardView.findViewById(R.id.btn_item_pin);
-        TextView btnEdit = cardView.findViewById(R.id.btn_item_edit);
-        TextView btnDelete = cardView.findViewById(R.id.btn_item_delete);
         MaterialButton btnAddExpense = cardView.findViewById(R.id.btn_item_add_expense);
         MaterialButton btnAddPayment = cardView.findViewById(R.id.btn_item_add_payment);
         TextView txtRoleBadge = cardView.findViewById(R.id.txt_item_role_badge);
@@ -304,21 +302,7 @@ public class DashboardActivity extends BaseDrawerActivity {
         btnPin.setTextColor(0xFF2E7D32);
         btnPin.setOnClickListener(v -> handlePinToggle(name));
 
-        btnEdit.setOnClickListener(v -> {
-            if (isAdmin) {
-                navigateToUpdateTrip(tripId, name, destination, members, startDate, endDate);
-            } else {
-                Toast.makeText(this, "Only the Admin can edit trips.", Toast.LENGTH_SHORT).show();
-            }
-        });
 
-        btnDelete.setOnClickListener(v -> {
-            if (isAdmin) {
-                showDeleteDialog(tripId, name);
-            } else {
-                Toast.makeText(this, "Only the Admin can delete trips.", Toast.LENGTH_SHORT).show();
-            }
-        });
 
         btnAddExpense.setOnClickListener(v -> {
             if (canAddTransactions) {
@@ -357,37 +341,6 @@ public class DashboardActivity extends BaseDrawerActivity {
                     Toast.makeText(DashboardActivity.this, "'" + tripName + "' unpinned!", Toast.LENGTH_SHORT).show();
                     fetchTripsFromCloud();
                 });
-    }
-
-    private void showDeleteDialog(String tripId, String tripName) {
-        AlertDialog alertDialog = new AlertDialog.Builder(this)
-                .setTitle("Delete Trip")
-                .setMessage("Are you sure you want to delete '" + tripName + "'?")
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .setPositiveButton("Yes, Delete", (dialog, which) -> executeCloudDelete(tripId))
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                .create();
-        alertDialog.show();
-        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF85022E);
-        alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF85022E);
-    }
-
-    private void executeCloudDelete(String tripId) {
-        db.collection("Trips").document(tripId).delete().addOnSuccessListener(aVoid -> {
-            Toast.makeText(this, "Trip deleted!", Toast.LENGTH_SHORT).show();
-            fetchTripsFromCloud();
-        });
-    }
-
-    private void navigateToUpdateTrip(String tripId, String name, String destination, String members, String startDate, String endDate) {
-        Intent intent = new Intent(this, UpdateTripActivity.class);
-        intent.putExtra("TRIP_ID", tripId);
-        intent.putExtra("TRIP_NAME", name);
-        intent.putExtra("TRIP_DESTINATION", destination);
-        intent.putExtra("TRIP_MEMBERS", members);
-        intent.putExtra("TRIP_START_DATE", startDate);
-        intent.putExtra("TRIP_END_DATE", endDate);
-        startActivity(intent);
     }
 
     private void navigateToTripDetails(String tripId, String name, String destination, String members, String startDate, String endDate) {

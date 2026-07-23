@@ -61,40 +61,6 @@
                     android:layout_width="1dp"
                     android:layout_height="match_parent"
                     android:background="#CCCCCC" />
-                <TextView
-                    android:id="@+id/btn_item_edit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/action_edit"
-                    android:textColor="#1A73E8"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:padding="6dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true"
-                    tools:ignore="TouchTargetSizeCheck" />
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="match_parent"
-                    android:background="#CCCCCC" />
-                <TextView
-                    android:id="@+id/btn_item_delete"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/action_delete"
-                    android:textColor="#D93025"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:padding="6dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true"
-                    tools:ignore="TouchTargetSizeCheck" />
             </LinearLayout>
         </RelativeLayout>
         <LinearLayout
