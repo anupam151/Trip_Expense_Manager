@@ -82,6 +82,10 @@
             android:exported="false" />
         <activity android:name=".ArchivedTripsActivity"
             android:exported="false" />
+        <activity
+            android:name=".CurrencyConverterActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -108,4 +112,5 @@
             <action android:name="android.intent.action.VIEW" />
         </intent>
     </queries>
+    <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

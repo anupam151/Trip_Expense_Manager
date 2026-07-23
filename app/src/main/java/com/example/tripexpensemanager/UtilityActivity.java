@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.ImageButton;
 //import android.widget.LinearLayout;
 import androidx.appcompat.app.AlertDialog;
+//import androidx.cardview.widget.CardView;
 import androidx.core.view.GravityCompat;
 // 1. Extend BaseDrawerActivity instead of Activity
 public class UtilityActivity extends BaseDrawerActivity {
@@ -72,14 +73,11 @@ public class UtilityActivity extends BaseDrawerActivity {
         //4. Live Currency Converter
         androidx.cardview.widget.CardView cardToolCurrency = findViewById(R.id.card_tool_currency);
         if (cardToolCurrency != null) {
-            cardToolCurrency.setOnClickListener(v ->
-                    new AlertDialog.Builder(UtilityActivity.this)
-                            .setTitle("Work in Progress")
-                            .setMessage("The Live Currency Converter feature is currently under development. Please check back later!")
-                            .setIcon(android.R.drawable.ic_dialog_info)
-                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
-                            .show()
-            );
+            cardToolCurrency.setOnClickListener(v -> {
+                // This MUST point to CurrencyConverterActivity.class
+                Intent intent = new Intent(UtilityActivity.this, CurrencyConverterActivity.class);
+                startActivity(intent);
+            });
         }
 
 
