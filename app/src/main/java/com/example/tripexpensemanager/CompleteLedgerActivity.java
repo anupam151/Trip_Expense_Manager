@@ -167,10 +167,10 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         addCell(row, "Fund\nDebit", true);
 
         // --- NEW AUDIT TRAIL HEADERS ---
-        addCell(row, "Added By", true);
-        addCell(row, "Added On", true);
+        addCell(row, "Transaction Added By", true);
+        addCell(row, "Transaction Added On", true);
         addCell(row, "Approved On", true);
-        addCell(row, "Status", true);
+        addCell(row, "Status of Transaction", true);
 
         tableHeader.addView(row);
     }
