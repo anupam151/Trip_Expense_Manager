@@ -35,14 +35,18 @@ public class LedgerDataService {
                 Double rawAmount = doc.getDouble("amount");
                 double safeAmount = (rawAmount != null) ? rawAmount : 0.0;
 
-                // Backwards compatibility: If status doesn't exist on old docs, assume APPROVED
                 String status = doc.getString("status");
-                if (status == null) status = "APPROVED";
+                if (status == null) status = "ADMIN_ADDED"; // Default for old data
+
+                String addedBy = doc.getString("addedBy") != null ? doc.getString("addedBy") : "Legacy System";
+                String addedOn = doc.getString("addedOn") != null ? doc.getString("addedOn") : "N/A";
+                String approvedOn = doc.getString("approvedOn") != null ? doc.getString("approvedOn") : "NA";
 
                 allEntries.add(new LedgerEntry(
                         doc.getId(), "Expense", doc.getString("purpose"),
                         safeAmount, doc.getString("date"),
-                        doc.getString("paidBy"), doc.getString("sharedWith"), status
+                        doc.getString("paidBy"), doc.getString("sharedWith"),
+                        status, addedBy, addedOn, approvedOn
                 ));
             }
 
@@ -52,18 +56,22 @@ public class LedgerDataService {
                 Double rawAmount = doc.getDouble("amount");
                 double safeAmount = (rawAmount != null) ? rawAmount : 0.0;
 
-                // Backwards compatibility: If status doesn't exist on old docs, assume APPROVED
                 String status = doc.getString("status");
-                if (status == null) status = "APPROVED";
+                if (status == null) status = "ADMIN_ADDED"; // Default for old data
+
+                String addedBy = doc.getString("addedBy") != null ? doc.getString("addedBy") : "Legacy System";
+                String addedOn = doc.getString("addedOn") != null ? doc.getString("addedOn") : "N/A";
+                String approvedOn = doc.getString("approvedOn") != null ? doc.getString("approvedOn") : "NA";
 
                 allEntries.add(new LedgerEntry(
                         doc.getId(), "Payment", "Payment by " + doc.getString("paymentBy"),
                         safeAmount, doc.getString("date"),
-                        doc.getString("paymentBy"), null, status
+                        doc.getString("paymentBy"), null,
+                        status, addedBy, addedOn, approvedOn
                 ));
             }
 
-            // 3. Sort Chronologically (Crash-Proof version)
+            // 3. Sort Chronologically
             allEntries.sort((e1, e2) -> {
                 try {
                     String date1Str = e1.getDate();

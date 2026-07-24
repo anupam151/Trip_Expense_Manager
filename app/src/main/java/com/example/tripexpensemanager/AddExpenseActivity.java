@@ -161,7 +161,6 @@ public class AddExpenseActivity extends AppCompatActivity {
             isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
             editExpenseId = getIntent().getStringExtra("TRANS_ID");
 
-            // NEW: Fetch Trip Owner Email
             if (currentTripId != null) {
                 db.collection("Trips").document(currentTripId).get().addOnSuccessListener(doc -> {
                     if (doc.exists()) {
@@ -346,10 +345,18 @@ public class AddExpenseActivity extends AppCompatActivity {
         String joinedSharedWithText = TextUtils.join(", ", participatingMembersList);
         String dateStr = etExpenseDate.getText().toString();
 
-        // NEW: Assign status based on Admin/Editor
+        // Safely extract email with a fallback
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String currentUserEmail = (user != null) ? user.getEmail() : "";
-        String status = (currentUserEmail != null && currentUserEmail.equalsIgnoreCase(tripOwnerEmail)) ? "APPROVED" : "PENDING";
+        String currentUserEmail = (user != null && user.getEmail() != null) ? user.getEmail() : "Unknown";
+
+        // Safe comparison: Checks if tripOwnerEmail is not null BEFORE comparing
+        boolean isAdmin = tripOwnerEmail != null && tripOwnerEmail.equalsIgnoreCase(currentUserEmail);
+
+        String status = isAdmin ? "ADMIN_ADDED" : "PENDING";
+
+        // Generate Date & Time: DD MMM YY, hh:mm am/pm
+        String addedOn = new SimpleDateFormat("dd MMM yy, hh:mm a", Locale.US).format(Calendar.getInstance().getTime());
+        String approvedOn = isAdmin ? "NA" : "Pending";
 
         Map<String, Object> expenseData = new HashMap<>();
         expenseData.put("purpose", purpose);
@@ -357,7 +364,10 @@ public class AddExpenseActivity extends AppCompatActivity {
         expenseData.put("date", dateStr);
         expenseData.put("paidBy", selectedPayer);
         expenseData.put("sharedWith", joinedSharedWithText);
-        expenseData.put("status", status); // NEW: Injecting the status
+        expenseData.put("status", status);
+        expenseData.put("addedBy", currentUserEmail); // Audit Trail
+        expenseData.put("addedOn", addedOn);          // Audit Trail
+        expenseData.put("approvedOn", approvedOn);    // Audit Trail
 
         if ("Fund".equals(selectedPayer)) {
             validateFundAndSave(expenseData, totalAmount);

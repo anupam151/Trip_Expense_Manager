@@ -16,8 +16,12 @@ import com.google.firebase.firestore.Source;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class CompleteLedgerActivity extends AppCompatActivity {
 
@@ -162,7 +166,10 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         addCell(row, "Fund\nCredit", true);
         addCell(row, "Fund\nDebit", true);
 
-        // NEW: Status Column Header
+        // --- NEW AUDIT TRAIL HEADERS ---
+        addCell(row, "Added By", true);
+        addCell(row, "Added On", true);
+        addCell(row, "Approved On", true);
         addCell(row, "Status", true);
 
         tableHeader.addView(row);
@@ -179,9 +186,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         String paidBy = entry.getPaidBy();
         String sharedWith = entry.getSharedWith();
 
-        // THIS FIXES THE WARNING: We are finally using getStatus()
-        String status = entry.getStatus();
-        if (status == null) status = "APPROVED"; // Safety fallback
+        String status = entry.getStatus() != null ? entry.getStatus() : "ADMIN_ADDED"; // Safety fallback
 
         addCell(row, date, false);
         addCell(row, purpose, false);
@@ -230,7 +235,10 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         addCell(row, String.format(Locale.US, "%.2f", rowFundCredit), false);
         addCell(row, String.format(Locale.US, "%.2f", rowFundDebit), false);
 
-        // NEW: Add the dynamic colored Status cell
+        // --- NEW: Populate Audit Trail Cells ---
+        addCell(row, entry.getAddedBy() != null ? entry.getAddedBy() : "Legacy System", false);
+        addCell(row, entry.getAddedOn() != null ? entry.getAddedOn() : "N/A", false);
+        addCell(row, entry.getApprovedOn() != null ? entry.getApprovedOn() : "NA", false);
         addStatusCell(row, status);
 
         // Click to Edit/Delete/Approve - passing the status forward
@@ -261,7 +269,10 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         addCell(row, String.format(Locale.US, "%.2f", totalFundCredit), true);
         addCell(row, String.format(Locale.US, "%.2f", totalFundDebit), true);
 
-        // NEW: Blank cell under the Status column
+        // --- NEW: 4 Blank cells to match the 4 new Audit/Status columns ---
+        addCell(row, "-", true);
+        addCell(row, "-", true);
+        addCell(row, "-", true);
         addCell(row, "-", true);
 
         tableTotal.addView(row);
@@ -286,7 +297,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         row.addView(tv);
     }
 
-    // NEW: Specialized method to handle colored Status text
+    // --- NEW: Specialized method to handle colored Status text ---
     private void addStatusCell(TableRow row, String status) {
         TextView tv = new TextView(this);
         tv.setPadding(16, 16, 16, 16);
@@ -296,12 +307,15 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         tv.setWidth(widthInPx);
         tv.setTypeface(null, android.graphics.Typeface.BOLD);
 
-        if ("PENDING".equalsIgnoreCase(status)) {
+        if ("ADMIN_ADDED".equalsIgnoreCase(status)) {
+            tv.setText("Admin Activity");
+            tv.setTextColor(Color.parseColor("#757575")); // Gray text
+        } else if ("PENDING".equalsIgnoreCase(status)) {
             tv.setText("Approval Pending");
-            tv.setTextColor(Color.parseColor("#E65100")); // Orange
+            tv.setTextColor(Color.parseColor("#E65100")); // Orange text
         } else {
             tv.setText("Approved by Admin");
-            tv.setTextColor(Color.parseColor("#2E7D32")); // Green
+            tv.setTextColor(Color.parseColor("#2E7D32")); // Green text
         }
         row.addView(tv);
     }
@@ -322,7 +336,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         row.setDividerDrawable(divider);
     }
 
-    // UPDATED: Now dynamically builds menu based on status
+    // --- UPDATED: Now dynamically builds menu based on status ---
     private void showTransactionOptions(String transId, String type, String tripId, String status) {
         if (!"Admin".equalsIgnoreCase(currentUserRole)) {
             Toast.makeText(this, "Only the Admin can edit or delete transactions.", Toast.LENGTH_SHORT).show();
@@ -361,13 +375,22 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                 }).show();
     }
 
-    // NEW: Function to instantly flip status to Approved in Firebase
+    // --- NEW: Function to instantly flip status and record timestamp in Firebase ---
     private void approveTransaction(String transId, String type) {
+        String currentTime = new SimpleDateFormat("dd MMM yy, hh:mm a", Locale.US).format(Calendar.getInstance().getTime());
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "APPROVED");
+        updates.put("approvedOn", currentTime); // Logs the exact moment of approval
+
         String collection = "Expense".equals(type) ? "Expenses" : "Payments";
         FirebaseFirestore.getInstance().collection("Trips").document(currentTripId)
                 .collection(collection).document(transId)
-                .update("status", "APPROVED")
-                .addOnSuccessListener(aVoid -> recreate()) // Refresh table to show changes immediately
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Transaction Approved", Toast.LENGTH_SHORT).show();
+                    recreate(); // Refresh table to show changes immediately
+                })
                 .addOnFailureListener(e -> Toast.makeText(this, "Failed to approve: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 

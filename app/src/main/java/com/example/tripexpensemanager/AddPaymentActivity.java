@@ -42,7 +42,7 @@ public class AddPaymentActivity extends AppCompatActivity {
 
     private TripDatabaseHelper dbHelper;
     private String currentTripId;
-    private String tripOwnerEmail = ""; // NEW: Stores the Admin's email
+    private String tripOwnerEmail = ""; // Stores the Admin's email
     private final ArrayList<String> parsedMembersList = new ArrayList<>();
 
     private FirebaseFirestore db;
@@ -163,7 +163,7 @@ public class AddPaymentActivity extends AppCompatActivity {
             isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
             editPaymentId = getIntent().getStringExtra("TRANS_ID");
 
-            // NEW: Fetch Trip Owner Email for Maker-Checker validation
+            // Fetch Trip Owner Email for Maker-Checker validation
             if (currentTripId != null) {
                 db.collection("Trips").document(currentTripId).get().addOnSuccessListener(doc -> {
                     if (doc.exists()) {
@@ -235,7 +235,7 @@ public class AddPaymentActivity extends AppCompatActivity {
 
         String selectedPayer = spinnerPaymentBy.getSelectedItem().toString();
 
-        // We extracted the logic into this clean method call!
+        // Extracted logic into clean method call
         Map<String, Object> paymentData = createPaymentDataMap(selectedPayer, paymentDateStr, totalAmount);
 
         if (isEditMode && editPaymentId != null) {
@@ -260,11 +260,20 @@ public class AddPaymentActivity extends AppCompatActivity {
         finish();
     }
 
-    // NEW EXTRACTED METHOD to clear the IDE warning
     private Map<String, Object> createPaymentDataMap(String selectedPayer, String paymentDateStr, double totalAmount) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String currentUserEmail = (user != null) ? user.getEmail() : "";
-        String status = (currentUserEmail != null && currentUserEmail.equalsIgnoreCase(tripOwnerEmail)) ? "APPROVED" : "PENDING";
+
+        // Safely extract email with a fallback
+        String currentUserEmail = (user != null && user.getEmail() != null) ? user.getEmail() : "Unknown";
+
+        // Safe comparison: Checks if tripOwnerEmail is not null BEFORE comparing
+        boolean isAdmin = tripOwnerEmail != null && tripOwnerEmail.equalsIgnoreCase(currentUserEmail);
+
+        String status = isAdmin ? "ADMIN_ADDED" : "PENDING";
+
+        // Generate Date & Time: DD MMM YY, hh:mm am/pm
+        String addedOn = new SimpleDateFormat("dd MMM yy, hh:mm a", Locale.US).format(Calendar.getInstance().getTime());
+        String approvedOn = isAdmin ? "NA" : "Pending";
 
         Map<String, Object> paymentData = new HashMap<>();
         paymentData.put("paymentBy", selectedPayer);
@@ -272,6 +281,9 @@ public class AddPaymentActivity extends AppCompatActivity {
         paymentData.put("date", paymentDateStr);
         paymentData.put("amount", totalAmount);
         paymentData.put("status", status);
+        paymentData.put("addedBy", currentUserEmail); // Audit Trail
+        paymentData.put("addedOn", addedOn);          // Audit Trail
+        paymentData.put("approvedOn", approvedOn);    // Audit Trail
 
         return paymentData;
     }
