@@ -156,7 +156,6 @@ public class TripAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             fullHolder.txtRoleBadge.setTextColor(roleTextColor);
             fullHolder.txtRoleBadge.setBackground(roleBg);
             fullHolder.txtRoleBadge.setPadding(hPadding, vPadding, hPadding, vPadding);
-
             // Pin State text logic
             if (trip.getIsPinnedState() == 1) {
                 fullHolder.txtTripName.setText(context.getString(R.string.fmt_item_name_pinned_sequential, (position + 1), trip.getDestination()));

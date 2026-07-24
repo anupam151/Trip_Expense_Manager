@@ -13,10 +13,7 @@
         android:layout_height="match_parent"
         android:background="#F6F6F6">
 
-        <!-- ========================================== -->
         <!-- 🟢 NEW WRAPPER FOR BLUR EFFECT 🟢 -->
-        <!-- Everything inside this container will be blurred -->
-        <!-- ========================================== -->
         <RelativeLayout
             android:id="@+id/main_content_container"
             android:layout_width="match_parent"
@@ -145,7 +142,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:weightSum="3"
+                            android:weightSum="4"
                             android:paddingVertical="15dp"
                             android:paddingHorizontal="10dp"
                             android:gravity="center_vertical">
@@ -155,35 +152,50 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:orientation="vertical"
+                                android:layout_marginEnd="2dp"
                                 android:gravity="start">
                                 <TextView
                                     android:id="@+id/txt_details_member_count"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#2E7D32"
+                                    android:textColor="#1D293D"
                                     android:textSize="15sp"
                                     android:textStyle="bold"/>
                             </LinearLayout>
 
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="35dp"
+                                android:layout_gravity="center_vertical"
+                                android:background="#CCCCCC" />
+
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
+                                android:layout_weight="2"
+                                android:layout_marginHorizontal="2dp"
                                 android:orientation="vertical"
                                 android:gravity="center">
                                 <TextView
                                     android:id="@+id/txt_details_destination"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#85022E"
+                                    android:textColor="#1D293D"
                                     android:gravity="center"
-                                    android:textSize="15sp"
+                                    android:textSize="18sp"
                                     android:textStyle="bold"/>
                             </LinearLayout>
+
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="35dp"
+                                android:layout_gravity="center_vertical"
+                                android:background="#CCCCCC" />
 
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_marginStart="2dp"
                                 android:layout_weight="1"
                                 android:orientation="vertical"
                                 android:gravity="end">
@@ -193,7 +205,7 @@
                                     android:layout_height="wrap_content"
                                     android:textSize="15sp"
                                     android:textStyle="bold"
-                                    android:textColor="#85022E"/>
+                                    android:textColor="#1D293D"/>
                             </LinearLayout>
 
                         </LinearLayout>
