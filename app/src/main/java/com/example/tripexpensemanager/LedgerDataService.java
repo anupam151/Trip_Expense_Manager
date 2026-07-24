@@ -35,10 +35,14 @@ public class LedgerDataService {
                 Double rawAmount = doc.getDouble("amount");
                 double safeAmount = (rawAmount != null) ? rawAmount : 0.0;
 
+                // Backwards compatibility: If status doesn't exist on old docs, assume APPROVED
+                String status = doc.getString("status");
+                if (status == null) status = "APPROVED";
+
                 allEntries.add(new LedgerEntry(
                         doc.getId(), "Expense", doc.getString("purpose"),
                         safeAmount, doc.getString("date"),
-                        doc.getString("paidBy"), doc.getString("sharedWith")
+                        doc.getString("paidBy"), doc.getString("sharedWith"), status
                 ));
             }
 
@@ -48,10 +52,14 @@ public class LedgerDataService {
                 Double rawAmount = doc.getDouble("amount");
                 double safeAmount = (rawAmount != null) ? rawAmount : 0.0;
 
+                // Backwards compatibility: If status doesn't exist on old docs, assume APPROVED
+                String status = doc.getString("status");
+                if (status == null) status = "APPROVED";
+
                 allEntries.add(new LedgerEntry(
                         doc.getId(), "Payment", "Payment by " + doc.getString("paymentBy"),
                         safeAmount, doc.getString("date"),
-                        doc.getString("paymentBy"), null
+                        doc.getString("paymentBy"), null, status
                 ));
             }
 

@@ -90,7 +90,6 @@ public class CompleteLedgerActivity extends AppCompatActivity {
     }
 
     private void loadTripDataAndLedger() {
-        // 1. First, fetch the Trip details to get the base members
         FirebaseFirestore.getInstance().collection("Trips").document(currentTripId)
                 .get(Source.DEFAULT)
                 .addOnSuccessListener(doc -> {
@@ -101,8 +100,6 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                         if (membersRaw != null && !membersRaw.isEmpty()) {
                             allMembersList.addAll(Arrays.asList(membersRaw.split(",")));
                         }
-
-                        // 2. Now fetch the transactions using our new Engine!
                         fetchTransactions();
                     }
                 })
@@ -110,11 +107,9 @@ public class CompleteLedgerActivity extends AppCompatActivity {
     }
 
     private void fetchTransactions() {
-        // THIS IS WHERE WE USE THE SERVICE (Warning vanishes!)
         ledgerDataService.fetchUnifiedLedger(currentTripId, new LedgerDataService.LedgerCallback() {
             @Override
             public void onResult(List<LedgerEntry> entries) {
-                // Ensure historical members (who might have been deleted) are included
                 for (LedgerEntry entry : entries) {
                     addUniqueMember(entry.getPaidBy());
                     if (entry.getSharedWith() != null) {
@@ -124,16 +119,14 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                     }
                 }
 
-                // Initialize arrays for our Totals row
                 totalCredits = new double[allMembersList.size()];
                 totalDebits = new double[allMembersList.size()];
 
-                // Build the UI
                 buildHeaderRow();
 
                 tableData.removeAllViews();
                 for (LedgerEntry entry : entries) {
-                    buildDataRow(entry); // This uses all the getters!
+                    buildDataRow(entry);
                 }
 
                 buildTotalRow();
@@ -166,9 +159,11 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, m + "\nDebit", true);
         }
 
-        // Add Fund Columns at the end
         addCell(row, "Fund\nCredit", true);
         addCell(row, "Fund\nDebit", true);
+
+        // NEW: Status Column Header
+        addCell(row, "Status", true);
 
         tableHeader.addView(row);
     }
@@ -177,13 +172,16 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         TableRow row = new TableRow(this);
         applyRowDividers(row);
 
-        // THESE LINES CLEAR YOUR WARNINGS in LedgerEntry.java!
         String type = entry.getType();
         String date = entry.getDate() != null ? entry.getDate() : "N/A";
         String purpose = entry.getPurpose();
         double amount = entry.getAmount();
         String paidBy = entry.getPaidBy();
         String sharedWith = entry.getSharedWith();
+
+        // THIS FIXES THE WARNING: We are finally using getStatus()
+        String status = entry.getStatus();
+        if (status == null) status = "APPROVED"; // Safety fallback
 
         addCell(row, date, false);
         addCell(row, purpose, false);
@@ -201,21 +199,18 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             double mDebit = 0.0;
 
             if (entry.isExpense()) {
-                // 1. Expense Logic
                 if (member.equalsIgnoreCase(paidBy)) {
-                    mCredit = amount; // Member paid
+                    mCredit = amount;
                 }
                 if (Arrays.asList(sharedArray).contains(member)) {
-                    mDebit = shareAmount; // Member participated
+                    mDebit = shareAmount;
                 }
             } else {
-                // 2. Payment Logic
                 if (member.equalsIgnoreCase(paidBy)) {
-                    mCredit = amount; // Member paid into fund
+                    mCredit = amount;
                 }
             }
 
-            // Add to running totals
             totalCredits[i] += mCredit;
             totalDebits[i] += mDebit;
 
@@ -223,11 +218,10 @@ public class CompleteLedgerActivity extends AppCompatActivity {
             addCell(row, String.format(Locale.US, "%.2f", mDebit), false);
         }
 
-        // Fund Logic for this specific row
         if (entry.isExpense() && "Fund".equalsIgnoreCase(paidBy)) {
-            rowFundDebit = amount; // Money left the fund
+            rowFundDebit = amount;
         } else if (!entry.isExpense()) {
-            rowFundCredit = amount; // Money entered the fund via Payment
+            rowFundCredit = amount;
         }
 
         totalFundCredit += rowFundCredit;
@@ -236,10 +230,15 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         addCell(row, String.format(Locale.US, "%.2f", rowFundCredit), false);
         addCell(row, String.format(Locale.US, "%.2f", rowFundDebit), false);
 
-        // Click to Edit/Delete
+        // NEW: Add the dynamic colored Status cell
+        addStatusCell(row, status);
+
+        // Click to Edit/Delete/Approve - passing the status forward
         row.setClickable(true);
         row.setBackgroundResource(android.R.drawable.list_selector_background);
-        row.setOnClickListener(v -> showTransactionOptions(entry.getTransId(), type, currentTripId));
+
+        final String finalStatus = status; // Needed for lambda
+        row.setOnClickListener(v -> showTransactionOptions(entry.getTransId(), type, currentTripId, finalStatus));
 
         tableData.addView(row);
     }
@@ -261,6 +260,9 @@ public class CompleteLedgerActivity extends AppCompatActivity {
 
         addCell(row, String.format(Locale.US, "%.2f", totalFundCredit), true);
         addCell(row, String.format(Locale.US, "%.2f", totalFundDebit), true);
+
+        // NEW: Blank cell under the Status column
+        addCell(row, "-", true);
 
         tableTotal.addView(row);
     }
@@ -284,6 +286,26 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         row.addView(tv);
     }
 
+    // NEW: Specialized method to handle colored Status text
+    private void addStatusCell(TableRow row, String status) {
+        TextView tv = new TextView(this);
+        tv.setPadding(16, 16, 16, 16);
+        tv.setGravity(Gravity.CENTER);
+
+        int widthInPx = (int) (80 * getResources().getDisplayMetrics().density);
+        tv.setWidth(widthInPx);
+        tv.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        if ("PENDING".equalsIgnoreCase(status)) {
+            tv.setText("Approval Pending");
+            tv.setTextColor(Color.parseColor("#E65100")); // Orange
+        } else {
+            tv.setText("Approved by Admin");
+            tv.setTextColor(Color.parseColor("#2E7D32")); // Green
+        }
+        row.addView(tv);
+    }
+
     private void applyRowDividers(TableRow row) {
         row.setShowDividers(android.widget.LinearLayout.SHOW_DIVIDER_MIDDLE);
         android.graphics.drawable.GradientDrawable divider = new android.graphics.drawable.GradientDrawable();
@@ -300,21 +322,32 @@ public class CompleteLedgerActivity extends AppCompatActivity {
         row.setDividerDrawable(divider);
     }
 
-    private void showTransactionOptions(String transId, String type, String tripId) {
-        // =================================================================
-        // --- NEW: ADMIN-ONLY GUARD ---
-        // =================================================================
+    // UPDATED: Now dynamically builds menu based on status
+    private void showTransactionOptions(String transId, String type, String tripId, String status) {
         if (!"Admin".equalsIgnoreCase(currentUserRole)) {
             Toast.makeText(this, "Only the Admin can edit or delete transactions.", Toast.LENGTH_SHORT).show();
-            return; // Stops the method right here, preventing the dialog from opening
+            return;
         }
-        // =================================================================
 
-        String[] options = {"Edit", "Delete"};
+        List<String> optionsList = new ArrayList<>();
+
+        // Show "Approve" only if it's PENDING
+        if ("PENDING".equalsIgnoreCase(status)) {
+            optionsList.add("Approve");
+        }
+        optionsList.add("Edit");
+        optionsList.add("Delete");
+
+        String[] options = optionsList.toArray(new String[0]);
+
         new AlertDialog.Builder(this)
                 .setTitle("Transaction Options")
                 .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
+                    String selectedOption = options[which];
+
+                    if ("Approve".equals(selectedOption)) {
+                        approveTransaction(transId, type);
+                    } else if ("Edit".equals(selectedOption)) {
                         Intent intent = new Intent(this, "Expense".equals(type) ? AddExpenseActivity.class : AddPaymentActivity.class);
                         intent.putExtra("TRIP_ID", tripId);
                         intent.putExtra("IS_EDIT_MODE", true);
@@ -322,10 +355,20 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                         intent.putExtra("TRIP_MEMBERS", String.join(",", allMembersList));
                         startActivity(intent);
                         finish();
-                    } else if (which == 1) {
+                    } else if ("Delete".equals(selectedOption)) {
                         confirmDelete(transId, type);
                     }
                 }).show();
+    }
+
+    // NEW: Function to instantly flip status to Approved in Firebase
+    private void approveTransaction(String transId, String type) {
+        String collection = "Expense".equals(type) ? "Expenses" : "Payments";
+        FirebaseFirestore.getInstance().collection("Trips").document(currentTripId)
+                .collection(collection).document(transId)
+                .update("status", "APPROVED")
+                .addOnSuccessListener(aVoid -> recreate()) // Refresh table to show changes immediately
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to approve: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void confirmDelete(String transId, String type) {
@@ -340,6 +383,7 @@ public class CompleteLedgerActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null).show();
     }
+
     @SuppressWarnings("unchecked")
     private void fetchUserRole() {
         com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();

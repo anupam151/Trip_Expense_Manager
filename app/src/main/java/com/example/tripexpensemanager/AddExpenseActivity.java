@@ -24,7 +24,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
-// --- Firebase Imports ---
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -45,7 +46,6 @@ public class AddExpenseActivity extends AppCompatActivity {
     private Spinner spinnerPaidBy;
     private GridLayout layoutCheckboxContainer;
 
-    // UI Elements for Live Summary
     private TextView txtSelectedCountPreview, txtSplitAmountPreview;
 
     private final Calendar calendar = Calendar.getInstance();
@@ -53,12 +53,13 @@ public class AddExpenseActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private String currentTripId;
+    private String tripOwnerEmail = ""; // NEW: Stores Admin email
     private final ArrayList<String> parsedMembersList = new ArrayList<>();
     private final ArrayList<CheckBox> activeCheckBoxesReferences = new ArrayList<>();
 
     private boolean isEditMode = false;
-    private String editExpenseId = null; // Changed to String for Firestore IDs
-    private double oldAmount = 0.0; // Stored to accurately calculate fund limits during edit
+    private String editExpenseId = null;
+    private double oldAmount = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +68,6 @@ public class AddExpenseActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        // Map UI elements
         edtPurpose = findViewById(R.id.edt_expense_purpose);
         edtAmount = findViewById(R.id.edt_expense_amount);
         etExpenseDate = findViewById(R.id.et_expense_date);
@@ -76,11 +76,9 @@ public class AddExpenseActivity extends AppCompatActivity {
         TextView txtHeading = findViewById(R.id.txt_expense_heading);
         Button btnSaveExpense = findViewById(R.id.btn_save_expense);
 
-        // Map Live Summary elements
         txtSelectedCountPreview = findViewById(R.id.txt_selected_count_preview);
         txtSplitAmountPreview = findViewById(R.id.txt_split_amount_preview);
 
-        // Setup Custom Back Button
         ImageButton btnBack = findViewById(R.id.btn_back);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
@@ -93,7 +91,6 @@ public class AddExpenseActivity extends AppCompatActivity {
             });
         }
 
-        // Live Math Logic
         edtAmount.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -105,7 +102,6 @@ public class AddExpenseActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Focus and Keyboard logic
         edtPurpose.requestFocus();
         edtPurpose.postDelayed(() -> {
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -128,11 +124,9 @@ public class AddExpenseActivity extends AppCompatActivity {
 
         btnSaveExpense.setOnClickListener(v -> executeExpenseValidationPipeline());
 
-        // Run initial calculation to update default text
         calculateAndDisplaySplit();
     }
 
-    // --- Live Calculation Method ---
     private void calculateAndDisplaySplit() {
         String amountString = edtAmount.getText().toString().trim();
         double totalAmount = 0.0;
@@ -166,6 +160,15 @@ public class AddExpenseActivity extends AppCompatActivity {
             currentTripId = getIntent().getStringExtra("TRIP_ID");
             isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
             editExpenseId = getIntent().getStringExtra("TRANS_ID");
+
+            // NEW: Fetch Trip Owner Email
+            if (currentTripId != null) {
+                db.collection("Trips").document(currentTripId).get().addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        tripOwnerEmail = doc.getString("ownerEmail");
+                    }
+                });
+            }
 
             List<String> allMembers = new ArrayList<>();
             String rawMembersStr = getIntent().getStringExtra("TRIP_MEMBERS");
@@ -210,7 +213,6 @@ public class AddExpenseActivity extends AppCompatActivity {
                         String paidBy = doc.getString("paidBy");
                         String sharedWith = doc.getString("sharedWith");
 
-                        // If historical document contains a member not in current trip list, add them temporarily
                         boolean listUpdated = false;
                         if (paidBy != null && !paidBy.equals("Fund") && !parsedMembersList.contains(paidBy)) {
                             parsedMembersList.add(paidBy);
@@ -231,7 +233,6 @@ public class AddExpenseActivity extends AppCompatActivity {
                             generateDynamicMembersCheckboxes();
                         }
 
-                        // Pre-select Spinner
                         if (paidBy != null && spinnerPaidBy.getAdapter() instanceof ArrayAdapter) {
                             ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerPaidBy.getAdapter();
                             for (int i = 0; i < adapter.getCount(); i++) {
@@ -242,7 +243,6 @@ public class AddExpenseActivity extends AppCompatActivity {
                             }
                         }
 
-                        // Pre-select Checkboxes
                         if (sharedWith != null) {
                             List<String> sharedList = Arrays.asList(sharedWith.split(",\\s*"));
                             for (CheckBox cb : activeCheckBoxesReferences) {
@@ -346,12 +346,18 @@ public class AddExpenseActivity extends AppCompatActivity {
         String joinedSharedWithText = TextUtils.join(", ", participatingMembersList);
         String dateStr = etExpenseDate.getText().toString();
 
+        // NEW: Assign status based on Admin/Editor
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = (user != null) ? user.getEmail() : "";
+        String status = (currentUserEmail != null && currentUserEmail.equalsIgnoreCase(tripOwnerEmail)) ? "APPROVED" : "PENDING";
+
         Map<String, Object> expenseData = new HashMap<>();
         expenseData.put("purpose", purpose);
         expenseData.put("amount", totalAmount);
         expenseData.put("date", dateStr);
         expenseData.put("paidBy", selectedPayer);
         expenseData.put("sharedWith", joinedSharedWithText);
+        expenseData.put("status", status); // NEW: Injecting the status
 
         if ("Fund".equals(selectedPayer)) {
             validateFundAndSave(expenseData, totalAmount);
@@ -361,7 +367,6 @@ public class AddExpenseActivity extends AppCompatActivity {
     }
 
     private void validateFundAndSave(Map<String, Object> expenseData, double totalAmount) {
-        // We use OnCompleteListener because it ALWAYS fires, even if the cache is empty/fails.
         db.collection("Trips").document(currentTripId).collection("Payments")
                 .whereEqualTo("paymentTo", "Fund")
                 .get(com.google.firebase.firestore.Source.CACHE)
@@ -376,7 +381,6 @@ public class AddExpenseActivity extends AppCompatActivity {
 
                     final double finalTotalPayments = totalPayments;
 
-                    // Chain the next call
                     db.collection("Trips").document(currentTripId).collection("Expenses")
                             .whereEqualTo("paidBy", "Fund")
                             .get(com.google.firebase.firestore.Source.CACHE)
@@ -391,7 +395,6 @@ public class AddExpenseActivity extends AppCompatActivity {
 
                                 double effectiveBalance = (finalTotalPayments - totalFundExpenses) + (isEditMode ? oldAmount : 0.0);
 
-                                // Validation Logic
                                 if (totalAmount > effectiveBalance) {
                                     Toast.makeText(this, "Insufficient Fund! Available: ₹" + String.format(Locale.US, "%.2f", effectiveBalance), Toast.LENGTH_LONG).show();
                                 } else {

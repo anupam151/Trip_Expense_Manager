@@ -499,12 +499,35 @@
                         android:clickable="true"
                         android:focusable="true"
                         android:background="?attr/selectableItemBackgroundBorderless">
-                        <ImageView
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
-                            android:src="@drawable/bank"
-                            app:tint="#85022E"
-                            android:contentDescription="@string/complete_ledger"/>
+
+                        <!-- NEW: FrameLayout to hold Icon + Badge -->
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:src="@drawable/bank"
+                                app:tint="#85022E"
+                                android:contentDescription="@string/complete_ledger"/>
+
+                            <!-- NEW: The Red Notification Bubble -->
+                            <TextView
+                                android:id="@+id/txt_pending_badge"
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_gravity="top|end"
+                                android:background="@drawable/bg_red_badge"
+                                android:textColor="#FFFFFF"
+                                android:textSize="9sp"
+                                android:textStyle="bold"
+                                android:gravity="center"
+                                android:visibility="gone"
+                                android:layout_marginTop="-2dp"
+                                android:layout_marginEnd="-2dp"/>
+                        </FrameLayout>
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"

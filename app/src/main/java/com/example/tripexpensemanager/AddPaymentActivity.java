@@ -24,10 +24,10 @@ import java.util.Map;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Window;
-// Rounded corner dialog End
 import android.widget.ImageButton;
 
-// --- Firebase Imports ---
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class AddPaymentActivity extends AppCompatActivity {
@@ -40,18 +40,15 @@ public class AddPaymentActivity extends AppCompatActivity {
     private final Calendar calendar = Calendar.getInstance();
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
 
-    // --- Kept for Historical Member lookup ---
     private TripDatabaseHelper dbHelper;
     private String currentTripId;
+    private String tripOwnerEmail = ""; // NEW: Stores the Admin's email
     private final ArrayList<String> parsedMembersList = new ArrayList<>();
 
-    // --- Firebase DB ---
     private FirebaseFirestore db;
-
-    // --- Edit Mode Flags ---
     private boolean isEditMode = false;
     private Button btnSavePayment;
-    private String editPaymentId = null; // Firestore uses String IDs
+    private String editPaymentId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +96,7 @@ public class AddPaymentActivity extends AppCompatActivity {
                         edtPaymentAmount.setText(String.valueOf(doc.getDouble("amount")));
                         edtPaymentDate.setText(doc.getString("date"));
 
-                        String paidBy = doc.getString("paymentBy"); // Corresponds to payment_by in DB
+                        String paidBy = doc.getString("paymentBy");
                         @SuppressWarnings("unchecked")
                         ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerPaymentBy.getAdapter();
 
@@ -166,6 +163,15 @@ public class AddPaymentActivity extends AppCompatActivity {
             isEditMode = getIntent().getBooleanExtra("IS_EDIT_MODE", false);
             editPaymentId = getIntent().getStringExtra("TRANS_ID");
 
+            // NEW: Fetch Trip Owner Email for Maker-Checker validation
+            if (currentTripId != null) {
+                db.collection("Trips").document(currentTripId).get().addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        tripOwnerEmail = doc.getString("ownerEmail");
+                    }
+                });
+            }
+
             ArrayList<String> allMembers = compileCompleteMemberList(rawMembersStr);
             parsedMembersList.clear();
             parsedMembersList.addAll(allMembers);
@@ -224,17 +230,13 @@ public class AddPaymentActivity extends AppCompatActivity {
             return;
         }
 
-        // 1. Lock the button so user can't click twice
         btnSavePayment.setEnabled(false);
         btnSavePayment.setText("Saving...");
 
         String selectedPayer = spinnerPaymentBy.getSelectedItem().toString();
 
-        Map<String, Object> paymentData = new HashMap<>();
-        paymentData.put("paymentBy", selectedPayer);
-        paymentData.put("paymentTo", "Fund");
-        paymentData.put("date", paymentDateStr);
-        paymentData.put("amount", totalAmount);
+        // We extracted the logic into this clean method call!
+        Map<String, Object> paymentData = createPaymentDataMap(selectedPayer, paymentDateStr, totalAmount);
 
         if (isEditMode && editPaymentId != null) {
             db.collection("Trips").document(currentTripId).collection("Payments").document(editPaymentId)
@@ -254,12 +256,26 @@ public class AddPaymentActivity extends AppCompatActivity {
                     });
         }
 
-        // 2. Close immediately (Offline or Online)
         Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show();
         finish();
     }
 
-    // --- HISTORICAL MEMBER HELPER METHODS (Kept for local lookups) ---
+    // NEW EXTRACTED METHOD to clear the IDE warning
+    private Map<String, Object> createPaymentDataMap(String selectedPayer, String paymentDateStr, double totalAmount) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = (user != null) ? user.getEmail() : "";
+        String status = (currentUserEmail != null && currentUserEmail.equalsIgnoreCase(tripOwnerEmail)) ? "APPROVED" : "PENDING";
+
+        Map<String, Object> paymentData = new HashMap<>();
+        paymentData.put("paymentBy", selectedPayer);
+        paymentData.put("paymentTo", "Fund");
+        paymentData.put("date", paymentDateStr);
+        paymentData.put("amount", totalAmount);
+        paymentData.put("status", status);
+
+        return paymentData;
+    }
+
     private ArrayList<String> getHistoricalMembers() {
         ArrayList<String> allMembers = new ArrayList<>();
         String query1 = "SELECT DISTINCT expense_paid_by FROM expenses WHERE expense_trip_id = ?";

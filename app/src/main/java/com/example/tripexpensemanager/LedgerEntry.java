@@ -10,8 +10,9 @@ public class LedgerEntry implements Serializable {
     private final String date;
     private final String paidBy;
     private final String sharedWith; // Only for Expenses
+    private final String status; // NEW: Tracks Maker-Checker state
 
-    public LedgerEntry(String transId, String type, String purpose, double amount, String date, String paidBy, String sharedWith) {
+    public LedgerEntry(String transId, String type, String purpose, double amount, String date, String paidBy, String sharedWith, String status) {
         this.transId = transId;
         this.type = type;
         this.purpose = purpose;
@@ -19,6 +20,7 @@ public class LedgerEntry implements Serializable {
         this.date = date;
         this.paidBy = paidBy;
         this.sharedWith = sharedWith;
+        this.status = status;
     }
 
     // Getters
@@ -29,6 +31,7 @@ public class LedgerEntry implements Serializable {
     public String getDate() { return date; }
     public String getPaidBy() { return paidBy; }
     public String getSharedWith() { return sharedWith; }
+    public String getStatus() { return status; } // NEW
 
     // Helper to identify quickly
     public boolean isExpense() { return "Expense".equals(type); }
